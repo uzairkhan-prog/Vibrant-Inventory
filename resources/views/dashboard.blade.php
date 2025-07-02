@@ -31,7 +31,7 @@
             </div>
 
             <div class="col-md-9">
-                <h2>Analytics (Coming soon...)</h2>
+                <h2>Analytics (Coming soon.....)</h2>
                 <!-- You can add ApexCharts here -->
             </div>
         </div>
