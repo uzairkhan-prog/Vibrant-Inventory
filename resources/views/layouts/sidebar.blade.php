@@ -31,12 +31,12 @@
                     <span class="hide-menu">Inventory</span>
                 </li>
 
-                <li class="sidebar-item">
+                <!-- <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('analytics.index') }}">
                         <i class="ti ti-chart-bar"></i>
                         <span class="hide-menu">Analytics</span>
                     </a>
-                </li>
+                </li> -->
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('products.index') }}">

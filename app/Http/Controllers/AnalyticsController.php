@@ -17,19 +17,16 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        // Monthly Sales
         $monthlySales = Sale::selectRaw('MONTH(created_at) as month, SUM(total_amount) as total')
             ->groupBy('month')
             ->orderBy('month')
             ->get();
 
-        // Monthly Purchases
         $monthlyPurchases = Purchase::selectRaw('MONTH(created_at) as month, SUM(total_amount) as total')
             ->groupBy('month')
             ->orderBy('month')
             ->get();
 
-        // Summary Counts
         $totalProducts = Product::count();
         $totalCategories = Category::count();
         $totalSuppliers = Supplier::count();
@@ -40,7 +37,12 @@ class AnalyticsController extends Controller
         $totalAssets = Asset::count();
         $totalLedgers = Ledger::count();
 
-        // Return view with all data
+        $sumPurchasesAmount = Purchase::sum('total_amount');
+        $sumSalesAmount = Sale::sum('total_amount');
+        $sumExpensesAmount = Expense::sum('amount');
+        $sumAssetsAmount = Asset::sum('value');
+        $totalLedgerBalance = Ledger::sum('balance');
+
         return view('analytics.index', compact(
             'monthlySales',
             'monthlyPurchases',
@@ -52,7 +54,12 @@ class AnalyticsController extends Controller
             'totalSales',
             'totalExpenses',
             'totalAssets',
-            'totalLedgers'
+            'totalLedgers',
+            'sumPurchasesAmount',
+            'sumSalesAmount',
+            'sumExpensesAmount',
+            'sumAssetsAmount',
+            'totalLedgerBalance'
         ));
     }
 }
