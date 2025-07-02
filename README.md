@@ -1,2 +1,2 @@
-# Inventory-Vibrant
-Inventory-Vibrant
+# Vibrant Inventory
+Vibrant Inventory
