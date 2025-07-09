@@ -19,6 +19,14 @@
             </div>
         </div>
 
+        <!-- Subtotal -->
+        <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
+            <div class="d-flex justify-content-between">
+                <span>Total Balance:</span>
+                <span>Rs {{ number_format($total_balance, 2) }}</span>
+            </div>
+        </div>
+
         <!-- Filters -->
         <div class="row mb-3 align-items-center">
             <div class="col-md-10 d-flex align-items-center">
@@ -33,14 +41,6 @@
                     @endforeach
                 </select>
                 <label class="ms-2 fw-semibold">entries</label>
-            </div>
-        </div>
-
-        <!-- Subtotal -->
-        <div class="alert alert-info fw-bold fs-5">
-            <div class="d-flex justify-content-between">
-                <span>Total Balance:</span>
-                <span>Rs {{ number_format($total_balance, 2) }}</span>
             </div>
         </div>
 

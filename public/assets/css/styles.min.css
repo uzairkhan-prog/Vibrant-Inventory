@@ -18460,7 +18460,8 @@ fieldset:disabled .btn {
 .sidebar-nav ul .sidebar-item.selected>.sidebar-link.active,
 .sidebar-nav ul .sidebar-item.selected>.sidebar-link,
 .sidebar-nav ul .sidebar-item>.sidebar-link.active {
-  background-color: var(--bs-primary);
+  /* background-color: var(--bs-primary); */
+  background: linear-gradient(90deg, #4d69de, #52b1fc);
   color: var(--bs-white);
 }
 

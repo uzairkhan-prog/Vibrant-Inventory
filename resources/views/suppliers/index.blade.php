@@ -19,30 +19,33 @@
             </div>
         </div>
 
-        <!-- Filter Row -->
-        <div class="row mb-4 g-3 align-items-center">
-            <div class="col-md-8 d-flex align-items-center">
-                <label class="me-2 fw-semibold">Search:</label>
-                <input type="text" id="searchInput" class="form-control w-75" placeholder="Search by name, address or balance">
+        <!-- Subtotal -->
+        @php
+        $subtotal = $suppliers->sum('balance');
+        @endphp
+
+        <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
+            <div class="d-flex justify-content-between">
+                <span>Total Suppliers Value:</span>
+                <span>Rs {{ number_format($subtotal, 2) }}</span>
             </div>
-            <div class="col-md-4 text-end">
+        </div>
+
+        <!-- Filter Row -->
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-10 d-flex align-items-center">
+                <label class="me-2 fw-semibold">Search:</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by name, address or balance">
+            </div>
+            <div class="col-md-2 d-flex justify-content-end align-items-center">
                 <label class="me-2 fw-semibold">Show</label>
-                <select id="rowsPerPage" class="form-select d-inline-block w-auto">
+                <select id="rowsPerPage" class="form-select w-auto">
                     @foreach ([5, 10, 50, 100] as $value)
                     <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
                     @endforeach
                 </select>
                 <span class="ms-2 fw-semibold">entries</span>
             </div>
-        </div>
-
-        <!-- Subtotal Balance Display -->
-        @php
-        $subtotal = $suppliers->sum('balance');
-        @endphp
-        <div class="alert alert-info shadow-sm rounded-3 fs-5 d-flex justify-content-between align-items-center">
-            <span><strong>Total Balance:</strong></span>
-            <span class="fw-bold text-success">Rs {{ number_format($subtotal, 2) }}</span>
         </div>
 
         <!-- Flash Success -->
