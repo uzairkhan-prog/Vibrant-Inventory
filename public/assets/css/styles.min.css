@@ -18526,7 +18526,7 @@ fieldset:disabled .btn {
   position: relative;
   z-index: 50;
   width: 100%;
-  background: #ecf0f2;
+  background: var(--bs-white);
   padding: 0 10px;
   /* top: 65px; */
 }
