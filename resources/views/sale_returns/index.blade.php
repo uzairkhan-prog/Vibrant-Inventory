@@ -68,13 +68,15 @@
                     <td>Rs {{ number_format($r->amount_deducted, 2) }}</td>
                     <td>Rs {{ number_format($r->total_after_return, 2) }}</td>
                     <td>
-                        <a href="{{ route('sale-returns.edit', $r) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('sale-returns.edit', $r) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('sale-returns.destroy', $r) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this return?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

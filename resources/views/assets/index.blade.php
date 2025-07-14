@@ -40,13 +40,15 @@
                     <td>{{ $asset->title }}</td>
                     <td>{{ $asset->value }}</td>
                     <td>
-                        <a href="{{ route('assets-inventory.edit', $asset) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('assets-inventory.edit', $asset) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('assets-inventory.destroy', $asset) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete asset?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

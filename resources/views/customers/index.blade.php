@@ -79,15 +79,18 @@
                     <td>{{ number_format($customer->balance ?? 0, 2) }}</td>
                     <td>
                         <a href="{{ route('customers.show', $customer) }}" class="btn btn-sm btn-info text-white" title="View Profile">
+                            View
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
-                        <a href="{{ route('customers.edit', $customer) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('customers.edit', $customer) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('customers.destroy', $customer) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this customer?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

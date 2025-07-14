@@ -80,13 +80,15 @@
                     <td>{{ $product->quantity }}</td>
                     <td>{{ number_format($product->price_per_unit * $product->quantity, 2) }}</td>
                     <td>
-                        <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this product?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

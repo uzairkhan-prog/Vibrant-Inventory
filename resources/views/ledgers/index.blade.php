@@ -77,13 +77,15 @@
                     <td>{{ number_format($ledger->balance, 2) }}</td>
                     <td>{{ $ledger->updated_at->format('Y-m-d H:i') }}</td>
                     <td>
-                        <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('ledgers.edit', $ledger) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('ledgers.destroy', $ledger) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete ledger entry?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

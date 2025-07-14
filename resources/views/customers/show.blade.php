@@ -85,17 +85,19 @@
                             <td>
                                 <span class="badge bg-secondary">{{ $payment->payment_mode }}</span>
                             </td>
-                            <td>{{ $payment->description }}</td>  
+                            <td>{{ $payment->description }}</td>
                             <td class="fw-bold text-success">Rs {{ number_format($payment->amount, 2) }}</td>
                             <td>{{ \Carbon\Carbon::parse($payment->date)->format('Y-m-d') }}</td>
                             <td>
-                                <a href="{{ route('customer-payments.edit', $payment) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                                <a href="{{ route('customer-payments.edit', $payment) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                                    Edit
                                     <i class="material-icons">edit</i>
                                 </a>
                                 <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this payment?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        Delete
                                         <i class="material-icons">delete</i>
                                     </button>
                                 </form>

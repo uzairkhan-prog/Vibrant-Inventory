@@ -71,13 +71,15 @@
                     <td>{{ $expense->payment_type }}</td>
                     <td>{{ number_format($expense->amount, 2) }}</td>
                     <td>
-                        <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('expenses.destroy', $expense) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this expense?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

@@ -79,15 +79,18 @@
                     <td>{{ number_format($sale->total_amount ?? 0, 2) }}</td>
                     <td>
                         <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info" title="View">
+                            View
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
-                        <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-warning text-white" title="Edit">
+                        <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                            Edit
                             <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('sales.destroy', $sale) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete sale?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>

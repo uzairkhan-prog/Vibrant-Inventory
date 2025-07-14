@@ -74,12 +74,14 @@
                     <td>{{ number_format($purchase->total_amount, 2) }}</td>
                     <td>
                         <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info" title="View">
+                            View
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
                         <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete purchase?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                Delete
                                 <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>
