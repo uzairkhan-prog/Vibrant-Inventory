@@ -85,7 +85,7 @@
                             <td>
                                 <span class="badge bg-secondary">{{ $payment->payment_mode }}</span>
                             </td>
-                            <td>{{ $payment->description }}</td>
+                            <td>{{ $payment->description }}</td>  
                             <td class="fw-bold text-success">Rs {{ number_format($payment->amount, 2) }}</td>
                             <td>{{ \Carbon\Carbon::parse($payment->date)->format('Y-m-d') }}</td>
                             <td>

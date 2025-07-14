@@ -11,7 +11,7 @@
     font-family: 'Material Icons';
     font-weight: normal;
     font-style: normal;
-    font-size: 24px;
+    font-size: 14px;
     line-height: 1;
     letter-spacing: normal;
     text-transform: none;
@@ -41,16 +41,16 @@
 }
 
 .table-title {
-    padding: 20px 30px;
+    padding: 10px 20px;
     background: linear-gradient(90deg, #4d69de, #52b1fc);
     color: #fff;
     border-radius: 12px 12px 0 0;
-    margin: -30px -30px 30px;
+    /* margin: -30px -30px 30px; */
     box-shadow: 0 4px 12px rgb(77 107 223);
 }
 
 .table-title h2 {
-    font-size: 26px;
+    font-size: 20px;
     margin: 0;
     font-weight: 700;
     margin-top: 7px;
@@ -111,22 +111,22 @@ table.table {
 }
 
 table.table thead th {
-    font-size: 18px;
+    font-size: 15px;
     background-color: #11142d;
     font-weight: 600;
     color: #ffffff;
     border: 1px solid #11142d40;
-    padding: 12px 16px;
+    padding: 5px;
     text-align: center;
     /* border-radius: 6px 6px 0 0; */
 }
 
 table.table td {
     color: #11142d;
-    font-size: 18px;
+    font-size: 14px;
     background-color: #fff;
     border: 1px solid #11142d40;
-    padding: 14px 16px;
+    padding: 1px;
     vertical-align: middle;
     text-align: center;
     border-radius: 5px;
@@ -196,7 +196,7 @@ table.table td a.btn-sm {
     }
 
     .table-title h2 {
-        font-size: 20px;
+        font-size: 16px;
     }
 
     .table-title .btn {
@@ -300,8 +300,8 @@ table.table td a.btn-sm {
 .row.mb-3.align-items-center {
     background: linear-gradient(90deg, #f0f8ff, #eaf6ff);
     border: 1px solid #a9d8ff;
-    padding: 15px;
-    border-radius: 15px 15px 0 0;
+    padding: 10px 20px;
+    /* border-radius: 15px 15px 0 0; */
     margin-bottom: 25px;
     box-shadow: 0 4px 12px rgba(66, 133, 244, 0.08);
     margin: 0 !important;
@@ -309,8 +309,8 @@ table.table td a.btn-sm {
 
 /* Labels */
 .row.mb-3 label {
-    font-size: 20px;
-    font-weight: 600;
+    /* font-size: 20px;
+    font-weight: 600; */
     color: #2c3e50;
 }
 
@@ -392,4 +392,10 @@ table.table td a.btn-sm {
     .pagination {
         flex-wrap: wrap;
     }
+}
+
+.alert.alert-success.shadow-sm.rounded-3.fs-6.fw-bold {
+    margin: 0;
+    padding: 10px 20px;
+    border-radius: 0 !important;
 }
