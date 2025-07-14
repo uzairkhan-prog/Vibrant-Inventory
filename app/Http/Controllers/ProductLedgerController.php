@@ -48,7 +48,7 @@ class ProductLedgerController extends Controller
 
         // Handle pagination with per_page option
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = $request->input('per_page', 5);
+        $perPage = $request->input('per_page', 20);
         $currentItems = $merged->slice(($currentPage - 1) * $perPage, $perPage)->all();
 
         $ledgerEntries = new LengthAwarePaginator(

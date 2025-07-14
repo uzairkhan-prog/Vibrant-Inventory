@@ -11,7 +11,7 @@ class SaleReturnController extends Controller
 {
     public function index()
     {
-        $returns = SaleReturn::with(['customer', 'product'])->latest()->paginate(10);
+        $returns = SaleReturn::with(['customer', 'product'])->latest()->paginate(20);
         return view('sale_returns.index', compact('returns'));
     }
 
