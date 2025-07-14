@@ -9,7 +9,7 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5); // default 5
+        $perPage = $request->get('per_page', 20); // default 5
         $customers = Customer::paginate($perPage);
         return view('customers.index', compact('customers'));
     }

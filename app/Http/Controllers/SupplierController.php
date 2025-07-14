@@ -10,7 +10,7 @@ class SupplierController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5); // default 5
+        $perPage = $request->get('per_page', 20); // default 5
         $suppliers = Supplier::paginate($perPage);
         return view('suppliers.index', compact('suppliers'));
     }

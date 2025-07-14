@@ -13,7 +13,7 @@ class PurchaseController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5); // Default 5
+        $perPage = $request->get('per_page', 20); // Default 5
         $purchases = Purchase::with('supplier')->orderBy('date', 'desc')->paginate($perPage);
         return view('purchases.index', compact('purchases'));
     }

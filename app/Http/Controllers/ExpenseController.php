@@ -9,7 +9,7 @@ class ExpenseController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5); // Default to 5
+        $perPage = $request->get('per_page', 20); // Default to 5
         $expenses = Expense::orderBy('created_at', 'desc')->paginate($perPage);
         $subtotal = $expenses->sum('amount'); // Only current page
 

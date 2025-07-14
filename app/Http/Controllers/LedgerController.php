@@ -12,7 +12,7 @@ class LedgerController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $perPage = $request->get('per_page', 5); // Default 5 entries per page
+        $perPage = $request->get('per_page', 20); // Default 5 entries per page
 
         // Query with search filter on related Customer/Supplier name
         $ledgers = Ledger::query()

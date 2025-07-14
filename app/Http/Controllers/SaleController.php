@@ -13,7 +13,7 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5); // default to 5
+        $perPage = $request->get('per_page', 20); // default to 5
         $sales = Sale::with('customer')->orderBy('date', 'desc')->paginate($perPage);
         return view('sales.index', compact('sales'));
     }
