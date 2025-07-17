@@ -37,24 +37,26 @@
         <table class="table table-striped table-hover" id="ledgerTable">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Customer / Supplier</th>
-                    <th>QTY</th>
                     <th>Invoice No</th>
+                    <!-- <th>#</th>
+                    <th>Date</th> -->
+                    <th>Type</th>
+                    <th>Product Name</th>
+                    <th>QTY</th>
+                    <th>Unit Price</th> <!-- New Column -->
                     <th>Invoice Value</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($ledgerEntries as $index => $entry)
                 <tr>
-                    <td>{{ ($ledgerEntries->currentPage() - 1) * $ledgerEntries->perPage() + $loop->iteration }}</td>
-                    <td>{{ $entry['date'] }}</td>
-                    <td>{{ $entry['type'] }}</td>
-                    <td>{{ $entry['party'] }}</td>
-                    <td>{{ $entry['qty'] }}</td>
                     <td>#{{ $entry['invoice_no'] }}</td>
+                    <!-- <td>{{ ($ledgerEntries->currentPage() - 1) * $ledgerEntries->perPage() + $loop->iteration }}</td>
+                    <td>{{ $entry['date'] }}</td> -->
+                    <td>{{ $entry['type'] }}</td>
+                    <td>{{ $entry['product_name'] }}</td>
+                    <td>{{ $entry['qty'] }}</td>
+                    <td>Rs {{ number_format($entry['unit_price'], 2) }}</td> <!-- New Column Value -->
                     <td>Rs {{ number_format($entry['invoice_value'], 2) }}</td>
                 </tr>
                 @endforeach

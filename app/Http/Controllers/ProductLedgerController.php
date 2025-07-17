@@ -23,8 +23,9 @@ class ProductLedgerController extends Controller
                 return [
                     'date' => $item->created_at->format('Y-m-d'),
                     'type' => 'Sale',
-                    'party' => $item->sale->customer->name ?? '-',
-                    'qty'  => $item->quantity,
+                    'product_name' => $item->product->name ?? '-',
+                    'qty' => $item->quantity,
+                    'unit_price' => $item->price, // <-- Added
                     'invoice_no' => $item->sale_id,
                     'invoice_value' => $item->price * $item->quantity,
                 ];
@@ -37,8 +38,9 @@ class ProductLedgerController extends Controller
                 return [
                     'date' => $item->created_at->format('Y-m-d'),
                     'type' => 'Purchase',
-                    'party' => $item->purchase->supplier->name ?? '-',
-                    'qty'  => $item->quantity,
+                    'product_name' => $item->product->name ?? '-',
+                    'qty' => $item->quantity,
+                    'unit_price' => $item->price, // <-- Added
                     'invoice_no' => $item->purchase_id,
                     'invoice_value' => $item->price * $item->quantity,
                 ];
