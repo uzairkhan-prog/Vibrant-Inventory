@@ -88,10 +88,30 @@
                 </li>
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('expenses.index') }}">
+                    <a class="sidebar-link has-arrow" href="javascript:void(0)">
                         <i class="ti ti-receipt"></i>
                         <span class="hide-menu">Expenses</span>
                     </a>
+                    <ul class="collapse first-level">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('expenses.index') }}">
+                                <i class="ti ti-list-details"></i>
+                                <span class="hide-menu">All Expenses</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('expense-name.index') }}">
+                                <i class="ti ti-credit-card"></i>
+                                <span class="hide-menu">Expense Name</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('payment-types.index') }}">
+                                <i class="ti ti-credit-card"></i>
+                                <span class="hide-menu">Payment Methods</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <!-- Product Ledger -->

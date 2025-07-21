@@ -73,8 +73,8 @@
                     <td>{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}</td>
                     <td>{{ number_format($purchase->total_amount, 2) }}</td>
                     <td>
-                        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info" title="View">
-                            View
+                        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info" title="View Details">
+                            View Details
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
                         <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete purchase?')">

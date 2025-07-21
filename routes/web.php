@@ -11,6 +11,8 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseNameController;
+use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\ReportsController;
@@ -41,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('purchases', PurchaseController::class);
     Route::resource('sales', SaleController::class);
     Route::resource('expenses', ExpenseController::class);
+    Route::resource('expense-name', ExpenseNameController::class);
+    Route::resource('payment-types', PaymentTypeController::class);
     Route::resource('ledgers', LedgerController::class);
     Route::resource('assets-inventory', AssetController::class);
     Route::resource('sale-returns', SaleReturnController::class);

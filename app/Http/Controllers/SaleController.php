@@ -13,7 +13,7 @@ class SaleController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 20); // default to 5
+        $perPage = $request->get('per_page', 20); // Default to 20
         $sales = Sale::with('customer')->orderBy('date', 'desc')->paginate($perPage);
         return view('sales.index', compact('sales'));
     }
@@ -30,7 +30,6 @@ class SaleController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'date'        => 'required|date',
-            'description' => 'nullable|string|max:255',
             'product_id.*' => 'required|exists:products,id',
             'quantity.*'  => 'required|integer|min:1',
             'price.*'     => 'required|numeric|min:0',
@@ -41,7 +40,7 @@ class SaleController extends Controller
                 'customer_id'  => $request->customer_id,
                 'total_amount' => 0,
                 'date'         => $request->date,
-                'description'  => $request->description,  // Add this
+                // 'description'  => $request->description,
             ]);
 
             $totalAmount = 0;
@@ -50,9 +49,8 @@ class SaleController extends Controller
                 $quantity = $request->quantity[$index];
                 $price    = $request->price[$index];
                 $subtotal = $quantity * $price;
-                $description    = $request->description;
 
-                $product = Product::find($productId);
+                $product = Product::findOrFail($productId);
 
                 if ($product->quantity < $quantity) {
                     throw new \Exception("Not enough stock for product: {$product->name}");
@@ -63,7 +61,7 @@ class SaleController extends Controller
                     'product_id' => $productId,
                     'quantity'   => $quantity,
                     'price'      => $price,
-                    'description'      => $description,
+                    // 'description' => $request->description,
                 ]);
 
                 // Decrease product stock
@@ -73,7 +71,7 @@ class SaleController extends Controller
                 $totalAmount += $subtotal;
             }
 
-            // Update total
+            // Update total amount
             $sale->total_amount = $totalAmount;
             $sale->save();
         });
@@ -100,13 +98,13 @@ class SaleController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'date'        => 'required|date',
-            'description' => 'nullable|string|max:255',
+            // 'description' => 'nullable|string|max:255',
         ]);
 
         $sale->update([
             'customer_id' => $request->customer_id,
             'date'        => $request->date,
-            'description' => $request->description,
+            // 'description' => $request->description,
         ]);
 
         return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
@@ -116,7 +114,6 @@ class SaleController extends Controller
     {
         DB::transaction(function () use ($sale) {
             foreach ($sale->items as $item) {
-                // Revert stock
                 $product = $item->product;
                 $product->quantity += $item->quantity;
                 $product->save();

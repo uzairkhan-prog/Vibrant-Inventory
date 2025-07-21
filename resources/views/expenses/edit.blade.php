@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="table-responsive">
     <div class="table-wrapper">
         <div class="table-title">
@@ -9,28 +8,42 @@
         </div>
 
         <div class="p-3">
-            <form method="POST" action="{{ route('expenses.update', $expense) }}">
+            <form method="POST" action="{{ route('expenses.update', $expense->id) }}">
                 @csrf
                 @method('PUT')
 
                 <div class="mb-3">
                     <label class="form-label">Expense Name</label>
-                    <input type="text" name="expense_name" class="form-control" value="{{ $expense->expense_name }}" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control">{{ $expense->description }}</textarea>
+                    <select name="expense_name_id" class="form-select" required>
+                        <option value="">-- Select Expense Name --</option>
+                        @foreach ($expenseNames as $name)
+                        <option value="{{ $name->id }}" {{ $expense->expense_name_id == $name->id ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Payment Type</label>
-                    <input type="text" name="payment_type" class="form-control" value="{{ $expense->payment_type }}" required>
+                    <select name="payment_type_id" class="form-select" required>
+                        <option value="">-- Select Payment Type --</option>
+                        @foreach ($paymentTypes as $type)
+                        <option value="{{ $type->id }}" {{ $expense->payment_type_id == $type->id ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Amount</label>
                     <input type="number" name="amount" step="0.01" class="form-control" value="{{ $expense->amount }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3">{{ $expense->description }}</textarea>
                 </div>
 
                 <div class="text-center">
@@ -39,8 +52,6 @@
                 </div>
             </form>
         </div>
-
     </div>
 </div>
-
 @endsection

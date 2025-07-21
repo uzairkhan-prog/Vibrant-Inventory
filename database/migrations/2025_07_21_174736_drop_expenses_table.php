@@ -6,32 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+    public function up()
     {
-        // Drop old table first (if exists)
         Schema::dropIfExists('expenses');
-
-        // Create new table
-        Schema::create('expenses', function (Blueprint $table) {
-            $table->id();
-
-            $table->unsignedBigInteger('expense_name_id')->nullable();
-            $table->unsignedBigInteger('payment_type_id')->nullable();
-
-            $table->text('description')->nullable();
-
-            $table->decimal('amount', 15, 2);
-
-            $table->timestamps();
-
-            // Foreign key constraints
-            $table->foreign('expense_name_id')->references('id')->on('expense_names')->onDelete('set null');
-            $table->foreign('payment_type_id')->references('id')->on('payment_types')->onDelete('set null');
-        });
     }
 
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('expenses');
+        // Optionally, recreate the table here if rollback is needed
+        Schema::create('expenses', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('expense_name_id')->nullable();
+            $table->unsignedBigInteger('payment_type_id')->nullable();
+            $table->text('description')->nullable();
+            $table->decimal('amount', 10, 2);
+            $table->timestamps();
+        });
     }
 };

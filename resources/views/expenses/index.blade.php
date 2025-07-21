@@ -1,11 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="table-responsive">
     <div class="table-wrapper">
 
-        <!-- Title -->
         <div class="table-title">
             <div class="row">
                 <div class="col-md-6">
@@ -19,7 +17,6 @@
             </div>
         </div>
 
-        <!-- Subtotal -->
         <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
             <div class="d-flex justify-content-between">
                 <span>Total Expense:</span>
@@ -27,7 +24,6 @@
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="row mb-3 align-items-center">
             <div class="col-md-10 d-flex align-items-center">
                 <label class="me-2 fw-semibold">Search:</label>
@@ -44,18 +40,16 @@
             </div>
         </div>
 
-        <!-- Success Message -->
         @if(session('success'))
         <div class="alert alert-success text-center">{{ session('success') }}</div>
         @endif
 
-        <!-- Table -->
         @if($expenses->count())
         <table class="table table-striped table-hover" id="expenseTable">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Expense Name</th>
+                    <th>Expense  </th>
                     <th>Description</th>
                     <th>Payment Type</th>
                     <th>Amount</th>
@@ -66,10 +60,10 @@
                 @foreach ($expenses as $expense)
                 <tr>
                     <td>{{ ($expenses->currentPage() - 1) * $expenses->perPage() + $loop->iteration }}</td>
-                    <td>{{ $expense->expense_name }}</td>
-                    <td>{{ $expense->description }}</td>
-                    <td>{{ $expense->payment_type }}</td>
+                    <td>{{ $expense->expenseName->name }}</td>
+                    <td>{{ $expense->paymentType->name ?? '-' }}</td>
                     <td>{{ number_format($expense->amount, 2) }}</td>
+                    <td>{{ $expense->description }}</td>
                     <td>
                         <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-sm btn-success text-white" title="Edit">
                             Edit
@@ -89,7 +83,6 @@
             </tbody>
         </table>
 
-        <!-- Pagination -->
         <div class="d-flex justify-content-center mt-3">
             {!! $expenses->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
         </div>
@@ -97,11 +90,9 @@
         @else
         <div class="alert alert-info text-center">No expenses found. <a href="{{ route('expenses.create') }}">Create one</a>.</div>
         @endif
-
     </div>
 </div>
 
-<!-- Search and PerPage Scripts -->
 <script>
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const val = this.value.toLowerCase();
@@ -117,5 +108,4 @@
         window.location.href = url.toString();
     });
 </script>
-
 @endsection

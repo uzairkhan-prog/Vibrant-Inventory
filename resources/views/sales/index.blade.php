@@ -63,7 +63,7 @@
                 <tr>
                     <th>#</th>
                     <th>Customer</th>
-                    <th>Description</th>
+                    <!-- <th>Description</th> -->
                     <th>Date</th>
                     <th>Total Amount</th>
                     <th>Actions</th>
@@ -74,18 +74,18 @@
                 <tr>
                     <td>{{ ($sales->currentPage() - 1) * $sales->perPage() + $loop->iteration }}</td>
                     <td>{{ $sale->customer->name }}</td>
-                    <td>{{ $sale->description }}</td>
+                    <!-- <td>{{ $sale->description }}</td> -->
                     <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
                     <td>{{ number_format($sale->total_amount ?? 0, 2) }}</td>
                     <td>
-                        <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info" title="View">
-                            View
+                        <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info" title="View Details">
+                            View Details
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
-                        <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                        <!-- <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-success text-white" title="Edit">
                             Edit
                             <i class="material-icons">&#xE254;</i>
-                        </a>
+                        </a> -->
                         <form action="{{ route('sales.destroy', $sale) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete sale?')">
                             @csrf
                             @method('DELETE')

@@ -10,9 +10,20 @@ class Expense extends Model
     use HasFactory;
 
     protected $fillable = [
-        'expense_name',
-        'description',
-        'payment_type',
+        'expense_name_id',
+        'payment_type_id',
         'amount',
+        'description',
     ];
+
+    // Define relation to PaymentType
+    public function paymentType()
+    {
+        return $this->belongsTo(PaymentType::class, 'payment_type_id');
+    }
+
+    public function expenseName()
+    {
+        return $this->belongsTo(ExpenseName::class, 'expense_name_id');
+    }
 }
