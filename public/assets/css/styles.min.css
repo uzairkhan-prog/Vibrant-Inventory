@@ -18367,10 +18367,10 @@ fieldset:disabled .btn {
 
 .sidebar-nav ul .sidebar-item .sidebar-link {
   display: flex;
-  font-size: 16px;
+  font-size: 15px;
   white-space: nowrap;
   align-items: center;
-  line-height: 25px;
+  line-height: 15px;
   position: relative;
   margin: 0px 0px 2px;
   padding: 10px;
