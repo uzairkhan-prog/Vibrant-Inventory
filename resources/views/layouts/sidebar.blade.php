@@ -124,11 +124,26 @@
 
                 <!-- General Ledger -->
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('ledgers.index') }}">
+                    <a class="sidebar-link has-arrow" href="javascript:void(0)">
                         <i class="ti ti-book"></i>
-                        <span class="hide-menu">Ledger</span>
+                        <span class="hide-menu">Ledgers</span>
                     </a>
+                    <ul class="collapse first-level">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('customer-ledgers.index') }}">
+                                <i class="ti ti-user"></i>
+                                <span class="hide-menu">Customer Ledger</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('supplier-ledgers.index') }}">
+                                <i class="ti ti-truck-loading"></i>
+                                <span class="hide-menu">Supplier Ledger</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
+
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('assets-inventory.index') }}">
