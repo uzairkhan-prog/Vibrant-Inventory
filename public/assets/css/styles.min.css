@@ -41,7 +41,7 @@
   --bs-danger: #fc4b6c;
   --bs-light: #f6f8fb;
   --bs-dark: #11142d;
-  --bs-muted: #777e89;
+  --bs-muted: #11142d;
   --bs-indigo: #6610f2;
   --bs-light-indigo: #ebf3fe;
   --bs-primary-rgb: 30, 77, 183;
@@ -2465,15 +2465,15 @@ progress {
   --bs-table-bg-type: initial;
   --bs-table-color-state: initial;
   --bs-table-bg-state: initial;
-  --bs-table-color: #777e89;
+  --bs-table-color: #11142d;
   --bs-table-bg: var(--bs-body-bg);
   --bs-table-border-color: #ecf0f2;
   --bs-table-accent-bg: transparent;
-  --bs-table-striped-color: #777e89;
+  --bs-table-striped-color: #11142d;
   --bs-table-striped-bg: #ecf0f2;
-  --bs-table-active-color: #777e89;
+  --bs-table-active-color: #11142d;
   --bs-table-active-bg: rgba(var(--bs-emphasis-color-rgb), 0.1);
-  --bs-table-hover-color: #777e89;
+  --bs-table-hover-color: #11142d;
   --bs-table-hover-bg: #f6f8fb;
   width: 100%;
   margin-bottom: 1rem;
@@ -2738,7 +2738,7 @@ progress {
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #777e89;
+  color: #11142d;
   appearance: none;
   background-color: transparent;
   background-clip: padding-box;
@@ -2763,7 +2763,7 @@ progress {
 }
 
 .form-control:focus {
-  color: #777e89;
+  color: #11142d;
   background-color: transparent;
   border-color: rgb(142.5, 166, 219);
   outline: 0;
@@ -2795,7 +2795,7 @@ progress {
   padding: 8px 16px;
   margin: -8px -16px;
   margin-inline-end: 16px;
-  color: #777e89;
+  color: #11142d;
   background-color: var(--bs-tertiary-bg);
   pointer-events: none;
   border-color: inherit;
@@ -2912,7 +2912,7 @@ textarea.form-control-lg {
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #777e89;
+  color: #11142d;
   appearance: none;
   background-color: transparent;
   background-image: var(--bs-form-select-bg-img), var(--bs-form-select-bg-icon, none);
@@ -2949,7 +2949,7 @@ textarea.form-control-lg {
 
 .form-select:-moz-focusring {
   color: transparent;
-  text-shadow: 0 0 0 #777e89;
+  text-shadow: 0 0 0 #11142d;
 }
 
 .form-select-sm {
@@ -3367,7 +3367,7 @@ textarea.form-control-lg {
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #777e89;
+  color: #11142d;
   text-align: center;
   white-space: nowrap;
   background-color: #ecf0f2;
@@ -3885,8 +3885,8 @@ fieldset:disabled .btn {
 
 .btn-muted {
   --bs-btn-color: #fff;
-  --bs-btn-bg: #777e89;
-  --bs-btn-border-color: #777e89;
+  --bs-btn-bg: #11142d;
+  --bs-btn-border-color: #11142d;
   --bs-btn-hover-color: #fff;
   --bs-btn-hover-bg: rgb(101.15, 107.1, 116.45);
   --bs-btn-hover-border-color: rgb(95.2, 100.8, 109.6);
@@ -3896,8 +3896,8 @@ fieldset:disabled .btn {
   --bs-btn-active-border-color: rgb(89.25, 94.5, 102.75);
   --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
   --bs-btn-disabled-color: #fff;
-  --bs-btn-disabled-bg: #777e89;
-  --bs-btn-disabled-border-color: #777e89;
+  --bs-btn-disabled-bg: #11142d;
+  --bs-btn-disabled-border-color: #11142d;
 }
 
 .btn-indigo {
@@ -4071,19 +4071,19 @@ fieldset:disabled .btn {
 }
 
 .btn-outline-muted {
-  --bs-btn-color: #777e89;
-  --bs-btn-border-color: #777e89;
+  --bs-btn-color: #11142d;
+  --bs-btn-border-color: #11142d;
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #777e89;
-  --bs-btn-hover-border-color: #777e89;
+  --bs-btn-hover-bg: #11142d;
+  --bs-btn-hover-border-color: #11142d;
   --bs-btn-focus-shadow-rgb: 119, 126, 137;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #777e89;
-  --bs-btn-active-border-color: #777e89;
+  --bs-btn-active-bg: #11142d;
+  --bs-btn-active-border-color: #11142d;
   --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-  --bs-btn-disabled-color: #777e89;
+  --bs-btn-disabled-color: #11142d;
   --bs-btn-disabled-bg: transparent;
-  --bs-btn-disabled-border-color: #777e89;
+  --bs-btn-disabled-border-color: #11142d;
   --bs-gradient: none;
 }
 
@@ -5347,7 +5347,7 @@ fieldset:disabled .btn {
   --bs-card-spacer-x: 30px;
   --bs-card-title-spacer-y: 0.5rem;
   --bs-card-title-color: #11142d;
-  --bs-card-subtitle-color: #777e89;
+  --bs-card-subtitle-color: #11142d;
   --bs-card-border-width: 1px;
   --bs-card-border-color: #ecf0f2;
   --bs-card-border-radius: 7px;

@@ -4,12 +4,13 @@
 
 <div class="invoice-wrapper p-4 my-5 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">Purchase Invoice</h2>
+        <h2 class="fw-bold text-primary">Edit Purchase Invoice</h2>
         <span class="text-muted">{{ \Carbon\Carbon::now()->format('d M, Y') }}</span>
     </div>
 
-    <form method="POST" action="{{ route('purchases.store') }}">
+    <form method="POST" action="{{ route('purchases.update', $purchase->id) }}">
         @csrf
+        @method('PUT')
 
         <!-- Supplier and Date -->
         <div class="row mb-4">
@@ -17,17 +18,19 @@
                 <label for="supplier_id" class="form-label">Supplier</label>
                 <select name="supplier_id" id="supplier_id" class="form-select" required>
                     @foreach($suppliers as $supplier)
-                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                    <option value="{{ $supplier->id }}" {{ $supplier->id == $purchase->supplier_id ? 'selected' : '' }}>
+                        {{ $supplier->name }}
+                    </option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-6">
                 <label for="date" class="form-label">Date</label>
-                <input type="date" name="date" id="date" class="form-control" required>
+                <input type="date" name="date" id="date" class="form-control" value="{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}" required>
             </div>
         </div>
 
-        <!-- Products Table -->
+        <!-- Product Table -->
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center invoice-table mb-4">
                 <thead class="table-light">
@@ -42,27 +45,38 @@
                     </tr>
                 </thead>
                 <tbody id="product-list">
+                    @foreach($purchase->items as $item)
+                    @php
+                    $base = $item->quantity * $item->price;
+                    $discountAmount = ($item->discount ?? 0) * $base / 100;
+                    $taxable = $base - $discountAmount;
+                    $taxAmount = ($item->tax ?? 0) * $taxable / 100;
+                    $subtotal = $taxable + $taxAmount;
+                    @endphp
                     <tr class="product-row">
                         <td>
                             <select name="product_id[]" class="form-select" required>
-                                <option>Select a Product</option>
+                                <option value="">Select a Product</option>
                                 @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }})</option>
+                                <option value="{{ $product->id }}" {{ $item->product_id == $product->id ? 'selected' : '' }}>
+                                    {{ $product->name }} (Stock: {{ $product->quantity }})
+                                </option>
                                 @endforeach
                             </select>
                         </td>
-                        <td><input type="number" name="quantity[]" class="form-control qty" min="1" required></td>
-                        <td><input type="number" name="price[]" class="form-control price" step="0.01" required></td>
-                        <td><input type="number" name="discount[]" class="form-control discount" value="0" min="0" step="0.01"></td>
+                        <td><input type="number" name="quantity[]" class="form-control qty" value="{{ $item->quantity }}" min="1" required></td>
+                        <td><input type="number" name="price[]" class="form-control price" step="0.01" value="{{ $item->price }}" required></td>
+                        <td><input type="number" class="form-control discount" name="discount[]" value="{{ $item->discount ?? 0 }}"></td>
                         <td>
-                            <select name="tax[]" class="form-select tax">
-                                <option value="0">0%</option>
-                                <option value="18">18%</option>
+                            <select class="form-select tax" name="tax[]">
+                                <option value="0" {{ $item->tax == 0 ? 'selected' : '' }}>0%</option>
+                                <option value="18" {{ $item->tax == 18 ? 'selected' : '' }}>18%</option>
                             </select>
                         </td>
-                        <td><input type="text" class="form-control subtotal" readonly></td>
+                        <td><input type="text" class="form-control subtotal" value="Rs {{ number_format($subtotal, 2) }}" readonly></td>
                         <td><button type="button" class="btn btn-danger remove-product">×</button></td>
                     </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -71,7 +85,7 @@
             <button type="button" class="btn btn-secondary" id="add-product">+ Add Product</button>
         </div>
 
-        <!-- Total Summary -->
+        <!-- Total -->
         <div class="row justify-content-end">
             <div class="col-md-4">
                 <div class="p-3 border rounded bg-light text-end">
@@ -82,12 +96,14 @@
         </div>
 
         <div class="mt-4 text-center">
-            <button type="submit" class="btn btn-primary px-5">Submit</button>
+            <button type="submit" class="btn btn-primary px-5">Update</button>
             <a href="{{ route('purchases.index') }}" class="btn btn-dark ms-2">Back</a>
         </div>
+
     </form>
 </div>
 
+<!-- Styles -->
 <style>
     .invoice-wrapper {
         max-width: 1200px;
@@ -121,6 +137,7 @@
     }
 </style>
 
+<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     function calculateTotals() {
@@ -132,42 +149,47 @@
             const discount = parseFloat($(this).find('.discount').val()) || 0;
             const tax = parseFloat($(this).find('.tax').val()) || 0;
 
-            let base = qty * price;
-            let discountAmount = (discount / 100) * base;
-            let taxable = base - discountAmount;
-            let taxAmount = (tax / 100) * taxable;
-            let finalAmount = taxable + taxAmount;
+            const base = qty * price;
+            const discountAmount = (discount / 100) * base;
+            const taxable = base - discountAmount;
+            const taxAmount = (tax / 100) * taxable;
+            const subtotal = taxable + taxAmount;
 
-            $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
-            grandTotal += finalAmount;
+            $(this).find('.subtotal').val('Rs ' + subtotal.toFixed(2));
+            grandTotal += subtotal;
         });
 
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
     }
 
-    $('#add-product').click(function() {
-        const newRow = $('#product-list .product-row:first').clone();
-        newRow.find('input').val('');
-        newRow.find('select').val('');
-        newRow.find('.subtotal').val('');
-        $('#product-list').append(newRow);
-    });
+    $(document).ready(function() {
+        calculateTotals();
 
-    $(document).on('click', '.remove-product', function() {
-        if ($('#product-list .product-row').length > 1) {
-            $(this).closest('.product-row').remove();
+        $(document).on('input change', '.qty, .price, .discount, .tax', function() {
             calculateTotals();
-        }
+        });
+
+        $('#add-product').click(function() {
+            const firstRow = $('#product-list .product-row:first');
+            const newRow = firstRow.clone();
+
+            newRow.find('input').val('');
+            newRow.find('.subtotal').val('Rs 0.00');
+            newRow.find('select').each(function() {
+                $(this).val($(this).find('option:first').val());
+            });
+
+            $('#product-list').append(newRow);
+            calculateTotals();
+        });
+
+        $(document).on('click', '.remove-product', function() {
+            if ($('#product-list .product-row').length > 1) {
+                $(this).closest('.product-row').remove();
+                calculateTotals();
+            }
+        });
     });
-
-    $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
-</script>
-
-@endsectionalculateTotals();
-}
-});
-
-$(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
 </script>
 
 @endsection

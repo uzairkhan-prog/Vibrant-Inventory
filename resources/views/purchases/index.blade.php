@@ -2,66 +2,56 @@
 
 @section('content')
 
-<div class="table-responsive">
-    <div class="table-wrapper">
+<div class="purchase-wrapper p-4 my-5 bg-white shadow rounded">
+    <!-- Title and Add Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary mb-0">Purchase Invoice Management</h2>
+        <a href="{{ route('purchases.create') }}" class="btn btn-secondary">
+            <i class="material-icons me-1">&#xE147;</i> Add Purchase
+        </a>
+    </div>
 
-        <!-- Title -->
-        <div class="table-title">
-            <div class="row">
-                <div class="col-md-6">
-                    <h2>Purchase <b>Management</b></h2>
-                </div>
-                <div class="col-md-6 text-end">
-                    <a href="{{ route('purchases.create') }}" class="btn btn-secondary">
-                        <i class="material-icons">&#xE147;</i> <span>Add Purchase</span>
-                    </a>
-                </div>
-            </div>
+    <!-- Total Purchase Value -->
+    @php $subtotal = $purchases->sum('total_amount'); @endphp
+    <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
+        <div class="d-flex justify-content-between">
+            <span>Total Purchase Value:</span>
+            <span>Rs {{ number_format($subtotal, 2) }}</span>
         </div>
+    </div>
 
-        <!-- Subtotal -->
-        @php
-        $subtotal = $purchases->sum('total_amount');
-        @endphp
-
-        <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
-            <div class="d-flex justify-content-between">
-                <span>Total Purchase Value:</span>
-                <span>Rs {{ number_format($subtotal, 2) }}</span>
-            </div>
+    <!-- Filters -->
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-9 d-flex align-items-center">
+            <label class="me-2 fw-semibold">Search:</label>
+            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by supplier, date or amount">
         </div>
-
-        <!-- Filters -->
-        <div class="row mb-3 align-items-center">
-            <div class="col-md-10 d-flex align-items-center">
-                <label class="me-2 fw-semibold">Search:</label>
-                <input type="text" id="searchInput" class="form-control" placeholder="Search by supplier, date or amount">
-            </div>
-            <div class="col-md-2 d-flex justify-content-end align-items-center">
-                <label class="me-2 fw-semibold">Show</label>
-                <select id="rowsPerPage" class="form-select w-auto">
-                    @foreach ([5, 10, 50, 100] as $value)
-                    <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
-                    @endforeach
-                </select>
-                <label class="ms-2 fw-semibold">entries</label>
-            </div>
+        <div class="col-md-3 d-flex align-items-center justify-content-end">
+            <label class="me-2 fw-semibold">Show</label>
+            <select id="rowsPerPage" class="form-select w-auto">
+                @foreach ([5, 10, 50, 100] as $value)
+                <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
+                @endforeach
+            </select>
+            <label class="ms-2 fw-semibold">entries</label>
         </div>
+    </div>
 
-        <!-- Success Message -->
-        @if(session('success'))
-        <div class="alert alert-success text-center">{{ session('success') }}</div>
-        @endif
+    <!-- Success Message -->
+    @if(session('success'))
+    <div class="alert alert-success text-center">{{ session('success') }}</div>
+    @endif
 
-        <!-- Table -->
-        @if($purchases->count())
-        <table class="table table-striped table-hover" id="purchaseTable">
-            <thead>
+    <!-- Table -->
+    @if($purchases->count())
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered align-middle text-center" id="purchaseTable">
+            <thead class="table-light">
                 <tr>
                     <th>#</th>
                     <th>Supplier</th>
-                    <th>Date</th>
                     <th>Total Amount</th>
+                    <th>Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -70,19 +60,20 @@
                 <tr>
                     <td>{{ ($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration }}</td>
                     <td>{{ $purchase->supplier->name }}</td>
+                    <td>Rs {{ number_format($purchase->total_amount, 2) }}</td>
                     <td>{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}</td>
-                    <td>{{ number_format($purchase->total_amount, 2) }}</td>
-                    <td>
-                        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info" title="View Details">
-                            View Details
-                            <i class="material-icons">&#xE8F4;</i>
+                    <td class="d-flex justify-content-center">
+                        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info me-1">
+                            Invoice <i class="material-icons">&#xE8F4;</i>
+                        </a>
+                        <a href="{{ route('purchases.edit', $purchase) }}" class="btn btn-sm btn-warning me-1">
+                            Edit <i class="material-icons">&#xE3C9;</i>
                         </a>
                         <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete purchase?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                Delete
-                                <i class="material-icons">&#xE872;</i>
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                Delete <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>
                     </td>
@@ -90,24 +81,62 @@
                 @endforeach
             </tbody>
         </table>
-
-        <!-- Pagination -->
-        <div class="d-flex justify-content-center mt-3">
-            {!! $purchases->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
-        </div>
-
-        @else
-        <div class="alert alert-info text-center">No purchases found. <a href="{{ route('purchases.create') }}">Create one</a>.</div>
-        @endif
     </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+        {!! $purchases->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
+    </div>
+
+    @else
+    <div class="alert alert-info text-center mt-4">No purchases found. <a href="{{ route('purchases.create') }}">Create one</a>.</div>
+    @endif
 </div>
+
+<!-- Styles -->
+<style>
+    .purchase-wrapper {
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .table th,
+    .table td {
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+
+    .btn-info {
+        background-color: #0dcaf0;
+        border: none;
+        color: #fff;
+        font-weight: 500;
+    }
+
+    .btn-info:hover {
+        background-color: #0bbbe6;
+    }
+
+    .btn-danger {
+        font-weight: 500;
+    }
+
+    .form-select,
+    .form-control {
+        font-size: 0.85rem;
+    }
+
+    .material-icons {
+        vertical-align: middle;
+        font-size: 1rem;
+    }
+</style>
 
 <!-- JS Filter -->
 <script>
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const searchVal = this.value.toLowerCase();
         const rows = document.querySelectorAll('#purchaseTable tbody tr');
-
         rows.forEach(row => {
             const rowText = row.innerText.toLowerCase();
             row.style.display = rowText.includes(searchVal) ? '' : 'none';
