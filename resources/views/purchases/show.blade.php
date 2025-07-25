@@ -2,29 +2,38 @@
 
 @section('content')
 
-<div class="invoice-wrapper p-4 my-5 bg-white shadow rounded">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">Purchase Invoice</h2>
-        <span class="text-muted">Invoice Date: {{ \Carbon\Carbon::parse($purchase->date)->format('d M, Y') }}</span>
+<div class="invoice-wrapper p-4 my-5 bg-white shadow rounded" id="invoiceContent">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap mb-4 border-bottom pb-3">
+        <div>
+            <!-- Replace SVG logo with PNG Base64 fallback -->
+            <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}"
+                alt="Vibrant Engineering Logo"
+                style="max-height: 60px; border-radius: 10px; margin-bottom: 10px; background: linear-gradient(43deg, #11142d 29%, #0B4168 80%);">
+            <p class="mb-1">Head Office: Shop #13, Falak Park View Near <br> Inquiry Office Nazimabad #2, Karachi</p>
+            <p class="mb-1">Phone: +92 335 2385773</p>
+            <p class="mb-0">Email: info@vibrantengineering.pk</p>
+        </div>
+        <div class="text-end mt-3 mt-md-0">
+            <h2 class="fw-bold text-primary">Purchase Invoice</h2>
+            <p><strong>Invoice #:</strong> {{ $purchase->id }}</p>
+            <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($purchase->date)->format('d M, Y') }}</p>
+            <p><strong>Payment Terms:</strong> Due on receipt</p>
+        </div>
     </div>
 
-    <!-- Supplier Info -->
     <div class="mb-4">
         <p><strong>Supplier:</strong> {{ $purchase->supplier->name }}</p>
-        <p><strong>Total Amount:</strong>
-            <span class="text-success fw-bold">Rs {{ number_format($purchase->total_amount, 2) }}</span>
-        </p>
     </div>
 
-    <!-- Invoice Items Table -->
     <div class="table-responsive">
         <table class="table table-bordered invoice-table align-middle text-center">
             <thead class="table-light text-uppercase">
                 <tr>
                     <th>#</th>
-                    <th>Product</th>
+                    <th class="text-start">Product</th>
                     <th>Qty</th>
-                    <th>Price (Rs)</th>
+                    <th>Unit Price (Rs)</th>
                     <th>Discount (%)</th>
                     <th>Tax (%)</th>
                     <th>Subtotal (Rs)</th>
@@ -61,10 +70,42 @@
         </table>
     </div>
 
-    <div class="mt-4 text-center">
+    <!-- Buttons (Exclude from PDF using class) -->
+    <div class="mt-4 text-center d-flex justify-content-center gap-3 flex-wrap no-print" id="exportButtons">
         <a href="{{ route('purchases.index') }}" class="btn btn-primary px-4 py-2">← Back to Purchases</a>
+        <a href="{{ route('purchases.exportCSV', $purchase->id) }}" class="btn btn-success px-4 py-2">📁 Export CSV</a>
+        <a href="javascript:void(0);" onclick="exportToPDF()" class="btn btn-danger px-4 py-2">📄 Export PDF</a>
     </div>
+
 </div>
+
+{{-- PDF Export Script --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+    function exportToPDF() {
+        const element = document.getElementById('invoiceContent');
+
+        const opt = {
+            margin: 0.3,
+            filename: 'purchase-invoice-{{ $purchase->id }}.pdf',
+            image: {
+                type: 'jpeg',
+                quality: 0.98
+            },
+            html2canvas: {
+                scale: 2,
+                ignoreElements: (el) => el.classList.contains('no-print')
+            },
+            jsPDF: {
+                unit: 'in',
+                format: 'a4',
+                orientation: 'portrait'
+            }
+        };
+
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
 
 <style>
     .invoice-wrapper {
@@ -81,35 +122,62 @@
     }
 
     .invoice-table thead th {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
+        background-color: #f1f1f1;
+        border-bottom: 2px solid #ccc;
         font-weight: 600;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.03em;
     }
 
     .invoice-table tbody tr:hover {
-        background-color: #f1f3f5;
+        background-color: #f8f9fa;
     }
 
-    .btn-dark {
+    .btn-primary,
+    .btn-success,
+    .btn-danger {
         font-weight: 600;
         font-size: 1rem;
         border-radius: 6px;
         transition: background-color 0.3s ease;
     }
 
-    .btn-dark:hover {
-        background-color: #000;
+    .btn-primary:hover {
+        background-color: #0056b3;
         color: #fff;
     }
 
-    /* Responsive */
+    .btn-success:hover {
+        background-color: #218838;
+        color: #fff;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        color: #fff;
+    }
+
     @media (max-width: 575px) {
 
         .invoice-table thead th,
         .invoice-table tbody td {
             font-size: 0.85rem;
             padding: 0.5rem 0.4rem;
+        }
+    }
+
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        body {
+            -webkit-print-color-adjust: exact !important;
+        }
+
+        .invoice-wrapper {
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
     }
 </style>

@@ -3,15 +3,18 @@
 @section('content')
 
 <div class="purchase-wrapper p-4 my-5 bg-white shadow rounded">
-    <!-- Title and Add Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Purchase Invoice Management</h2>
-        <a href="{{ route('purchases.create') }}" class="btn btn-secondary">
-            <i class="material-icons me-1">&#xE147;</i> Add Purchase
-        </a>
+        <div>
+            <a href="{{ route('purchases.exportCsv') }}" class="btn btn-success me-2">
+                <i class="material-icons me-1">&#xE2C4;</i> Export CSV
+            </a>
+            <a href="{{ route('purchases.create') }}" class="btn btn-secondary">
+                <i class="material-icons me-1">&#xE147;</i> Add Purchase
+            </a>
+        </div>
     </div>
 
-    <!-- Total Purchase Value -->
     @php $subtotal = $purchases->sum('total_amount'); @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
@@ -20,7 +23,6 @@
         </div>
     </div>
 
-    <!-- Filters -->
     <div class="row mb-3 align-items-center">
         <div class="col-md-9 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
@@ -37,12 +39,10 @@
         </div>
     </div>
 
-    <!-- Success Message -->
     @if(session('success'))
     <div class="alert alert-success text-center">{{ session('success') }}</div>
     @endif
 
-    <!-- Table -->
     @if($purchases->count())
     <div class="table-responsive">
         <table class="table table-striped table-hover table-bordered align-middle text-center" id="purchaseTable">
@@ -83,7 +83,6 @@
         </table>
     </div>
 
-    <!-- Pagination -->
     <div class="d-flex justify-content-center mt-4">
         {!! $purchases->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
     </div>
@@ -93,7 +92,6 @@
     @endif
 </div>
 
-<!-- Styles -->
 <style>
     .purchase-wrapper {
         max-width: 1200px;
@@ -132,7 +130,6 @@
     }
 </style>
 
-<!-- JS Filter -->
 <script>
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const searchVal = this.value.toLowerCase();

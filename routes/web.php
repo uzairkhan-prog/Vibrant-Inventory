@@ -43,6 +43,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('suppliers', SupplierController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('purchases', PurchaseController::class);
+
+    // CSV Export route
+    Route::get('purchases-export-csv', [PurchaseController::class, 'exportCsv'])->name('purchases.exportCsv');
+    Route::get('/purchases/export-csv/{id}', [App\Http\Controllers\PurchaseController::class, 'exportInoviceCSV'])->name('purchases.exportCSV');
+
     Route::resource('sales', SaleController::class);
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expense-name', ExpenseNameController::class);
