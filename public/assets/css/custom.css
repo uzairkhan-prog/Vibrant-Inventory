@@ -145,7 +145,8 @@ table.table-hover tbody tr:hover td {
 
 /* Button Styles */
 
-table.table td a.btn-sm {
+table.table td a.btn-sm,
+table.table td button.btn-sm {
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 14px;

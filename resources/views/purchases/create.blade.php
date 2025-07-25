@@ -163,11 +163,4 @@
     $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
 </script>
 
-@endsectionalculateTotals();
-}
-});
-
-$(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
-</script>
-
 @endsection
