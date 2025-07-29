@@ -108,12 +108,67 @@ class SaleController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'date'        => 'required|date',
+            'product_id.*' => 'required|exists:products,id',
+            'quantity.*'  => 'required|integer|min:1',
+            'price.*'     => 'required|numeric|min:0',
+            'discount.*'  => 'nullable|numeric|min:0',
+            'tax.*'       => 'nullable|numeric|min:0',
         ]);
 
-        $sale->update([
-            'customer_id' => $request->customer_id,
-            'date'        => $request->date,
-        ]);
+        DB::transaction(function () use ($request, $sale) {
+            // Revert previous stock
+            foreach ($sale->items as $item) {
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->quantity += $item->quantity;
+                    $product->save();
+                }
+            }
+
+            // Delete old items
+            $sale->items()->delete();
+
+            // Update sale header
+            $sale->update([
+                'customer_id'  => $request->customer_id,
+                'date'         => $request->date,
+                'total_amount' => 0,
+            ]);
+
+            $totalAmount = 0;
+
+            foreach ($request->product_id as $index => $productId) {
+                $quantity = (float) $request->quantity[$index];
+                $price    = (float) $request->price[$index];
+                $discount = (float) ($request->discount[$index] ?? 0);
+                $tax      = (float) ($request->tax[$index] ?? 0);
+
+                $base = $quantity * $price;
+                $discountAmount = ($discount / 100) * $base;
+                $taxable = $base - $discountAmount;
+                $taxAmount = ($tax / 100) * $taxable;
+                $subtotal = $taxable + $taxAmount;
+
+                // Create new sale item
+                SaleItem::create([
+                    'sale_id'    => $sale->id,
+                    'product_id' => $productId,
+                    'quantity'   => $quantity,
+                    'price'      => $price,
+                    'discount'   => $discount,
+                    'tax'        => $tax,
+                ]);
+
+                // Deduct sold stock
+                $product = Product::find($productId);
+                $product->quantity -= $quantity;
+                $product->save();
+
+                $totalAmount += $subtotal;
+            }
+
+            $sale->update(['total_amount' => $totalAmount]);
+        });
 
         return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
     }
