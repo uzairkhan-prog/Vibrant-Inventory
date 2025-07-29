@@ -21,105 +21,6 @@ class PurchaseController extends Controller
         return view('purchases.index', compact('purchases'));
     }
 
-    public function exportInoviceCSV($id)
-    {
-        $purchase = Purchase::with(['items.product', 'supplier'])->findOrFail($id);
-
-        $filename = 'purchase_invoice_' . $purchase->id . '.csv';
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $callback = function () use ($purchase) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['#', 'Product', 'Qty', 'Price', 'Discount (%)', 'Tax (%)', 'Subtotal']);
-
-            $total = 0;
-            foreach ($purchase->items as $index => $item) {
-                $base = $item->quantity * $item->price;
-                $discount = ($item->discount ?? 0) * $base / 100;
-                $taxable = $base - $discount;
-                $tax = ($item->tax ?? 0) * $taxable / 100;
-                $subtotal = $taxable + $tax;
-                $total += $subtotal;
-
-                fputcsv($handle, [
-                    $index + 1,
-                    $item->product->name,
-                    $item->quantity,
-                    number_format($item->price, 2),
-                    number_format($item->discount ?? 0, 2),
-                    number_format($item->tax ?? 0, 2),
-                    number_format($subtotal, 2)
-                ]);
-            }
-
-            fputcsv($handle, ['', '', '', '', '', 'Total', number_format($total, 2)]);
-            fclose($handle);
-        };
-
-        return Response::stream($callback, 200, $headers);
-    }
-
-    public function exportCsv()
-    {
-        $filename = 'purchase_report_' . date('Ymd_His') . '.csv';
-
-        $response = new StreamedResponse(function () {
-            $handle = fopen('php://output', 'w');
-
-            // CSV Headers
-            fputcsv($handle, [
-                'Invoice #',
-                'Invoice Date',
-                'Supplier',
-                'Product',
-                'Quantity',
-                'Price',
-                'Discount %',
-                'Tax %',
-                'Subtotal',
-                'Total Amount'
-            ]);
-
-            $purchases = Purchase::with('supplier', 'items.product')->orderBy('date', 'desc')->get();
-
-            foreach ($purchases as $purchase) {
-                foreach ($purchase->items as $item) {
-                    $base = $item->quantity * $item->price;
-                    $discountAmount = ($item->discount ?? 0) * $base / 100;
-                    $taxable = $base - $discountAmount;
-                    $taxAmount = ($item->tax ?? 0) * $taxable / 100;
-                    $subtotal = $taxable + $taxAmount;
-
-                    fputcsv($handle, [
-                        $purchase->id,
-                        $purchase->date->format('Y-m-d'),
-                        $purchase->supplier->name,
-                        $item->product->name,
-                        $item->quantity,
-                        number_format($item->price, 2),
-                        number_format($item->discount ?? 0, 2),
-                        number_format($item->tax ?? 0, 2),
-                        number_format($subtotal, 2),
-                        number_format($purchase->total_amount, 2),
-                    ]);
-                }
-            }
-
-            fclose($handle);
-        });
-
-        $response->headers->set('Content-Type', 'text/csv');
-        $response->headers->set('Content-Disposition', "attachment; filename=\"$filename\"");
-
-        return $response;
-    }
-
     public function create()
     {
         $suppliers = Supplier::all();
@@ -282,5 +183,104 @@ class PurchaseController extends Controller
         });
 
         return redirect()->route('purchases.index')->with('success', 'Purchase deleted successfully.');
+    }
+
+    public function exportInoviceCSV($id)
+    {
+        $purchase = Purchase::with(['items.product', 'supplier'])->findOrFail($id);
+
+        $filename = 'purchase_invoice_' . $purchase->id . '.csv';
+        $headers = [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function () use ($purchase) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['#', 'Product', 'Qty', 'Price', 'Discount (%)', 'Tax (%)', 'Subtotal']);
+
+            $total = 0;
+            foreach ($purchase->items as $index => $item) {
+                $base = $item->quantity * $item->price;
+                $discount = ($item->discount ?? 0) * $base / 100;
+                $taxable = $base - $discount;
+                $tax = ($item->tax ?? 0) * $taxable / 100;
+                $subtotal = $taxable + $tax;
+                $total += $subtotal;
+
+                fputcsv($handle, [
+                    $index + 1,
+                    $item->product->name,
+                    $item->quantity,
+                    number_format($item->price, 2),
+                    number_format($item->discount ?? 0, 2),
+                    number_format($item->tax ?? 0, 2),
+                    number_format($subtotal, 2)
+                ]);
+            }
+
+            fputcsv($handle, ['', '', '', '', '', 'Total', number_format($total, 2)]);
+            fclose($handle);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
+
+    public function exportCsv()
+    {
+        $filename = 'purchase_report_' . date('Ymd_His') . '.csv';
+
+        $response = new StreamedResponse(function () {
+            $handle = fopen('php://output', 'w');
+
+            // CSV Headers
+            fputcsv($handle, [
+                'Invoice #',
+                'Invoice Date',
+                'Supplier',
+                'Product',
+                'Quantity',
+                'Price',
+                'Discount %',
+                'Tax %',
+                'Subtotal',
+                'Total Amount'
+            ]);
+
+            $purchases = Purchase::with('supplier', 'items.product')->orderBy('date', 'desc')->get();
+
+            foreach ($purchases as $purchase) {
+                foreach ($purchase->items as $item) {
+                    $base = $item->quantity * $item->price;
+                    $discountAmount = ($item->discount ?? 0) * $base / 100;
+                    $taxable = $base - $discountAmount;
+                    $taxAmount = ($item->tax ?? 0) * $taxable / 100;
+                    $subtotal = $taxable + $taxAmount;
+
+                    fputcsv($handle, [
+                        $purchase->id,
+                        $purchase->date->format('Y-m-d'),
+                        $purchase->supplier->name,
+                        $item->product->name,
+                        $item->quantity,
+                        number_format($item->price, 2),
+                        number_format($item->discount ?? 0, 2),
+                        number_format($item->tax ?? 0, 2),
+                        number_format($subtotal, 2),
+                        number_format($purchase->total_amount, 2),
+                    ]);
+                }
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', "attachment; filename=\"$filename\"");
+
+        return $response;
     }
 }

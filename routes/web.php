@@ -44,10 +44,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('purchases', PurchaseController::class);
 
-    // CSV Export route
-    Route::get('purchases-export-csv', [PurchaseController::class, 'exportCsv'])->name('purchases.exportCsv');
-    Route::get('/purchases/export-csv/{id}', [App\Http\Controllers\PurchaseController::class, 'exportInoviceCSV'])->name('purchases.exportCSV');
-
     Route::resource('sales', SaleController::class);
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expense-name', ExpenseNameController::class);
@@ -68,6 +64,14 @@ Route::middleware('auth')->group(function () {
     Route::get('customer-payments/{payment}/edit', [CustomerPaymentController::class, 'edit'])->name('customer-payments.edit');
     Route::put('customer-payments/{payment}', [CustomerPaymentController::class, 'update'])->name('customer-payments.update');
     Route::delete('customer-payments/{payment}', [CustomerPaymentController::class, 'destroy'])->name('customer-payments.destroy');
+
+    // Purchase Export route
+    Route::get('purchases-export-csv', [PurchaseController::class, 'exportCsv'])->name('purchases.exportCsv');
+    Route::get('/purchases/export-csv/{id}', [App\Http\Controllers\PurchaseController::class, 'exportInoviceCSV'])->name('purchases.exportCSV');
+
+    // Sale Export route
+    Route::get('sales-export-csv', [SaleController::class, 'exportCsv'])->name('sales.exportCsv');
+    Route::get('/sales/export-csv/{id}', [App\Http\Controllers\SaleController::class, 'exportInoviceCSV'])->name('sales.exportCSV');
 });
 
 require __DIR__ . '/auth.php';

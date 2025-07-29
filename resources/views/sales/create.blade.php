@@ -2,204 +2,123 @@
 
 @section('content')
 
-<div class="table-responsive">
-    <div class="table-wrapper">
-        <div class="table-title">
-            <div class="row">
-                <div class="col-sm-5">
-                    <h2>Sale <b>Create</b></h2>
-                </div>
+<div class="invoice-wrapper p-4 my-5 bg-white shadow rounded">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-primary">Sales Invoice</h2>
+        <span class="text-muted">{{ \Carbon\Carbon::now()->format('d M, Y') }}</span>
+    </div>
+
+    <form method="POST" action="{{ route('sales.store') }}">
+        @csrf
+
+        <!-- Customer and Date -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="customer_id" class="form-label">Customer</label>
+                <select name="customer_id" id="customer_id" class="form-select" required>
+                    <option value="" disabled selected>-- Select Customer --</option>
+                    @foreach($customers as $customer)
+                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" name="date" id="date" class="form-control" required value="{{ old('date', date('Y-m-d')) }}">
             </div>
         </div>
 
-        <div class="p-3">
-            <form method="POST" action="{{ route('sales.store') }}">
-                @csrf
-
-                <div class="mb-3">
-                    <label for="customer_id" class="form-label">Customer</label>
-                    <select name="customer_id" id="customer_id" class="form-select" required>
-                        @foreach($customers as $customer)
-                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label for="date" class="form-label">Date</label>
-                    <input type="date" name="date" id="date" class="form-control" required>
-                </div>
-
-                <!-- <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea name="description" id="description" class="form-control" rows="3"></textarea>
-                </div> -->
-
-                <h5 class="mt-4">Products</h5>
-
-                <div id="product-list">
-                    <div class="row mb-2 align-items-end product-row">
-                        <div class="col-md-3">
-                            <label>Product</label>
+        <!-- Products Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center invoice-table mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Discount %</th>
+                        <th>Tax %</th>
+                        <th>Subtotal</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list">
+                    <tr class="product-row">
+                        <td>
                             <select name="product_id[]" class="form-select" required>
+                                <option value="" disabled selected>Select a Product</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }})</option>
                                 @endforeach
                             </select>
-                        </div>
-
-                        <div class="col-md-1">
-                            <label>Qty</label>
-                            <input type="number" name="quantity[]" class="form-control qty" min="1" required>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Price</label>
-                            <input type="number" name="price[]" class="form-control price" step="0.01" required>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Discount %</label>
-                            <input type="number" class="form-control discount" value="0">
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Tax %</label>
-                            <select class="form-select tax">
+                        </td>
+                        <td><input type="number" name="quantity[]" class="form-control qty" min="1" required></td>
+                        <td><input type="number" name="price[]" class="form-control price" step="0.01" required></td>
+                        <td><input type="number" name="discount[]" class="form-control discount" value="0" min="0" step="0.01"></td>
+                        <td>
+                            <select name="tax[]" class="form-select tax">
                                 <option value="0">0%</option>
                                 <option value="18">18%</option>
                             </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label>Subtotal</label>
-                            <input type="text" class="form-control subtotal" readonly>
-                        </div>
-
-                        <div class="col-md-1 d-flex align-items-end">
-                            <button type="button" class="btn btn-danger remove-product">X</button>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-secondary my-3" id="add-product">+ Add Product</button>
-
-                <div class="alert alert-info fw-bold fs-6">
-                    <div class="d-flex justify-content-between">
-                        <span>Total Sale Amount:</span>
-                        <span id="grand-total">Rs 0.00</span>
-                    </div>
-                </div>
-
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                    <a href="{{ route('sales.index') }}" class="btn btn-dark">Back</a>
-                </div>
-            </form>
+                        </td>
+                        <td><input type="text" class="form-control subtotal" readonly></td>
+                        <td><button type="button" class="btn btn-danger remove-product">×</button></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-    </div>
+        <div class="mb-3">
+            <button type="button" class="btn btn-secondary" id="add-product">+ Add Product</button>
+        </div>
+
+        <!-- Total Summary -->
+        <div class="row justify-content-end">
+            <div class="col-md-4">
+                <div class="p-3 border rounded bg-light text-end">
+                    <strong class="d-block mb-2 fs-5">Total Amount:</strong>
+                    <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-primary px-5">Submit</button>
+            <a href="{{ route('sales.index') }}" class="btn btn-dark ms-2">Back</a>
+        </div>
+    </form>
 </div>
 
 <style>
-    .table-wrapper {
-        background: #fff;
-        padding: 30px 35px;
-        border-radius: 15px;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-        margin-top: 30px;
+    .invoice-wrapper {
+        max-width: 1200px;
+        margin: auto;
+        background: #ffffff;
     }
 
-    .table-title {
-        background: linear-gradient(to right, #2364d2, #5fa8f5);
-        padding: 15px 25px;
-        border-radius: 10px;
-        color: #fff;
-        margin-bottom: 25px;
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .table-title h2 {
-        font-weight: 600;
-        font-size: 22px;
-        margin: 0;
-    }
-
-    form label {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #333;
-    }
-
-    .product-row {
-        background: #f8f9fb;
-        padding: 15px 10px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .product-row .form-control,
-    .product-row .form-select {
-        border-radius: 6px;
-        font-size: 0.875rem;
-    }
-
-    .product-row .btn-danger {
-        padding: 4px 10px;
-        font-size: 0.85rem;
-        font-weight: bold;
-        border-radius: 6px;
-        box-shadow: none;
-    }
-
-    #add-product {
-        font-weight: 500;
-        padding: 8px 20px;
+    .invoice-table th,
+    .invoice-table td {
+        vertical-align: middle;
         font-size: 0.9rem;
-        border-radius: 6px;
-    }
-
-    .alert-info {
-        background-color: #e7f3ff;
-        color: #084298;
-        border-left: 4px solid #0d6efd;
-        font-size: 1rem;
-        padding: 15px 20px;
-        border-radius: 8px;
     }
 
     .btn-primary {
-        background: #2364d2;
-        border: none;
+        background-color: #2364d2;
         font-weight: 600;
-        padding: 10px 20px;
-        font-size: 0.95rem;
-        border-radius: 6px;
-        transition: 0.2s ease-in-out;
-    }
-
-    .btn-primary:hover {
-        background: #1b4db3;
     }
 
     .btn-dark {
-        background: #111827;
-        border: none;
         font-weight: 600;
-        padding: 10px 20px;
-        font-size: 0.95rem;
-        border-radius: 6px;
-        transition: 0.2s ease-in-out;
     }
 
-    .btn-dark:hover {
-        background: #000000;
+    .btn-danger {
+        font-size: 0.9rem;
+        padding: 4px 10px;
     }
 
-    #grand-total {
-        font-size: 1.2rem;
-        font-weight: bold;
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
     }
 </style>
 
@@ -229,7 +148,8 @@
 
     $('#add-product').click(function() {
         const newRow = $('#product-list .product-row:first').clone();
-        newRow.find('input, select').val('');
+        newRow.find('input').val('');
+        newRow.find('select').val('');
         newRow.find('.subtotal').val('');
         $('#product-list').append(newRow);
     });
