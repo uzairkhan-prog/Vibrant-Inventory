@@ -62,7 +62,8 @@
                     <th>Name</th>
                     <th>Address</th>
                     <th>Date</th>
-                    <th>Balance</th>
+                    <th>Balance Details</th>
+                    <!-- <th>Balance</th> -->
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -73,12 +74,14 @@
                     <td>{{ $supplier->name }}</td>
                     <td>{{ $supplier->address }}</td>
                     <td>{{ \Carbon\Carbon::parse($supplier->created_at)->format('Y-m-d') }}</td>
-                    <td>{{ number_format($supplier->balance ?? 0, 2) }}</td>
                     <td>
-                        <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white" title="View Profile">
-                            View
+                        <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white" title="View">
+                            View Details
                             <i class="material-icons">&#xE8F4;</i>
                         </a>
+                    </td>
+                    <!-- <td>{{ number_format($supplier->balance ?? 0, 2) }}</td> -->
+                    <td>
                         <a href="{{ route('suppliers.edit', $supplier) }}" class="btn btn-sm btn-success text-white" title="Edit">
                             Edit
                             <i class="material-icons">&#xE254;</i>

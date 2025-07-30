@@ -10,7 +10,7 @@ class SupplierController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 20); // default 5
+        $perPage = $request->get('per_page', 20);
         $suppliers = Supplier::paginate($perPage);
         return view('suppliers.index', compact('suppliers'));
     }
@@ -62,7 +62,6 @@ class SupplierController extends Controller
         return redirect()->route('suppliers.index')->with('success', 'Supplier deleted successfully.');
     }
 
-
     public function show(Supplier $supplier)
     {
         $supplier->load('payments');
@@ -79,15 +78,26 @@ class SupplierController extends Controller
             'amount'       => 'required|numeric|min:0.01',
         ]);
 
-        // Create payment record
+        $currentBalance = $supplier->current_balance;
+
+        if ($currentBalance <= 0) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Payment not allowed. Supplier balance is zero.');
+        }
+
+        if ($request->amount > $currentBalance) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Payment amount cannot be greater than current balance (Rs ' . number_format($currentBalance, 2) . ').');
+        }
+
         SupplierPayment::create([
             'supplier_id'  => $supplier->id,
             'description'  => $request->description,
             'payment_type' => $request->payment_type,
             'amount'       => $request->amount,
         ]);
-
-        // Optionally, update balance if you want to track real-time balance on Supplier model (recommended to keep initial balance fixed)
 
         return redirect()->route('suppliers.show', $supplier)->with('success', 'Payment recorded successfully.');
     }

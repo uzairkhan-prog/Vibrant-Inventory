@@ -24,7 +24,8 @@ class Supplier extends Model
 
     public function getCurrentBalanceAttribute()
     {
-        $paymentsSum = $this->payments()->sum('amount');
-        return $this->balance - $paymentsSum;
+        $initialBalance = $this->balance ?? 0;
+        $paid = $this->payments()->sum('amount');
+        return $initialBalance - $paid;
     }
 }
