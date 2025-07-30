@@ -21,4 +21,11 @@ class Customer extends Model
     {
         return $this->hasMany(CustomerPayment::class);
     }
+
+    public function getCurrentBalanceAttribute()
+    {
+        $initialBalance = $this->balance ?? 0;
+        $paid = $this->payments()->sum('amount');
+        return $initialBalance - $paid;
+    }
 }

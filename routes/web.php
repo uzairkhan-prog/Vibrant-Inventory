@@ -55,12 +55,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('sale-returns', SaleReturnController::class);
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+
+    // Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])->name('suppliers.payments.store');
+    
+    Route::post('customers/{customer}/payments', [CustomerController::class, 'storePayment'])->name('customers.payments.store');
+
     Route::get('/supplier-payments/{payment}/edit', [SupplierPaymentController::class, 'edit'])->name('supplier-payments.edit');
     Route::put('/supplier-payments/{payment}', [SupplierPaymentController::class, 'update'])->name('supplier-payments.update');
     Route::delete('/supplier-payments/{payment}', [SupplierPaymentController::class, 'destroy'])->name('supplier-payments.destroy');
-    Route::post('customers/{customer}/payments', [CustomerPaymentController::class, 'store'])->name('customers.payments.store');
+
     Route::get('customer-payments/{payment}/edit', [CustomerPaymentController::class, 'edit'])->name('customer-payments.edit');
     Route::put('customer-payments/{payment}', [CustomerPaymentController::class, 'update'])->name('customer-payments.update');
     Route::delete('customer-payments/{payment}', [CustomerPaymentController::class, 'destroy'])->name('customer-payments.destroy');
