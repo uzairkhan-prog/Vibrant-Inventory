@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Models\PurchaseItem;
 use App\Models\Purchase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ProductLedgerController extends Controller
 {
@@ -16,6 +17,7 @@ class ProductLedgerController extends Controller
     {
         $products = Product::orderBy('name')->get();
 
+        // Sales as plain array collection
         $sales = SaleItem::with(['sale.customer', 'product'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -25,12 +27,13 @@ class ProductLedgerController extends Controller
                     'type' => 'Sale',
                     'product_name' => $item->product->name ?? '-',
                     'qty' => $item->quantity,
-                    'unit_price' => $item->price, // <-- Added
+                    'unit_price' => $item->price,
                     'invoice_no' => $item->sale_id,
                     'invoice_value' => $item->price * $item->quantity,
                 ];
             });
 
+        // Purchases as plain array collection
         $purchases = PurchaseItem::with(['purchase.supplier', 'product'])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -40,15 +43,16 @@ class ProductLedgerController extends Controller
                     'type' => 'Purchase',
                     'product_name' => $item->product->name ?? '-',
                     'qty' => $item->quantity,
-                    'unit_price' => $item->price, // <-- Added
+                    'unit_price' => $item->price,
                     'invoice_no' => $item->purchase_id,
                     'invoice_value' => $item->price * $item->quantity,
                 ];
             });
 
-        $merged = $sales->merge($purchases)->sortByDesc('date')->values();
+        // Convert both to base collection before merging
+        $merged = collect($sales)->merge($purchases)->sortByDesc('date')->values();
 
-        // Handle pagination with per_page option
+        // Handle pagination
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         $perPage = $request->input('per_page', 20);
         $currentItems = $merged->slice(($currentPage - 1) * $perPage, $perPage)->all();
@@ -62,10 +66,10 @@ class ProductLedgerController extends Controller
         );
 
         // Totals
-        $total_sold_qty = $sales->sum('qty');
-        $total_sold_value = $sales->sum('invoice_value');
-        $total_purchase_qty = $purchases->sum('qty');
-        $total_purchase_value = $purchases->sum('invoice_value');
+        $total_sold_qty = collect($sales)->sum('qty');
+        $total_sold_value = collect($sales)->sum('invoice_value');
+        $total_purchase_qty = collect($purchases)->sum('qty');
+        $total_purchase_value = collect($purchases)->sum('invoice_value');
 
         return view('ledger.products', compact(
             'ledgerEntries',
