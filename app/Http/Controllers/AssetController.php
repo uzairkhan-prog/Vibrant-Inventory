@@ -28,15 +28,15 @@ class AssetController extends Controller
 
         Asset::create($request->all());
 
-        return redirect()->route('assets.index')->with('success', 'Asset created successfully.');
+        return redirect()->route('assets-inventory.index')->with('success', 'Asset created successfully.');
     }
 
-    public function edit(Asset $asset)
+    public function edit(Asset $assets_inventory)
     {
-        return view('assets.edit', compact('asset'));
+        return view('assets.edit', ['asset' => $assets_inventory]);
     }
 
-    public function update(Request $request, Asset $asset)
+    public function update(Request $request, Asset $assets_inventory)
     {
         $request->validate([
             'title' => 'required',
@@ -44,15 +44,15 @@ class AssetController extends Controller
             'date'  => 'required|date',
         ]);
 
-        $asset->update($request->all());
+        $assets_inventory->update($request->all());
 
-        return redirect()->route('assets.index')->with('success', 'Asset updated successfully.');
+        return redirect()->route('assets-inventory.index')->with('success', 'Asset updated successfully.');
     }
 
-    public function destroy(Asset $asset)
+    public function destroy(Asset $assets_inventory)
     {
-        $asset->delete();
+        $assets_inventory->delete();
 
-        return redirect()->route('assets.index')->with('success', 'Asset deleted successfully.');
+        return redirect()->route('assets-inventory.index')->with('success', 'Asset deleted successfully.');
     }
 }
