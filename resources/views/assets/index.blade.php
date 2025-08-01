@@ -26,8 +26,8 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Date</th>
                     <th>Title</th>
+                    <th>#</th>
                     <th>Value</th>
                     <th>Actions</th>
                 </tr>
@@ -36,9 +36,9 @@
                 @foreach ($assets as $asset)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $asset->date }}</td>
                     <td>{{ $asset->title }}</td>
                     <td>{{ $asset->value }}</td>
+                    <td>{{ $asset->date }}</td>
                     <td>
                         <a href="{{ route('assets-inventory.edit', $asset) }}" class="btn btn-sm btn-success text-white" title="Edit">
                             Edit
