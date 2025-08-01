@@ -27,8 +27,8 @@
                 <tr>
                     <th>#</th>
                     <th>Title</th>
-                    <th>#</th>
                     <th>Value</th>
+                    <th>Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
