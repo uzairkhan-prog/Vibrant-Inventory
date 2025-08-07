@@ -47,8 +47,9 @@
                 <tr>
                     <th>#</th>
                     <th>Customer</th>
-                    <th>Date</th>
                     <th>Total Amount</th>
+                    <th>Date</th>
+                    <th>Sale Invoices</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -57,12 +58,14 @@
                 <tr>
                     <td>{{ ($sales->currentPage() - 1) * $sales->perPage() + $loop->iteration }}</td>
                     <td>{{ $sale->customer->name }}</td>
-                    <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
                     <td>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
-                    <td class="d-flex justify-content-center">
+                    <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
+                    <td>
                         <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info me-1">
                             Invoice <i class="material-icons">&#xE8F4;</i>
                         </a>
+                    </td>
+                    <td class="d-flex justify-content-center">
                         <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-warning me-1">
                             Edit <i class="material-icons">&#xE3C9;</i>
                         </a>

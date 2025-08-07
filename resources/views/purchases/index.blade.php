@@ -52,6 +52,7 @@
                     <th>Supplier</th>
                     <th>Total Amount</th>
                     <th>Date</th>
+                    <th>Purchase Invoices</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -62,10 +63,12 @@
                     <td>{{ $purchase->supplier->name }}</td>
                     <td>Rs {{ number_format($purchase->total_amount, 2) }}</td>
                     <td>{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}</td>
-                    <td class="d-flex justify-content-center">
+                    <td>
                         <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info me-1">
                             Invoice <i class="material-icons">&#xE8F4;</i>
                         </a>
+                    </td>
+                    <td class="d-flex justify-content-center">
                         <a href="{{ route('purchases.edit', $purchase) }}" class="btn btn-sm btn-warning me-1">
                             Edit <i class="material-icons">&#xE3C9;</i>
                         </a>
