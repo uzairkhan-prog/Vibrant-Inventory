@@ -139,7 +139,7 @@
         <!-- Title -->
         <div class="d-flex align-items-center mb-4">
             <i class="bi bi-graph-up-arrow text-primary fs-2 me-2"></i>
-            <h2 class="dashboard-heading mb-0">Shipping & Inventory Status Dashboard</h2>
+            <h2 class="dashboard-heading mb-0">Inventory Status Dashboard</h2>
         </div>
 
         <!-- Metric Cards -->
@@ -211,6 +211,8 @@
                 </div>
             </div>
         </div>
+
+        @include('products.partials.charts')
 
         <!-- Charts -->
         <div class="row mt-5">
