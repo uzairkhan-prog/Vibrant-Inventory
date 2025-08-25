@@ -2,8 +2,13 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="mb-4">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
         <h2 class="fw-bold text-primary-emphasis">Supplier Profile: <strong>{{ $supplier->name }}</strong></h2>
+        @if($supplier->payments->count())
+        <button class="btn btn-danger" onclick="exportSupplierPaymentsPDF()">
+            <i class="material-icons align-middle">picture_as_pdf</i> Export PDF
+        </button>
+        @endif
     </div>
 
     <!-- Balance Info -->
@@ -31,13 +36,11 @@
             <h4 class="mb-4 text-dark fw-semibold">💳 Record a Payment</h4>
             <form method="POST" action="{{ route('suppliers.payments.store', $supplier) }}">
                 @csrf
-
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Supplier Name</label>
                         <input type="text" class="form-control bg-light" value="{{ $supplier->name }}" readonly>
                     </div>
-
                     <div class="col-md-6">
                         <label for="payment_type" class="form-label">Payment Type</label>
                         <select name="payment_type" id="payment_type" class="form-select" required>
@@ -48,26 +51,20 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
-
                     <div class="col-md-12">
                         <label for="description" class="form-label">Payment Description</label>
                         <textarea name="description" id="description" class="form-control" rows="2" placeholder="Payment details...">{{ old('description') }}</textarea>
                     </div>
-
                     <div class="col-md-6">
                         <label for="amount" class="form-label">Amount (Rs)</label>
                         <input type="number" step="0.01" name="amount" id="amount" class="form-control" required min="0.01" value="{{ old('amount') }}">
                     </div>
                 </div>
-
                 @php
                 $isDisabled = $currentBalance <= 0 ? 'disabled' : '' ;
                     @endphp
-
                     <div class="mt-4 d-flex justify-content-between">
-                    <a href="{{ route('suppliers.index') }}" class="btn btn-outline-dark">
-                        ← Back to Suppliers
-                    </a>
+                    <a href="{{ route('suppliers.index') }}" class="btn btn-outline-dark">← Back to Suppliers</a>
                     <button type="submit" class="btn btn-primary px-4" {{ $isDisabled }}>
                         <i class="material-icons align-middle">send</i> Submit
                     </button>
@@ -83,7 +80,7 @@
 
         @if($supplier->payments->count())
         <div class="table-responsive">
-            <table class="table table-striped align-middle table-hover">
+            <table class="table table-striped align-middle table-hover" id="supplierPaymentsTable">
                 <thead class="table-dark text-center">
                     <tr>
                         <th scope="col">Type</th>
@@ -123,4 +120,94 @@
     </div>
 </div>
 </div>
+
+<!-- Include jsPDF and AutoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    window.exportSupplierPaymentsPDF = function() {
+        // Use jsPDF from window.jspdf
+        const doc = new window.jspdf.jsPDF("p", "mm", "a4");
+
+        // --- Logo ---
+        const logoUrl = "{{ asset('assets/images/logos/logo.jpg') }}";
+        const img = new Image();
+        img.src = logoUrl;
+
+        img.onload = function() {
+            doc.addImage(img, "JPG", 14, 10, 40, 15);
+
+            // --- Header ---
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(17, 20, 45);
+            doc.text("Supplier Payments Report", 105, 18, {
+                align: "center"
+            });
+
+            // Supplier Info
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Supplier: {{ $supplier->name }}`, 14, 32);
+            doc.text(`Current Balance: Rs {{ number_format($currentBalance, 2) }}`, 14, 39);
+
+            // --- Table Data ---
+            let head = [
+                ['Mode', 'Description', 'Amount (Rs)', 'Date']
+            ];
+            let body = [];
+            document.querySelectorAll("#supplierPaymentsTable tbody tr").forEach(tr => {
+                let tds = tr.querySelectorAll("td");
+                body.push([tds[0].innerText, tds[1].innerText, tds[2].innerText, tds[3].innerText]);
+            });
+
+            doc.autoTable({
+                head: head,
+                body: body,
+                startY: 50,
+                theme: 'grid',
+                styles: {
+                    fontSize: 9,
+                    halign: 'center',
+                    valign: 'middle',
+                    cellPadding: 3
+                },
+                headStyles: {
+                    fillColor: [17, 20, 45],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    1: {
+                        halign: 'left',
+                        cellWidth: 80
+                    }
+                },
+                didDrawPage: function(data) {
+                    let pageHeight = doc.internal.pageSize.height;
+                    doc.setFontSize(8);
+                    doc.setTextColor(100);
+                    doc.text("Page " + doc.internal.getNumberOfPages(), 200, pageHeight - 10, {
+                        align: "right"
+                    });
+                }
+            });
+
+            // --- Total Amount ---
+            let total = 0;
+            body.forEach(row => {
+                total += parseFloat(row[2].replace(/[^\d.-]/g, '')) || 0;
+            });
+            let finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(17, 20, 45);
+            doc.text(`Total Payments: Rs ${total.toFixed(2)}`, 14, finalY);
+
+            // Save PDF
+            doc.save('supplier-payments.pdf');
+        };
+    }
+</script>
 @endsection

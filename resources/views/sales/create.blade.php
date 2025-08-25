@@ -8,6 +8,16 @@
         <span class="text-muted">{{ \Carbon\Carbon::now()->format('d M, Y') }}</span>
     </div>
 
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('sales.store') }}">
         @csrf
 
@@ -16,9 +26,11 @@
             <div class="col-md-6">
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select" required>
-                    <option value="" disabled selected>-- Select Customer --</option>
+                    <option value="" disabled {{ old('customer_id') ? '' : 'selected' }}>-- Select Customer --</option>
                     @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                    <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
+                        {{ $customer->name }}
+                    </option>
                     @endforeach
                 </select>
             </div>
@@ -43,6 +55,39 @@
                     </tr>
                 </thead>
                 <tbody id="product-list">
+                    @if(old('product_id'))
+                    @foreach(old('product_id') as $index => $oldProductId)
+                    <tr class="product-row">
+                        <td>
+                            <select name="product_id[]" class="form-select" required>
+                                <option value="" disabled>Select a Product</option>
+                                @foreach($products as $product)
+                                <option value="{{ $product->id }}" {{ $oldProductId == $product->id ? 'selected' : '' }}>
+                                    {{ $product->name }} (Stock: {{ $product->quantity }})
+                                </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" name="quantity[]" class="form-control qty" min="1" required value="{{ old('quantity.'.$index) }}">
+                        </td>
+                        <td>
+                            <input type="number" name="price[]" class="form-control price" step="0.01" required value="{{ old('price.'.$index) }}">
+                        </td>
+                        <td>
+                            <input type="number" name="discount[]" class="form-control discount" min="0" step="0.01" value="{{ old('discount.'.$index, 0) }}">
+                        </td>
+                        <td>
+                            <select name="tax[]" class="form-select tax">
+                                <option value="0" {{ old('tax.'.$index) == 0 ? 'selected' : '' }}>0%</option>
+                                <option value="18" {{ old('tax.'.$index) == 18 ? 'selected' : '' }}>18%</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="form-control subtotal" readonly></td>
+                        <td><button type="button" class="btn btn-danger remove-product">×</button></td>
+                    </tr>
+                    @endforeach
+                    @else
                     <tr class="product-row">
                         <td>
                             <select name="product_id[]" class="form-select" required>
@@ -64,6 +109,7 @@
                         <td><input type="text" class="form-control subtotal" readonly></td>
                         <td><button type="button" class="btn btn-danger remove-product">×</button></td>
                     </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -124,6 +170,10 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    $(document).ready(function() {
+        calculateTotals();
+    });
+
     function calculateTotals() {
         let grandTotal = 0;
 

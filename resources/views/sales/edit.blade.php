@@ -1,12 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="invoice-wrapper p-4 my-5 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary">Edit Sale Invoice</h2>
         <span class="text-muted">{{ \Carbon\Carbon::now()->format('d M, Y') }}</span>
     </div>
+
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
     <form method="POST" action="{{ route('sales.update', $sale->id) }}">
         @csrf
@@ -18,15 +27,22 @@
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select" required>
                     @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}" {{ $sale->customer_id == $customer->id ? 'selected' : '' }}>
+                    <option value="{{ $customer->id }}" {{ old('customer_id', $sale->customer_id) == $customer->id ? 'selected' : '' }}>
                         {{ $customer->name }}
                     </option>
                     @endforeach
                 </select>
+                @error('customer_id')
+                <div class="text-danger small">{{ $message }}</div>
+                @enderror
             </div>
             <div class="col-md-6">
                 <label for="date" class="form-label">Date</label>
-                <input type="date" name="date" id="date" class="form-control" value="{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}" required>
+                <input type="date" name="date" id="date" class="form-control"
+                    value="{{ old('date', \Carbon\Carbon::parse($sale->date)->format('Y-m-d')) }}" required>
+                @error('date')
+                <div class="text-danger small">{{ $message }}</div>
+                @enderror
             </div>
         </div>
 
@@ -45,38 +61,66 @@
                     </tr>
                 </thead>
                 <tbody id="product-list">
-                    @foreach($sale->items as $item)
-                    @php
-                    $base = $item->quantity * $item->price;
-                    $discountAmount = ($item->discount ?? 0) * $base / 100;
-                    $taxable = $base - $discountAmount;
-                    $taxAmount = ($item->tax ?? 0) * $taxable / 100;
-                    $subtotal = $taxable + $taxAmount;
-                    @endphp
-                    <tr class="product-row">
-                        <td>
-                            <select name="product_id[]" class="form-select" required>
-                                <option value="">Select a Product</option>
-                                @foreach($products as $product)
-                                <option value="{{ $product->id }}" {{ $item->product_id == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }} (Stock: {{ $product->quantity }})
-                                </option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td><input type="number" name="quantity[]" class="form-control qty" value="{{ $item->quantity }}" min="1" required></td>
-                        <td><input type="number" name="price[]" class="form-control price" step="0.01" value="{{ $item->price }}" required></td>
-                        <td><input type="number" name="discount[]" class="form-control discount" value="{{ $item->discount ?? 0 }}"></td>
-                        <td>
-                            <select name="tax[]" class="form-select tax">
-                                <option value="0" {{ $item->tax == 0 ? 'selected' : '' }}>0%</option>
-                                <option value="18" {{ $item->tax == 18 ? 'selected' : '' }}>18%</option>
-                            </select>
-                        </td>
-                        <td><input type="text" class="form-control subtotal" value="Rs {{ number_format($subtotal, 2) }}" readonly></td>
-                        <td><button type="button" class="btn btn-danger remove-product">×</button></td>
-                    </tr>
-                    @endforeach
+                    @php $oldInputs = old('product_id') ? count(old('product_id')) : $sale->items->count(); @endphp
+                    @for ($i = 0; $i < $oldInputs; $i++)
+                        @php
+                        $item=$sale->items[$i] ?? null;
+                        $productId = old('product_id.' . $i, $item->product_id ?? '');
+                        $quantity = old('quantity.' . $i, $item->quantity ?? '');
+                        $price = old('price.' . $i, $item->price ?? '');
+                        $discount = old('discount.' . $i, $item->discount ?? 0);
+                        $tax = old('tax.' . $i, $item->tax ?? 0);
+                        $base = $quantity * $price;
+                        $discountAmt = ($discount / 100) * $base;
+                        $taxable = $base - $discountAmt;
+                        $taxAmt = ($tax / 100) * $taxable;
+                        $subtotal = $taxable + $taxAmt;
+                        @endphp
+                        <tr class="product-row">
+                            <td>
+                                <select name="product_id[]" class="form-select" required>
+                                    <option value="">Select a Product</option>
+                                    @foreach($products as $product)
+                                    <option value="{{ $product->id }}" {{ $productId == $product->id ? 'selected' : '' }}>
+                                        {{ $product->name }} (Stock: {{ $product->quantity }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error("product_id.$i")
+                                <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </td>
+                            <td>
+                                <input type="number" name="quantity[]" class="form-control qty" value="{{ $quantity }}" min="1" required>
+                                @error("quantity.$i")
+                                <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </td>
+                            <td>
+                                <input type="number" name="price[]" class="form-control price" step="0.01" value="{{ $price }}" required>
+                                @error("price.$i")
+                                <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </td>
+                            <td>
+                                <input type="number" name="discount[]" class="form-control discount" value="{{ $discount }}">
+                                @error("discount.$i")
+                                <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </td>
+                            <td>
+                                <select name="tax[]" class="form-select tax">
+                                    <option value="0" {{ $tax == 0 ? 'selected' : '' }}>0%</option>
+                                    <option value="18" {{ $tax == 18 ? 'selected' : '' }}>18%</option>
+                                </select>
+                                @error("tax.$i")
+                                <div class="text-danger small">{{ $message }}</div>
+                                @enderror
+                            </td>
+                            <td><input type="text" class="form-control subtotal" value="Rs {{ number_format($subtotal, 2) }}" readonly></td>
+                            <td><button type="button" class="btn btn-danger remove-product">×</button></td>
+                        </tr>
+                        @endfor
                 </tbody>
             </table>
         </div>
@@ -99,7 +143,6 @@
             <button type="submit" class="btn btn-primary px-5">Update</button>
             <a href="{{ route('sales.index') }}" class="btn btn-dark ms-2">Back</a>
         </div>
-
     </form>
 </div>
 
@@ -189,5 +232,4 @@
         });
     });
 </script>
-
 @endsection

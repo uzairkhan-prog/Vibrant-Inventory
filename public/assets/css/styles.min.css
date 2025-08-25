@@ -2917,7 +2917,7 @@ textarea.form-control-lg {
   background-color: transparent;
   background-image: var(--bs-form-select-bg-img), var(--bs-form-select-bg-icon, none);
   background-repeat: no-repeat;
-  background-position: right 16px center;
+  background-position: right 5px center;
   background-size: 16px 12px;
   border: var(--bs-border-width) solid #dfe5ef;
   border-radius: 7px;

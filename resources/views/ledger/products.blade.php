@@ -23,7 +23,7 @@
             <div class="col-md-2 d-flex justify-content-end align-items-center">
                 <label class="me-2 fw-semibold">Show</label>
                 <select id="rowsPerPage" class="form-select w-auto">
-                    @foreach ([5, 10, 50, 100] as $value)
+                    @foreach ([20, 50, 100] as $value)
                     <option value="{{ $value }}" {{ request('per_page', $perPage) == $value ? 'selected' : '' }}>
                         {{ $value }}
                     </option>

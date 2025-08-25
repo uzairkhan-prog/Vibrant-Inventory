@@ -6,9 +6,6 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Purchase Invoice Management</h2>
         <div>
-            <a href="{{ route('purchases.exportCsv') }}" class="btn btn-success me-2">
-                <i class="material-icons me-1">&#xE2C4;</i> Export CSV
-            </a>
             <a href="{{ route('purchases.create') }}" class="btn btn-secondary">
                 <i class="material-icons me-1">&#xE147;</i> Add Purchase
             </a>
@@ -31,7 +28,7 @@
         <div class="col-md-3 d-flex align-items-center justify-content-end">
             <label class="me-2 fw-semibold">Show</label>
             <select id="rowsPerPage" class="form-select w-auto">
-                @foreach ([5, 10, 50, 100] as $value)
+                @foreach ([20, 50, 100] as $value)
                 <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
                 @endforeach
             </select>

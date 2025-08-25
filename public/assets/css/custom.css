@@ -331,9 +331,9 @@ table.table td button.btn-sm {
 
 /* Entries Dropdown */
 #rowsPerPage.form-select {
-    border-radius: 8px;
-    padding: 9px 14px;
-    font-size: 15px;
+    /* border-radius: 8px; */
+    /* padding: 9px 16px; */
+    /* font-size: 15px; */
     border: 1px solid #bcd3f4;
     background-color: #fff;
     transition: all 0.3s ease;
@@ -400,3 +400,21 @@ table.table td button.btn-sm {
     padding: 10px 20px;
     border-radius: 0 !important;
 }
+
+/* Start - Export Btns Styling */
+
+.export-PDF {
+    color: #fff !important;
+    background-color: #f44336 !important;
+    border-color: #e53935 !important;
+    margin-left: 5px;
+}
+
+.export-CSV {
+    color: #ffffff !important;
+    background: #39cb7f !important;
+    border-color: #39cb7f !important;
+    margin-left: 5px;
+}
+
+/* End - Export Btns Styling */

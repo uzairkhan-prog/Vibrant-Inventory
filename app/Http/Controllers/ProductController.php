@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -92,9 +93,50 @@ class ProductController extends Controller
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
+    public function show(Product $product)
+    {
+        // Load category relation for product
+        $product->load('category');
+
+        return view('products.show', compact('product'));
+    }
+
     public function destroy(Product $product)
     {
         $product->delete();
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
+    }
+
+    public function importCSV(Request $request)
+    {
+        $file = $request->file('csv_file');
+        $rows = array_map('str_getcsv', file($file->getRealPath()));
+
+        $header = array_map('trim', $rows[0]); // CSV headers
+        unset($rows[0]); // remove header row
+
+        $inserted = 0;
+
+        foreach ($rows as $row) {
+            $data = array_combine($header, $row);
+
+            Product::create([
+                'name' => $data['name'] ?? null, // if missing -> null
+                'packing' => $data['packing'] ?? 0,
+                'price_per_unit' => is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0,
+                'quantity' => is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0,
+                'category_id' => null, // always null
+                'description' => $data['description'] ?? null,
+                'total' => (is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0)
+                    * (is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0),
+            ]);
+
+            $inserted++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "$inserted products imported successfully."
+        ]);
     }
 }

@@ -7,7 +7,8 @@ use App\Models\SaleItem;
 use App\Models\Customer;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use DB;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Response;
 
@@ -29,7 +30,7 @@ class SaleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'customer_id'   => 'required|exists:customers,id',
             'date'          => 'required|date',
             'product_id.*'  => 'required|exists:products,id',
@@ -39,52 +40,57 @@ class SaleController extends Controller
             'tax.*'         => 'nullable|numeric|min:0|max:100',
         ]);
 
-        DB::transaction(function () use ($request) {
-            $sale = Sale::create([
-                'customer_id'  => $request->customer_id,
-                'total_amount' => 0,
-                'date'         => $request->date,
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($request->product_id as $index => $productId) {
-                $quantity = $request->quantity[$index];
-                $price = $request->price[$index];
-                $discount = $request->discount[$index] ?? 0;
-                $tax = $request->tax[$index] ?? 0;
-
-                $product = Product::findOrFail($productId);
-
-                if ($product->quantity < $quantity) {
-                    throw new \Exception("Not enough stock for product: {$product->name}");
-                }
-
-                $baseTotal = $quantity * $price;
-                $discountAmount = ($discount / 100) * $baseTotal;
-                $afterDiscount = $baseTotal - $discountAmount;
-                $taxAmount = ($tax / 100) * $afterDiscount;
-                $lineTotal = $afterDiscount + $taxAmount;
-
-                SaleItem::create([
-                    'sale_id'   => $sale->id,
-                    'product_id' => $productId,
-                    'quantity'  => $quantity,
-                    'price'     => $price,
-                    'discount'  => $discount,
-                    'tax'       => $tax,
+        try {
+            DB::transaction(function () use ($request) {
+                $sale = Sale::create([
+                    'customer_id'  => $request->customer_id,
+                    'total_amount' => 0,
+                    'date'         => $request->date,
                 ]);
 
-                // Decrease product stock
-                $product->quantity -= $quantity;
-                $product->save();
+                $totalAmount = 0;
 
-                $totalAmount += $lineTotal;
-            }
+                foreach ($request->product_id as $index => $productId) {
+                    $quantity = $request->quantity[$index];
+                    $price = $request->price[$index];
+                    $discount = $request->discount[$index] ?? 0;
+                    $tax = $request->tax[$index] ?? 0;
 
-            $sale->total_amount = $totalAmount;
-            $sale->save();
-        });
+                    $product = Product::findOrFail($productId);
+
+                    if ($product->quantity < $quantity) {
+                        throw new \Exception("Not enough stock for product: {$product->name}");
+                    }
+
+                    $baseTotal = $quantity * $price;
+                    $discountAmount = ($discount / 100) * $baseTotal;
+                    $afterDiscount = $baseTotal - $discountAmount;
+                    $taxAmount = ($tax / 100) * $afterDiscount;
+                    $lineTotal = $afterDiscount + $taxAmount;
+
+                    SaleItem::create([
+                        'sale_id'   => $sale->id,
+                        'product_id' => $productId,
+                        'quantity'  => $quantity,
+                        'price'     => $price,
+                        'discount'  => $discount,
+                        'tax'       => $tax,
+                    ]);
+
+                    $product->quantity -= $quantity;
+                    $product->save();
+
+                    $totalAmount += $lineTotal;
+                }
+
+                $sale->total_amount = $totalAmount;
+                $sale->save();
+            });
+        } catch (\Exception $e) {
+            return Redirect::back()
+                ->withInput()
+                ->withErrors(['stock_error' => $e->getMessage()]);
+        }
 
         return redirect()->route('sales.index')->with('success', 'Sale created successfully.');
     }
@@ -105,70 +111,80 @@ class SaleController extends Controller
 
     public function update(Request $request, Sale $sale)
     {
-        $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'date'        => 'required|date',
-            'product_id.*' => 'required|exists:products,id',
-            'quantity.*'  => 'required|integer|min:1',
-            'price.*'     => 'required|numeric|min:0',
-            'discount.*'  => 'nullable|numeric|min:0',
-            'tax.*'       => 'nullable|numeric|min:0',
+        $validated = $request->validate([
+            'customer_id'   => 'required|exists:customers,id',
+            'date'          => 'required|date',
+            'product_id.*'  => 'required|exists:products,id',
+            'quantity.*'    => 'required|integer|min:1',
+            'price.*'       => 'required|numeric|min:0',
+            'discount.*'    => 'nullable|numeric|min:0|max:100',
+            'tax.*'         => 'nullable|numeric|min:0|max:100',
         ]);
 
-        DB::transaction(function () use ($request, $sale) {
-            // Revert previous stock
-            foreach ($sale->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->quantity += $item->quantity;
-                    $product->save();
+        try {
+            DB::transaction(function () use ($request, $sale) {
+                // Revert old stock
+                foreach ($sale->items as $item) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->quantity += $item->quantity;
+                        $product->save();
+                    }
                 }
-            }
 
-            // Delete old items
-            $sale->items()->delete();
+                // Remove old sale items
+                $sale->items()->delete();
 
-            // Update sale header
-            $sale->update([
-                'customer_id'  => $request->customer_id,
-                'date'         => $request->date,
-                'total_amount' => 0,
-            ]);
-
-            $totalAmount = 0;
-
-            foreach ($request->product_id as $index => $productId) {
-                $quantity = (float) $request->quantity[$index];
-                $price    = (float) $request->price[$index];
-                $discount = (float) ($request->discount[$index] ?? 0);
-                $tax      = (float) ($request->tax[$index] ?? 0);
-
-                $base = $quantity * $price;
-                $discountAmount = ($discount / 100) * $base;
-                $taxable = $base - $discountAmount;
-                $taxAmount = ($tax / 100) * $taxable;
-                $subtotal = $taxable + $taxAmount;
-
-                // Create new sale item
-                SaleItem::create([
-                    'sale_id'    => $sale->id,
-                    'product_id' => $productId,
-                    'quantity'   => $quantity,
-                    'price'      => $price,
-                    'discount'   => $discount,
-                    'tax'        => $tax,
+                // Update main sale record
+                $sale->update([
+                    'customer_id'  => $request->customer_id,
+                    'date'         => $request->date,
+                    'total_amount' => 0,
                 ]);
 
-                // Deduct sold stock
-                $product = Product::find($productId);
-                $product->quantity -= $quantity;
-                $product->save();
+                $totalAmount = 0;
 
-                $totalAmount += $subtotal;
-            }
+                foreach ($request->product_id as $index => $productId) {
+                    $quantity = $request->quantity[$index];
+                    $price = $request->price[$index];
+                    $discount = $request->discount[$index] ?? 0;
+                    $tax = $request->tax[$index] ?? 0;
 
-            $sale->update(['total_amount' => $totalAmount]);
-        });
+                    $product = Product::findOrFail($productId);
+
+                    if ($product->quantity < $quantity) {
+                        throw new \Exception("Not enough stock for product: {$product->name}");
+                    }
+
+                    $baseTotal = $quantity * $price;
+                    $discountAmount = ($discount / 100) * $baseTotal;
+                    $afterDiscount = $baseTotal - $discountAmount;
+                    $taxAmount = ($tax / 100) * $afterDiscount;
+                    $lineTotal = $afterDiscount + $taxAmount;
+
+                    SaleItem::create([
+                        'sale_id'   => $sale->id,
+                        'product_id' => $productId,
+                        'quantity'  => $quantity,
+                        'price'     => $price,
+                        'discount'  => $discount,
+                        'tax'       => $tax,
+                    ]);
+
+                    $product->quantity -= $quantity;
+                    $product->save();
+
+                    $totalAmount += $lineTotal;
+                }
+
+                $sale->total_amount = $totalAmount;
+                $sale->save();
+            });
+        } catch (\Exception $e) {
+            return Redirect::back()
+                ->withInput()
+                ->withErrors(['stock_error' => $e->getMessage()]);
+        }
 
         return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
     }

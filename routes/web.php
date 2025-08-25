@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
     // Resource Routes
     Route::resource('products', ProductController::class);
+    Route::post('products/import', [ProductController::class, 'importCSV'])->name('products.import');
     Route::get('ledger/products', [ProductLedgerController::class, 'index'])->name('ledger.products');
     Route::resource('categories', CategoryController::class);
     Route::resource('suppliers', SupplierController::class);
@@ -58,7 +59,7 @@ Route::middleware('auth')->group(function () {
 
     // Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
     Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])->name('suppliers.payments.store');
-    
+
     Route::post('customers/{customer}/payments', [CustomerController::class, 'storePayment'])->name('customers.payments.store');
 
     Route::get('/supplier-payments/{payment}/edit', [SupplierPaymentController::class, 'edit'])->name('supplier-payments.edit');
