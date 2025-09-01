@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vibrant Engineering Inventory - Login</title>
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/logos/favicon.png') }}" />
     <style>
         * {
             margin: 0;
@@ -118,7 +119,7 @@
 
         .logo {
             width: 200px;
-            background: #19396d;
+            background: linear-gradient(90deg, #0a2342, #1b3c73);
             margin-bottom: 10px;
             border-radius: 5px;
             padding: 5px;
