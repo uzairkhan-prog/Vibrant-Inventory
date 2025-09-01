@@ -176,7 +176,8 @@
                             </a>
                         </li>
                         <li class="sidebar-item">
-                            <a class="sidebar-link" href="#" onclick="return confirm('Are you sure you want to clear the cache?');">
+                            <a class="sidebar-link" href="{{ route('cache.clear') }}"
+                                onclick="return confirm('Are you sure you want to clear the cache?');">
                                 <i class="ti ti-refresh"></i>
                                 <span class="hide-menu">Clear Cache</span>
                             </a>

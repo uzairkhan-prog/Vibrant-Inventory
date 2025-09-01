@@ -20,6 +20,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\CacheClearController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
@@ -77,6 +78,9 @@ Route::middleware('auth')->group(function () {
     // Sale Export route
     Route::get('sales-export-csv', [SaleController::class, 'exportCsv'])->name('sales.exportCsv');
     Route::get('/sales/export-csv/{id}', [App\Http\Controllers\SaleController::class, 'exportInoviceCSV'])->name('sales.exportCSV');
+
+    // Clear Cache
+    Route::get('/clear-cache', [CacheClearController::class, 'clear'])->name('cache.clear');
 });
 
 require __DIR__ . '/auth.php';
