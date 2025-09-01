@@ -4,7 +4,30 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Flexy Free Bootstrap Admin Template by WrapPixel</title>
+    <title>
+        @php
+        // Map route names to page titles
+        $titles = [
+        'dashboard' => 'Dashboard - Vibrant Engineering',
+        'profile.edit' => 'Edit Profile - Vibrant Engineering',
+        'products.index' => 'Products - Vibrant Engineering',
+        'categories.index' => 'Categories - Vibrant Engineering',
+        'suppliers.index' => 'Suppliers - Vibrant Engineering',
+        'customers.index' => 'Customers - Vibrant Engineering',
+        'purchases.index' => 'Purchases - Vibrant Engineering',
+        'sales.index' => 'Sales - Vibrant Engineering',
+        'expenses.index' => 'Expenses - Vibrant Engineering',
+        'reports.index' => 'Reports - Vibrant Engineering',
+        'analytics.index' => 'Analytics - Vibrant Engineering',
+        // Add more routes as needed
+        ];
+
+        $currentRoute = Route::currentRouteName();
+        $title = $titles[$currentRoute] ?? 'Vibrant Engineering Inventory';
+        @endphp
+
+        {{ $title }}
+    </title>
     <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/logos/favicon.png') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/styles.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}" />
