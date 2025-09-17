@@ -26,15 +26,17 @@
             </div>
             <div class="col-md-6">
                 <label for="date" class="form-label">Date</label>
-                <input type="date" name="date" id="date" class="form-control" value="{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}" required>
+                <input type="date" name="date" id="date" class="form-control"
+                    value="{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}" required>
             </div>
         </div>
 
-        <!-- Product Table -->
+        <!-- Products Table -->
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center invoice-table mb-4">
                 <thead class="table-light">
                     <tr>
+                        <th>Category</th>
                         <th>Product</th>
                         <th>Qty</th>
                         <th>Price</th>
@@ -52,28 +54,55 @@
                     $taxable = $base - $discountAmount;
                     $taxAmount = ($item->tax ?? 0) * $taxable / 100;
                     $subtotal = $taxable + $taxAmount;
+                    $categoryId = $item->product->category_id ?? null;
                     @endphp
                     <tr class="product-row">
+                        <!-- Category -->
                         <td>
-                            <select name="product_id[]" class="form-select" required>
-                                <option value="">Select a Product</option>
-                                @foreach($products as $product)
-                                <option value="{{ $product->id }}" {{ $item->product_id == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }} (Stock: {{ $product->quantity }})
+                            <select name="category_id[]" class="form-select category-select" required>
+                                <option value="">Select Category</option>
+                                @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ $cat->id == $categoryId ? 'selected' : '' }}>
+                                    {{ $cat->name }}
                                 </option>
                                 @endforeach
                             </select>
                         </td>
-                        <td><input type="number" name="quantity[]" class="form-control qty" value="{{ $item->quantity }}" min="1" required></td>
-                        <td><input type="number" name="price[]" class="form-control price" step="0.01" value="{{ $item->price }}" required></td>
-                        <td><input type="number" class="form-control discount" name="discount[]" value="{{ $item->discount ?? 0 }}"></td>
+
+                        <!-- Product -->
+                        <td>
+                            <select name="product_id[]" class="form-select product-select" required>
+                                <option value="">Select Product</option>
+                                <!-- Will be loaded by AJAX -->
+                            </select>
+                            <input type="hidden" class="current-product-id" value="{{ $item->product_id }}">
+                        </td>
+
+                        <!-- Quantity -->
+                        <td><input type="number" name="quantity[]" class="form-control qty"
+                                value="{{ $item->quantity }}" min="1" required></td>
+
+                        <!-- Price -->
+                        <td><input type="number" name="price[]" class="form-control price"
+                                step="0.01" value="{{ $item->price }}" required></td>
+
+                        <!-- Discount -->
+                        <td><input type="number" class="form-control discount" name="discount[]"
+                                value="{{ $item->discount ?? 0 }}"></td>
+
+                        <!-- Tax -->
                         <td>
                             <select class="form-select tax" name="tax[]">
                                 <option value="0" {{ $item->tax == 0 ? 'selected' : '' }}>0%</option>
                                 <option value="18" {{ $item->tax == 18 ? 'selected' : '' }}>18%</option>
                             </select>
                         </td>
-                        <td><input type="text" class="form-control subtotal" value="Rs {{ number_format($subtotal, 2) }}" readonly></td>
+
+                        <!-- Subtotal -->
+                        <td><input type="text" class="form-control subtotal"
+                                value="Rs {{ number_format($subtotal, 2) }}" readonly></td>
+
+                        <!-- Remove -->
                         <td><button type="button" class="btn btn-danger remove-product">×</button></td>
                     </tr>
                     @endforeach
@@ -108,7 +137,7 @@
     .invoice-wrapper {
         max-width: 1200px;
         margin: auto;
-        background: #ffffff;
+        background: #fff;
     }
 
     .invoice-table th,
@@ -142,7 +171,6 @@
 <script>
     function calculateTotals() {
         let grandTotal = 0;
-
         $('#product-list .product-row').each(function() {
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
@@ -158,31 +186,60 @@
             $(this).find('.subtotal').val('Rs ' + subtotal.toFixed(2));
             grandTotal += subtotal;
         });
-
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
+    }
+
+    // Load products for a category (with preselected product if exists)
+    function loadProducts(categorySelect, selectedProductId = null) {
+        const categoryId = categorySelect.val();
+        const productSelect = categorySelect.closest('tr').find('.product-select');
+        productSelect.html('<option>Loading...</option>');
+
+        if (categoryId) {
+            $.getJSON('/products/by-category/' + categoryId, function(products) {
+                productSelect.empty().append('<option value="">Select Product</option>');
+                $.each(products, function(index, product) {
+                    const isSelected = selectedProductId == product.id ? 'selected' : '';
+                    productSelect.append('<option value="' + product.id + '" ' + isSelected + '>' +
+                        product.name + ' (Stock: ' + product.quantity + ')</option>');
+                });
+            });
+        } else {
+            productSelect.html('<option value="">Select Product</option>');
+        }
     }
 
     $(document).ready(function() {
         calculateTotals();
 
-        $(document).on('input change', '.qty, .price, .discount, .tax', function() {
-            calculateTotals();
+        // Init existing rows with correct products
+        $('#product-list .product-row').each(function() {
+            const categorySelect = $(this).find('.category-select');
+            const selectedProductId = $(this).find('.current-product-id').val();
+            loadProducts(categorySelect, selectedProductId);
         });
 
+        // Change events
+        $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
+
+        // Category change
+        $(document).on('change', '.category-select', function() {
+            loadProducts($(this));
+        });
+
+        // Add new row
         $('#add-product').click(function() {
-            const firstRow = $('#product-list .product-row:first');
-            const newRow = firstRow.clone();
-
+            const newRow = $('#product-list .product-row:first').clone();
             newRow.find('input').val('');
-            newRow.find('.subtotal').val('Rs 0.00');
-            newRow.find('select').each(function() {
-                $(this).val($(this).find('option:first').val());
-            });
-
+            newRow.find('.discount').val('0');
+            newRow.find('.subtotal').val('');
+            newRow.find('.category-select').val('');
+            newRow.find('.product-select').html('<option value="">Select Product</option>');
+            newRow.find('.current-product-id').val('');
             $('#product-list').append(newRow);
-            calculateTotals();
         });
 
+        // Remove row
         $(document).on('click', '.remove-product', function() {
             if ($('#product-list .product-row').length > 1) {
                 $(this).closest('.product-row').remove();

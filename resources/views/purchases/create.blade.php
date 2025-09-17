@@ -8,6 +8,16 @@
         <span class="text-muted">{{ \Carbon\Carbon::now()->format('d M, Y') }}</span>
     </div>
 
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('purchases.store') }}">
         @csrf
 
@@ -16,6 +26,7 @@
             <div class="col-md-6">
                 <label for="supplier_id" class="form-label">Supplier</label>
                 <select name="supplier_id" id="supplier_id" class="form-select" required>
+                    <option value="">Select Supplier</option>
                     @foreach($suppliers as $supplier)
                     <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                     @endforeach
@@ -32,6 +43,7 @@
             <table class="table table-bordered align-middle text-center invoice-table mb-4">
                 <thead class="table-light">
                     <tr>
+                        <th>Category</th>
                         <th>Product</th>
                         <th>Qty</th>
                         <th>Price</th>
@@ -44,11 +56,16 @@
                 <tbody id="product-list">
                     <tr class="product-row">
                         <td>
-                            <select name="product_id[]" class="form-select" required>
-                                <option>Select a Product</option>
-                                @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }})</option>
+                            <select name="category_id[]" class="form-select category-select" required>
+                                <option value="">Select Category</option>
+                                @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                 @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="product_id[]" class="form-select product-select" required>
+                                <option value="">Select Product</option>
                             </select>
                         </td>
                         <td><input type="number" name="quantity[]" class="form-control qty" min="1" required></td>
@@ -125,7 +142,6 @@
 <script>
     function calculateTotals() {
         let grandTotal = 0;
-
         $('#product-list .product-row').each(function() {
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
@@ -141,18 +157,21 @@
             $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
             grandTotal += finalAmount;
         });
-
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
     }
 
+    // Add new row
     $('#add-product').click(function() {
         const newRow = $('#product-list .product-row:first').clone();
         newRow.find('input').val('');
-        newRow.find('select').val('');
+        newRow.find('.discount').val('0');
         newRow.find('.subtotal').val('');
+        newRow.find('.category-select').val('');
+        newRow.find('.product-select').html('<option value="">Select Product</option>');
         $('#product-list').append(newRow);
     });
 
+    // Remove row
     $(document).on('click', '.remove-product', function() {
         if ($('#product-list .product-row').length > 1) {
             $(this).closest('.product-row').remove();
@@ -160,7 +179,37 @@
         }
     });
 
+    // Calculate totals on change
     $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
+
+    // Fetch products by category
+    $(document).on('change', '.category-select', function() {
+        let categoryId = $(this).val();
+        let productSelect = $(this).closest('tr').find('.product-select');
+        productSelect.html('<option>Loading...</option>');
+        if (categoryId) {
+            $.ajax({
+                url: '/products/by-category/' + categoryId,
+                type: 'GET',
+                success: function(products) {
+                    productSelect.empty().append('<option value="">Select Product</option>');
+                    $.each(products, function(index, product) {
+                        productSelect.append('<option value="' + product.id + '">' + product.name + ' (Stock: ' + product.quantity + ')</option>');
+                    });
+                }
+            });
+        } else {
+            productSelect.html('<option value="">Select Product</option>');
+        }
+    });
+
+    // ✅ Set today's date automatically if empty
+    $(document).ready(function() {
+        let today = new Date().toISOString().split('T')[0];
+        if (!$('#date').val()) {
+            $('#date').val(today);
+        }
+    });
 </script>
 
 @endsection

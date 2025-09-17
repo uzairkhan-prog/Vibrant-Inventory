@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('suppliers', SupplierController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('purchases', PurchaseController::class);
+    Route::get('/products/by-category/{id}', [PurchaseController::class, 'getProductsByCategory'])->name('products.byCategory');
 
     Route::resource('sales', SaleController::class);
     Route::resource('expenses', ExpenseController::class);

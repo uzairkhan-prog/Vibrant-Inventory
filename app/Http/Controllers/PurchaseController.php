@@ -6,8 +6,9 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Supplier;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Response;
 
@@ -23,22 +24,40 @@ class PurchaseController extends Controller
 
     public function create()
     {
-        $suppliers = Supplier::all();
-        $products  = Product::all();
-        return view('purchases.create', compact('suppliers', 'products'));
+        $suppliers  = Supplier::all();
+        $categories = Category::all(); // Load categories
+        return view('purchases.create', compact('suppliers', 'categories'));
+    }
+
+    public function getProductsByCategory($categoryId)
+    {
+        $products = Product::where('category_id', $categoryId)->get(['id', 'name', 'quantity']);
+        return response()->json($products);
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
-            'date'        => 'required|date',
+            'date'        => 'required|date|after_or_equal:today',
             'product_id.*' => 'required|exists:products,id',
             'quantity.*'  => 'required|integer|min:1',
             'price.*'     => 'required|numeric|min:0',
             'discount.*'  => 'nullable|numeric|min:0',
             'tax.*'       => 'nullable|numeric|min:0',
         ]);
+
+        // ✅ Custom quantity vs stock validation
+        foreach ($request->product_id as $index => $productId) {
+            $product = Product::find($productId);
+            $quantity = (int) $request->quantity[$index];
+
+            if ($quantity > $product->quantity) {
+                return back()
+                    ->withErrors(['quantity.' . $index => "Quantity for {$product->name} cannot exceed stock ({$product->quantity})."])
+                    ->withInput();
+            }
+        }
 
         DB::transaction(function () use ($request) {
             $purchase = Purchase::create([
@@ -71,7 +90,7 @@ class PurchaseController extends Controller
                 ]);
 
                 $product = Product::find($productId);
-                $product->quantity += $quantity;
+                $product->quantity -= $quantity; // ✅ Deduct stock
                 $product->save();
 
                 $totalAmount += $subtotal;
@@ -85,11 +104,11 @@ class PurchaseController extends Controller
 
     public function edit(Purchase $purchase)
     {
-        $suppliers = Supplier::all();
-        $products  = Product::all();
+        $suppliers  = Supplier::all();
+        $categories = Category::all(); // ✅ add categories
         $purchase->load('items.product');
 
-        return view('purchases.edit', compact('purchase', 'suppliers', 'products'));
+        return view('purchases.edit', compact('purchase', 'suppliers', 'categories'));
     }
 
     public function update(Request $request, Purchase $purchase)
