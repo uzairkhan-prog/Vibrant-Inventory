@@ -61,9 +61,8 @@
                     <th>#</th>
                     <th>Name</th>
                     <th>Address</th>
-                    <th>Date</th>
+                    <th>Total Amount</th> <!-- ✅ -->
                     <th>Balance Details</th>
-                    <!-- <th>Balance</th> -->
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -73,25 +72,21 @@
                     <td>{{ ($suppliers->currentPage() - 1) * $suppliers->perPage() + $loop->iteration }}</td>
                     <td>{{ $supplier->name }}</td>
                     <td>{{ $supplier->address }}</td>
-                    <td>{{ \Carbon\Carbon::parse($supplier->created_at)->format('Y-m-d') }}</td>
+                    <td>Rs {{ number_format($supplier->balance ?? 0, 2) }}</td> <!-- ✅ -->
                     <td>
-                        <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white" title="View">
-                            View Details
-                            <i class="material-icons">&#xE8F4;</i>
+                        <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white">
+                            View Details <i class="material-icons">&#xE8F4;</i>
                         </a>
                     </td>
-                    <!-- <td>{{ number_format($supplier->balance ?? 0, 2) }}</td> -->
                     <td>
-                        <a href="{{ route('suppliers.edit', $supplier) }}" class="btn btn-sm btn-success text-white" title="Edit">
-                            Edit
-                            <i class="material-icons">&#xE254;</i>
+                        <a href="{{ route('suppliers.edit', $supplier) }}" class="btn btn-sm btn-success text-white">
+                            Edit <i class="material-icons">&#xE254;</i>
                         </a>
-                        <form action="{{ route('suppliers.destroy', $supplier) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete supplier?')">
+                        <form action="{{ route('suppliers.destroy', $supplier) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this supplier?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                Delete
-                                <i class="material-icons">&#xE872;</i>
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                Delete <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>
                     </td>

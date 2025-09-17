@@ -64,9 +64,8 @@
                     <th>#</th>
                     <th>Name</th>
                     <th>Address</th>
-                    <th>Date</th>
+                    <th>Total Amount</th> <!-- ✅ Replaced Date -->
                     <th>Balance Details</th>
-                    <!-- <th>Balance</th> -->
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -76,8 +75,7 @@
                     <td>{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration }}</td>
                     <td>{{ $customer->name }}</td>
                     <td>{{ $customer->address }}</td>
-                    <td>{{ \Carbon\Carbon::parse($customer->created_at)->format('Y-m-d') }}</td>
-                    <!-- <td>{{ number_format($customer->balance ?? 0, 2) }}</td> -->
+                    <td>Rs {{ number_format($customer->balance ?? 0, 2) }}</td> <!-- ✅ Show balance -->
                     <td>
                         <a href="{{ route('customers.show', $customer) }}" class="btn btn-sm btn-info text-white" title="View">
                             View Details
@@ -86,15 +84,13 @@
                     </td>
                     <td>
                         <a href="{{ route('customers.edit', $customer) }}" class="btn btn-sm btn-success text-white" title="Edit">
-                            Edit
-                            <i class="material-icons">&#xE254;</i>
+                            Edit <i class="material-icons">&#xE254;</i>
                         </a>
                         <form action="{{ route('customers.destroy', $customer) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this customer?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                Delete
-                                <i class="material-icons">&#xE872;</i>
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                Delete <i class="material-icons">&#xE872;</i>
                             </button>
                         </form>
                     </td>
