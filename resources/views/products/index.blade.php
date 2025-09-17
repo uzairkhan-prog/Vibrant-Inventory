@@ -68,6 +68,7 @@
                 <tr>
                     <th>#</th>
                     <th>Name</th>
+                    <th>Category</th>
                     <th>Packing</th>
                     <th>Rate</th>
                     <th>Total QTY</th>
@@ -80,6 +81,7 @@
                 <tr>
                     <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                     <td>{{ $product->name }}</td>
+                    <td>{{ $product->category->name ?? 'Uncategorized' }}</td>
                     <td>{{ $product->packing }}</td>
                     <td>{{ number_format($product->price_per_unit, 2) }}</td>
                     <td>{{ $product->quantity }}</td>
