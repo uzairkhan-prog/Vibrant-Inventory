@@ -17,31 +17,46 @@ class ReportsController extends Controller
 {
     public function index(Request $request)
     {
-        $startDate = $request->start_date ?? now()->subMonth()->toDateString();
-        $endDate   = $request->end_date ?? now()->toDateString();
+        $startDate   = $request->start_date ?? now()->subMonth()->toDateString();
+        $endDate     = $request->end_date ?? now()->toDateString();
+        $reportType  = $request->report_type ?? 'all';
 
-        $totalSales = Sale::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
-        $totalPurchases = Purchase::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
-        $productCount = Product::count();
-        $categoryCount = Category::count();
-        $supplierCount = Supplier::count();
-        $customerCount = Customer::count();
-        $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])->sum('amount');
-        $assetCount = Asset::count();
-        $totalSaleReturns = SaleReturn::whereBetween('created_at', [$startDate, $endDate])->sum('amount_deducted');
+        // Base summary
+        $totalSales          = Sale::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
+        $totalPurchases      = Purchase::whereBetween('created_at', [$startDate, $endDate])->sum('total_amount');
+        $productCount        = Product::count();
+        $categoryCount       = Category::count();
+        $supplierCount       = Supplier::count();
+        $customerCount       = Customer::count();
+        $totalExpenses       = Expense::whereBetween('created_at', [$startDate, $endDate])->sum('amount');
+        $assetCount          = Asset::count();
+        $totalSaleReturns    = SaleReturn::whereBetween('created_at', [$startDate, $endDate])->sum('amount_deducted');
         $totalCustomerBalance = Customer::sum('balance');
 
-        // Fetch sales with items, products, categories, and customer
-        $sales = Sale::with(['customer', 'items.product.category'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('date', 'desc')
-            ->get();
+        // Fetch with pagination
+        $sales     = collect();
+        $purchases = collect();
+        $expenses  = collect();
 
-        // Fetch purchases with items, products, categories, and supplier
-        $purchases = Purchase::with(['supplier', 'items.product.category'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('date', 'desc')
-            ->get();
+        if ($reportType === 'sales' || $reportType === 'all') {
+            $sales = Sale::with(['customer', 'items.product.category'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+        }
+
+        if ($reportType === 'purchases' || $reportType === 'all') {
+            $purchases = Purchase::with(['supplier', 'items.product.category'])
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+        }
+
+        if ($reportType === 'expenses' || $reportType === 'all') {
+            $expenses = Expense::whereBetween('created_at', [$startDate, $endDate])
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+        }
 
         return view('reports.index', compact(
             'totalSales',
@@ -56,8 +71,10 @@ class ReportsController extends Controller
             'totalCustomerBalance',
             'startDate',
             'endDate',
+            'reportType',
             'sales',
-            'purchases'
+            'purchases',
+            'expenses'
         ));
     }
 }
