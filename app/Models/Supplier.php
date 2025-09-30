@@ -22,6 +22,11 @@ class Supplier extends Model
         return $this->hasMany(SupplierPayment::class);
     }
 
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
     public function getCurrentBalanceAttribute()
     {
         $initialBalance = $this->balance ?? 0;

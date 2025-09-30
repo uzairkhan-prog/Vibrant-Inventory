@@ -289,6 +289,118 @@
     </div>
 </div>
 
+<!-- Suppliers Ledger Modal -->
+<div class="modal fade" id="suppliersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Suppliers Ledger ({{ $startDate }} - {{ $endDate }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="suppliersReportContent">
+                @forelse($suppliersLedger as $supplier)
+                <div class="mb-3">
+                    <h6 class="fw-bold">
+                        {{ $supplier->name }}
+                        <span class="text-muted">(Closing Balance: {{ number_format($supplier->balance,2) }})</span>
+                    </h6>
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-start p-2">Date</th>
+                                <th class="text-start p-2">Type</th>
+                                <th class="text-start p-2">Invoice/Receipt</th>
+                                <th class="text-start p-2">Product</th>
+                                <th class="text-start p-2">Qty</th>
+                                <th class="text-start p-2">Price</th>
+                                <th class="text-start p-2">Tax</th>
+                                <th class="text-start p-2">Discount</th>
+                                <th class="text-end">Debit (+)</th>
+                                <th class="text-end">Credit (-)</th>
+                                <th class="text-end">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $runningBalance=0; $hasRows=false; $totalDebit=0; $totalCredit=0; @endphp
+
+                            {{-- Purchases from Supplier --}}
+                            @foreach($supplier->purchases as $purchase)
+                            @foreach($purchase->items as $item)
+                            @php
+                            $hasRows = true;
+                            $lineTotal = ($item->quantity * $item->price) + $purchase->tax - $purchase->discount;
+                            $runningBalance += $lineTotal;
+                            $totalDebit += $lineTotal;
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ $purchase->created_at->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
+                                <td class="text-start p-2">Invoice #{{ $purchase->id }}</td>
+                                <td class="text-start p-2">{{ $item->product->name }}</td>
+                                <td class="text-start p-2">{{ $item->quantity }}</td>
+                                <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                                <td class="text-start p-2">{{ number_format($purchase->tax,2) }}</td>
+                                <td class="text-start p-2">{{ number_format($purchase->discount,2) }}</td>
+                                <td class="text-end text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            </tr>
+                            @endforeach
+                            @endforeach
+
+                            {{-- Payments to Supplier --}}
+                            @foreach($supplier->payments as $payment)
+                            @php
+                            $hasRows = true;
+                            $runningBalance -= $payment->amount;
+                            $totalCredit += $payment->amount;
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
+                                <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
+                                <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            </tr>
+                            @endforeach
+
+                            @unless($hasRows)
+                            <tr>
+                                <td colspan="11" class="text-center text-muted">No records found for this supplier.</td>
+                            </tr>
+                            @endunless
+                        </tbody>
+
+                        {{-- Totals --}}
+                        @if($hasRows)
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="8" class="text-end">Totals:</td>
+                                <td class="text-end text-success">+{{ number_format($totalDebit,2) }}</td>
+                                <td class="text-end text-danger">-{{ number_format($totalCredit,2) }}</td>
+                                <td class="text-end">{{ number_format($runningBalance,2) }}</td>
+                            </tr>
+                        </tfoot>
+                        @endif
+                    </table>
+                </div>
+                @empty
+                <div class="alert alert-warning">No suppliers found.</div>
+                @endforelse
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="downloadSuppliersPdf">Export PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- PDF Export --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -302,7 +414,7 @@
         let content = document.getElementById(contentId).cloneNode(true);
         content.style.display = "block";
         content.style.width = "1000px";
-        content.style.padding = "20px"; // add padding for better look
+        content.style.padding = "20px";
 
         let tempDiv = document.createElement("div");
         tempDiv.style.position = "absolute";
@@ -326,50 +438,10 @@
 
             const pdfHeight = (canvas.height * usableWidth) / canvas.width;
             let heightLeft = pdfHeight;
-            let position = 60; // space for header
+            let position = 50; // start content after header
 
-            // ===== Company Header (Logo + Info) =====
-            pdf.addImage(
-                "data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}",
-                "PNG",
-                marginLeft,
-                10,
-                30,
-                25
-            );
-
-            pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(14);
-            pdf.text(reportTitle, pdfWidth / 2, 20, {
-                align: "center"
-            });
-
-            pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(9);
-            pdf.text("Head Office: Shop #13, Falak Park View Near Inquiry Office Nazimabad #2, Karachi", pdfWidth - marginRight, 12, {
-                align: "right"
-            });
-            pdf.text("Phone: +92 335 2385773", pdfWidth - marginRight, 18, {
-                align: "right"
-            });
-            pdf.text("Email: info@vibrantengineering.pk", pdfWidth - marginRight, 24, {
-                align: "right"
-            });
-
-            // Divider line
-            pdf.setLineWidth(0.5);
-            pdf.line(marginLeft, 35, pdfWidth - marginRight, 35);
-
-            // ===== Content =====
-            pdf.addImage(imgData, "PNG", marginLeft, position, usableWidth, pdfHeight);
-            heightLeft -= pageHeight;
-
-            // ===== Handle Multiple Pages =====
-            while (heightLeft > 0) {
-                position = heightLeft - pdfHeight + 60;
-                pdf.addPage();
-
-                // re-draw header on each page
+            // ===== Draw Header Function =====
+            function drawHeader() {
                 pdf.addImage(
                     "data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}",
                     "PNG",
@@ -399,10 +471,21 @@
 
                 pdf.setLineWidth(0.5);
                 pdf.line(marginLeft, 35, pdfWidth - marginRight, 35);
+            }
 
-                // add content
-                pdf.addImage(imgData, "PNG", marginLeft, position, usableWidth, pdfHeight);
-                heightLeft -= pageHeight;
+            // ===== First Page =====
+            drawHeader();
+            pdf.addImage(imgData, "PNG", marginLeft, position, usableWidth, pdfHeight);
+            heightLeft -= (pageHeight - position);
+
+            // ===== Handle Multiple Pages =====
+            while (heightLeft > 0) {
+                pdf.addPage();
+                drawHeader();
+
+                let newPosition = 50 - (pdfHeight - heightLeft);
+                pdf.addImage(imgData, "PNG", marginLeft, newPosition, usableWidth, pdfHeight);
+                heightLeft -= (pageHeight - 50);
             }
 
             pdf.save(fileName);
@@ -422,5 +505,8 @@
     });
     document.getElementById("downloadCustomersPdf").addEventListener("click", () => {
         exportPdf("customersReportContent", "Customers_Ledger.pdf", "Customers Ledger");
+    });
+    document.getElementById("downloadSuppliersPdf").addEventListener("click", () => {
+        exportPdf("suppliersReportContent", "Suppliers_Ledger.pdf", "Suppliers Ledger");
     });
 </script>

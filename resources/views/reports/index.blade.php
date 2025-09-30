@@ -15,6 +15,7 @@
                         <option value="purchases" {{ $reportType == 'purchases' ? 'selected' : '' }}>Purchases</option>
                         <option value="expenses" {{ $reportType == 'expenses' ? 'selected' : '' }}>Expenses</option>
                         <option value="customers" {{ $reportType == 'customers' ? 'selected' : '' }}>Customers Ledger</option>
+                        <option value="suppliers" {{ $reportType == 'suppliers' ? 'selected' : '' }}>Suppliers Ledger</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -259,14 +260,14 @@
                 <table class="table table-bordered table-striped align-middle">
                     <thead class="table-dark">
                         <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Invoice/Receipt</th>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Tax</th>
-                            <th>Discount</th>
+                            <th class="text-start p-2">Date</th>
+                            <th class="text-start p-2">Type</th>
+                            <th class="text-start p-2">Invoice/Receipt</th>
+                            <th class="text-start p-2">Product</th>
+                            <th class="text-start p-2">Qty</th>
+                            <th class="text-start p-2">Price</th>
+                            <th class="text-start p-2">Tax</th>
+                            <th class="text-start p-2">Discount</th>
                             <th class="text-end">Debit (+)</th>
                             <th class="text-end">Credit (-)</th>
                             <th class="text-end">Balance</th>
@@ -290,14 +291,14 @@
                         $totalDebit += $lineTotal;
                         @endphp
                         <tr>
-                            <td>{{ $sale->created_at->format('Y-m-d') }}</td>
-                            <td><span class="badge bg-success">Sale</span></td>
-                            <td>Invoice #{{ $sale->id }}</td>
-                            <td>{{ $item->product->name }}</td>
-                            <td>{{ $item->quantity }}</td>
-                            <td>{{ number_format($item->price,2) }}</td>
-                            <td>{{ number_format($sale->tax,2) }}</td>
-                            <td>{{ number_format($sale->discount,2) }}</td>
+                            <td class="text-start p-2">{{ $sale->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
+                            <td class="text-start p-2">Invoice #{{ $sale->id }}</td>
+                            <td class="text-start p-2">{{ $item->product->name }}</td>
+                            <td class="text-start p-2">{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($sale->tax,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($sale->discount,2) }}</td>
                             <td class="text-end text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
                             <td class="text-end">-</td>
                             <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
@@ -313,14 +314,14 @@
                         $totalCredit += $payment->amount;
                         @endphp
                         <tr>
-                            <td>{{ $payment->created_at->format('Y-m-d') }}</td>
-                            <td><span class="badge bg-primary">Payment</span></td>
-                            <td>Receipt #{{ $payment->id }}</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
+                            <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
+                            <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
                             <td class="text-end">-</td>
                             <td class="text-end text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
                             <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
@@ -356,6 +357,126 @@
             @if ($customersLedger->hasPages())
             <div class="d-flex justify-content-center">
                 {!! $customersLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    @if($reportType == 'suppliers' || $reportType == 'all')
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Suppliers Ledger</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#suppliersModal">Export</button>
+        </div>
+        <div class="card-body">
+            @forelse($suppliersLedger as $supplier)
+            <div class="mb-5">
+                <h6 class="fw-bold">
+                    {{ $supplier->name }}
+                    <span class="text-muted">(Closing Balance: {{ number_format($supplier->balance,2) }})</span>
+                </h6>
+
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-start p-2">Date</th>
+                            <th class="text-start p-2">Type</th>
+                            <th class="text-start p-2">Invoice/Receipt</th>
+                            <th class="text-start p-2">Product</th>
+                            <th class="text-start p-2">Qty</th>
+                            <th class="text-start p-2">Price</th>
+                            <th class="text-start p-2">Tax</th>
+                            <th class="text-start p-2">Discount</th>
+                            <th class="text-end">Debit (+)</th>
+                            <th class="text-end">Credit (-)</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                        $runningBalance = 0;
+                        $hasRows = false;
+                        $totalDebit = 0;
+                        $totalCredit = 0;
+                        @endphp
+
+                        {{-- Purchases --}}
+                        @foreach($supplier->purchases as $purchase)
+                        @foreach($purchase->items as $item)
+                        @php
+                        $hasRows = true;
+                        $lineTotal = ($item->quantity * $item->price) - $item->discount + $item->tax;
+                        $runningBalance += $lineTotal;
+                        $totalDebit += $lineTotal;
+                        @endphp
+                        <tr>
+                            <td class="text-start p-2">{{ $purchase->date }}</td>
+                            <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
+                            <td class="text-start p-2">Invoice #{{ $purchase->id }}</td>
+                            <td class="text-start p-2">{{ $item->product->name }}</td>
+                            <td class="text-start p-2">{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($item->tax,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($item->discount,2) }}</td>
+                            <td class="text-end text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
+                            <td class="text-end">-</td>
+                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                        </tr>
+                        @endforeach
+                        @endforeach
+
+                        {{-- Payments --}}
+                        @foreach($supplier->payments as $payment)
+                        @php
+                        $hasRows = true;
+                        $runningBalance -= $payment->amount;
+                        $totalCredit += $payment->amount;
+                        @endphp
+                        <tr>
+                            <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
+                            <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-start p-2">-</td>
+                            <td class="text-end">-</td>
+                            <td class="text-end text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
+                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                        </tr>
+                        @endforeach
+
+                        {{-- If no records --}}
+                        @unless($hasRows)
+                        <tr>
+                            <td colspan="11" class="text-center text-muted">No records found for this supplier.</td>
+                        </tr>
+                        @endunless
+                    </tbody>
+
+                    {{-- Totals Footer --}}
+                    @if($hasRows)
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="8" class="text-end">Totals:</td>
+                            <td class="text-end text-success">+{{ number_format($totalDebit,2) }}</td>
+                            <td class="text-end text-danger">-{{ number_format($totalCredit,2) }}</td>
+                            <td class="text-end">{{ number_format($runningBalance,2) }}</td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            </div>
+            @empty
+            <div class="alert alert-warning">No suppliers found.</div>
+            @endforelse
+
+            {{-- Pagination --}}
+            @if ($suppliersLedger->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $suppliersLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
             </div>
             @endif
         </div>
