@@ -24,8 +24,9 @@
                     <label for="end_date" class="form-label">End Date</label>
                     <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
+                <div class="col-md-3 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    <a href="{{ route('reports.index') }}" class="btn btn-danger w-100">Clear</a>
                 </div>
             </form>
         </div>
@@ -33,18 +34,6 @@
 
     <!-- Report Summary Cards -->
     <div class="row g-4 mb-4">
-        @if($reportType == 'sales' || $reportType == 'all')
-        <div class="col-md-3">
-            <div class="card shadow-sm text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Total Sales</h6>
-                    <h4 class="fw-bold">{{ number_format($totalSales, 2) }}</h4>
-                    <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#salesModal">Export</button>
-                </div>
-            </div>
-        </div>
-        @endif
-
         @if($reportType == 'purchases' || $reportType == 'all')
         <div class="col-md-3">
             <div class="card shadow-sm text-center">
@@ -52,6 +41,18 @@
                     <h6 class="text-muted">Total Purchases</h6>
                     <h4 class="fw-bold">{{ number_format($totalPurchases, 2) }}</h4>
                     <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#purchasesModal">Export</button>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if($reportType == 'sales' || $reportType == 'all')
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Sales</h6>
+                    <h4 class="fw-bold">{{ number_format($totalSales, 2) }}</h4>
+                    <button class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#salesModal">Export</button>
                 </div>
             </div>
         </div>
@@ -70,63 +71,6 @@
         @endif
     </div>
 
-    <!-- Sales Report -->
-    @if($reportType == 'sales' || $reportType == 'all')
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between">
-            <h5>Sales Report</h5>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#salesModal">Export</button>
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Customer</th>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Discount</th>
-                        <th>Tax</th>
-                        <th>Subtotal</th>
-                        <th>Total Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php $saleRow = 1; @endphp
-                    @forelse($sales as $sale)
-                    @foreach($sale->items as $item)
-                    <tr>
-                        <td>{{ $saleRow++ }}</td>
-                        <td>{{ $sale->customer->name ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name }}</td>
-                        <td>{{ $item->product->category->name ?? 'N/A' }}</td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->price, 2) }}</td>
-                        <td>{{ number_format($item->discount, 2) }}</td>
-                        <td>{{ number_format($item->tax, 2) }}</td>
-                        <td>{{ number_format(($item->quantity * $item->price) - $item->discount + $item->tax, 2) }}</td>
-                        <td>{{ number_format($sale->total_amount, 2) }}</td>
-                    </tr>
-                    @endforeach
-                    @empty
-                    <tr>
-                        <td colspan="10" class="text-center text-muted">No sales found.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
-            @if ($sales->hasPages())
-            <div class="d-flex justify-content-center">
-                {!! $sales->appends(request()->all())->links('pagination::bootstrap-5') !!}
-            </div>
-            @endif
-        </div>
-    </div>
-    @endif
-
     <!-- Purchases Report -->
     @if($reportType == 'purchases' || $reportType == 'all')
     <div class="card mb-4">
@@ -138,16 +82,15 @@
             <table class="table table-bordered table-striped">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Supplier</th>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Discount</th>
-                        <th>Tax</th>
-                        <th>Subtotal</th>
-                        <th>Total Amount</th>
+                        <th class="text-start p-2">ID</th>
+                        <th class="text-start p-2">Supplier</th>
+                        <th class="text-start p-2">Product</th>
+                        <th class="text-start p-2">Category</th>
+                        <th class="text-start p-2">Quantity</th>
+                        <th class="text-start p-2">Unit Price</th>
+                        <th class="text-start p-2">Discount</th>
+                        <th class="text-start p-2">Tax</th>
+                        <th class="text-start p-2">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -155,29 +98,93 @@
                     @forelse($purchases as $purchase)
                     @foreach($purchase->items as $item)
                     <tr>
-                        <td>{{ $purchaseRow++ }}</td>
-                        <td>{{ $purchase->supplier->name ?? 'N/A' }}</td>
-                        <td>{{ $item->product->name }}</td>
-                        <td>{{ $item->product->category->name ?? 'N/A' }}</td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->price, 2) }}</td>
-                        <td>{{ number_format($item->discount, 2) }}</td>
-                        <td>{{ number_format($item->tax, 2) }}</td>
-                        <td>{{ number_format(($item->quantity * $item->price) - $item->discount + $item->tax, 2) }}</td>
-                        <td>{{ number_format($purchase->total_amount, 2) }}</td>
+                        <td class="text-start p-2">{{ $purchaseRow++ }}</td>
+                        <td class="text-start p-2">{{ $purchase->supplier->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $item->product->name }}</td>
+                        <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $item->quantity }}</td>
+                        <td class="text-start p-2">{{ number_format($item->price, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->discount, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->tax, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format(($item->quantity * $item->price) - $item->discount + $item->tax, 2) }}</td>
                     </tr>
                     @endforeach
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center text-muted">No purchases found.</td>
+                        <td colspan="9" class="text-center text-muted">No purchases found.</td>
                     </tr>
                     @endforelse
                 </tbody>
+                <tfoot>
+                    <tr class="table-total">
+                        <td colspan="8" class="text-end">Total Purchases:</td>
+                        <td class="text-start p-2">{{ number_format($totalPurchases, 2) }}</td>
+                    </tr>
+                </tfoot>
             </table>
-
             @if ($purchases->hasPages())
             <div class="d-flex justify-content-center">
                 {!! $purchases->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    <!-- Sales Report -->
+    @if($reportType == 'sales' || $reportType == 'all')
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Sales Report</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#salesModal">Export</button>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-start p-2">ID</th>
+                        <th class="text-start p-2">Customer</th>
+                        <th class="text-start p-2">Product</th>
+                        <th class="text-start p-2">Category</th>
+                        <th class="text-start p-2">Quantity</th>
+                        <th class="text-start p-2">Unit Price</th>
+                        <th class="text-start p-2">Discount</th>
+                        <th class="text-start p-2">Tax</th>
+                        <th class="text-start p-2">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $saleRow = 1; @endphp
+                    @forelse($sales as $sale)
+                    @foreach($sale->items as $item)
+                    <tr>
+                        <td class="text-start p-2">{{ $saleRow++ }}</td>
+                        <td class="text-start p-2">{{ $sale->customer->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $item->product->name }}</td>
+                        <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $item->quantity }}</td>
+                        <td class="text-start p-2">{{ number_format($item->price, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->discount, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->tax, 2) }}</td>
+                        <td class="text-start p-2">{{ number_format(($item->quantity * $item->price) - $item->discount + $item->tax, 2) }}</td>
+                    </tr>
+                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No sales found.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                <tfoot>
+                    <tr class="table-total">
+                        <td colspan="8" class="text-end">Total Sales:</td>
+                        <td class="text-start p-2">{{ number_format($totalSales, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            @if ($sales->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $sales->appends(request()->all())->links('pagination::bootstrap-5') !!}
             </div>
             @endif
         </div>
@@ -195,29 +202,36 @@
             <table class="table table-bordered table-striped">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Amount</th>
+                        <th class="text-start p-2">ID</th>
+                        <th class="text-start p-2">Date</th>
+                        <th class="text-start p-2">Expense Name</th>
+                        <th class="text-start p-2">Description</th>
+                        <th class="text-start p-2">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     @php $expenseRow = 1; @endphp
                     @forelse($expenses as $expense)
                     <tr>
-                        <td>{{ $expenseRow++ }}</td>
-                        <td>{{ $expense->date }}</td>
-                        <td>{{ $expense->description }}</td>
-                        <td>{{ number_format($expense->amount, 2) }}</td>
+                        <td class="text-start p-2">{{ $expenseRow++ }}</td>
+                        <td class="text-start p-2">{{ $expense->created_at->format('Y-m-d') }}</td>
+                        <td class="text-start p-2">{{ $expense->expenseName->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $expense->description }}</td>
+                        <td class="text-start p-2">{{ number_format($expense->amount, 2) }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="text-center text-muted">No expenses found.</td>
+                        <td colspan="5" class="text-center text-muted">No expenses found.</td>
                     </tr>
                     @endforelse
                 </tbody>
+                <tfoot>
+                    <tr class="table-total">
+                        <td colspan="4" class="text-end">Total Expenses:</td>
+                        <td class="text-start p-2">{{ number_format($totalExpenses, 2) }}</td>
+                    </tr>
+                </tfoot>
             </table>
-
             @if ($expenses->hasPages())
             <div class="d-flex justify-content-center">
                 {!! $expenses->appends(request()->all())->links('pagination::bootstrap-5') !!}
@@ -226,8 +240,7 @@
         </div>
     </div>
     @endif
-
-    @include('reports.modals')
-
 </div>
+
+@include('reports.modals')
 @endsection

@@ -143,6 +143,17 @@ table.table-hover tbody tr:hover td {
     background: #ddebff;
 }
 
+.table-total {
+    background: #f8f9fa;
+    font-weight: bold;
+    border-top: 3px solid #333;
+}
+
+.table-total td {
+    padding: 10px !important;
+    font-size: 16px !important;
+}
+
 /* Button Styles */
 
 table.table td a.btn-sm,
