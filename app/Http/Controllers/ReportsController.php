@@ -12,6 +12,7 @@ use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\Asset;
 use App\Models\SaleReturn;
+use App\Models\CustomerPayment;
 
 class ReportsController extends Controller
 {
@@ -21,19 +22,18 @@ class ReportsController extends Controller
         $startDate  = $request->start_date;
         $endDate    = $request->end_date;
 
-        // Base queries
+        // Filters
         $salesQuery     = Sale::query();
         $purchasesQuery = Purchase::query();
         $expensesQuery  = Expense::query();
 
-        // Apply date filter only if provided
         if ($startDate && $endDate) {
             $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $purchasesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $expensesQuery->whereBetween('created_at', [$startDate, $endDate]);
         }
 
-        // Summary cards
+        // Totals
         $totalSales           = $salesQuery->clone()->sum('total_amount');
         $totalPurchases       = $purchasesQuery->clone()->sum('total_amount');
         $totalExpenses        = $expensesQuery->clone()->sum('amount');
@@ -46,10 +46,11 @@ class ReportsController extends Controller
             ->sum('amount_deducted');
         $totalCustomerBalance = Customer::sum('balance');
 
-        // Paginated lists
+        // Data
         $sales     = collect();
         $purchases = collect();
         $expenses  = collect();
+        $customersLedger = collect();
 
         if ($reportType === 'sales' || $reportType === 'all') {
             $sales = $salesQuery->with(['customer', 'items.product.category'])
@@ -69,6 +70,13 @@ class ReportsController extends Controller
                 ->paginate(20);
         }
 
+        if ($reportType === 'customers' || $reportType === 'all') {
+            $customersLedger = Customer::with([
+                'sales.items.product',
+                'payments'
+            ])->paginate(10);
+        }
+
         return view('reports.index', compact(
             'totalSales',
             'totalPurchases',
@@ -85,7 +93,8 @@ class ReportsController extends Controller
             'reportType',
             'sales',
             'purchases',
-            'expenses'
+            'expenses',
+            'customersLedger'
         ));
     }
 }
