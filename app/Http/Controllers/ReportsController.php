@@ -38,15 +38,14 @@ class ReportsController extends Controller
         $salesQuery      = Sale::query();
         $saleReturnQuery = SaleReturn::query();
         $expensesQuery   = Expense::query();
-        $assetsQuery     = Asset::query(); // ✅ added
+        $assetsQuery     = Asset::query();
 
         // ✅ Apply date filters globally
         if ($startDate && $endDate) {
             $purchasesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $saleReturnQuery->whereBetween('created_at', [$startDate, $endDate]);
-            $expensesQuery->whereBetween('created_at', [$startDate, $endDate]);
-            $assetsQuery->whereBetween('date', [$startDate, $endDate]); // ✅ assets use "date"
+            $expensesQuery->whereBetween('created_at', [$startDate, $endDate]); // ✅ using "date" column in assets
         } elseif ($startDate) {
             $purchasesQuery->whereDate('created_at', '>=', $startDate);
             $salesQuery->whereDate('created_at', '>=', $startDate);
@@ -66,7 +65,7 @@ class ReportsController extends Controller
         $totalSales           = (clone $salesQuery)->sum('total_amount');
         $totalSaleReturns     = (clone $saleReturnQuery)->sum('amount_deducted');
         $totalExpenses        = (clone $expensesQuery)->sum('amount');
-        $totalAssets          = (clone $assetsQuery)->sum('value'); // ✅ added
+        $totalAssets          = (clone $assetsQuery)->sum('value');
         $productCount         = Product::count();
         $categoryCount        = Category::count();
         $supplierCount        = Supplier::count();
@@ -81,11 +80,11 @@ class ReportsController extends Controller
         $sales           = $this->emptyPaginator();
         $saleReturns     = $this->emptyPaginator();
         $expenses        = $this->emptyPaginator();
-        $assetsLedger    = $this->emptyPaginator(); // ✅ added
+        $assetsLedger    = $this->emptyPaginator();
         $customersLedger = $this->emptyPaginator();
         $suppliersLedger = $this->emptyPaginator();
 
-        // ✅ Products Ledger (with categories too)
+        // ✅ Products Ledger
         if ($reportType === 'products' || $reportType === 'all') {
             $productsLedger = Product::with([
                 'category',
@@ -180,14 +179,14 @@ class ReportsController extends Controller
             'sales',
             'saleReturns',
             'expenses',
-            'assetsLedger',   // ✅ added
+            'assetsLedger',
             'customersLedger',
             'suppliersLedger',
             'totalPurchases',
             'totalSales',
             'totalSaleReturns',
             'totalExpenses',
-            'totalAssets',    // ✅ added
+            'totalAssets',
             'productCount',
             'categoryCount',
             'supplierCount',

@@ -499,6 +499,66 @@
     </div>
 </div>
 
+<!-- Assets Ledger Modal -->
+<div class="modal fade" id="assetsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assets Ledger ({{ $startDate }} - {{ $endDate }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assetsReportContent">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-start p-2">ID</th>
+                            <th class="text-start p-2">Date</th>
+                            <th class="text-start p-2">Asset Name</th>
+                            <th class="text-start p-2">Category</th>
+                            <th class="text-start p-2">Description</th>
+                            <th class="text-start p-2">Quantity</th>
+                            <th class="text-start p-2">Unit Price</th>
+                            <th class="text-start p-2">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $assetRow = 1; $totalAssets = 0; @endphp
+                        @forelse($assetsLedger as $asset)
+                        @php
+                        $lineTotal = $asset->quantity * $asset->price;
+                        $totalAssets += $lineTotal;
+                        @endphp
+                        <tr>
+                            <td class="text-start p-2">{{ $assetRow++ }}</td>
+                            <td class="text-start p-2">{{ $asset->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2">{{ $asset->name }}</td>
+                            <td class="text-start p-2">{{ $asset->category->name ?? 'N/A' }}</td>
+                            <td class="text-start p-2">{{ $asset->description ?? '-' }}</td>
+                            <td class="text-start p-2">{{ $asset->quantity }}</td>
+                            <td class="text-start p-2">{{ number_format($asset->price,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($lineTotal,2) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No assets found.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-total fw-bold">
+                            <td colspan="7" class="text-end">Total Assets:</td>
+                            <td class="text-start p-2">{{ number_format($totalAssets,2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="downloadAssetsPdf">Export PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- PDF Export --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -609,5 +669,8 @@
     });
     document.getElementById("downloadSuppliersPdf").addEventListener("click", () => {
         exportPdf("suppliersReportContent", "Suppliers_Ledger.pdf", "Suppliers Ledger");
+    });
+    document.getElementById("downloadAssetsPdf").addEventListener("click", () => {
+        exportPdf("assetsReportContent", "Assets_Report.pdf", "Assets Ledger Report");
     });
 </script>
