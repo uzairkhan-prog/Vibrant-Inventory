@@ -1,3 +1,101 @@
+<!-- Products Ledger Modal -->
+<div class="modal fade" id="productsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Products Ledger Report ({{ $startDate }} - {{ $endDate }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="productsReportContent">
+                @forelse($productsLedger as $product)
+                <div class="mb-5">
+                    <h6 class="fw-bold">
+                        {{ $product->name }}
+                        <span class="text-muted">(Stock: {{ $product->quantity }})</span>
+                        <span class="badge bg-info ms-2">{{ $product->category->name ?? 'Uncategorized' }}</span>
+                    </h6>
+
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-start p-2">Date</th>
+                                <th class="text-start p-2">Type</th>
+                                <th class="text-start p-2">Invoice</th>
+                                <th class="text-start p-2">Category</th>
+                                <th class="text-start p-2">Qty</th>
+                                <th class="text-start p-2">Price</th>
+                                <th class="text-start p-2">Total</th>
+                                <th class="text-end p-2">Running Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $runningStock = 0; $hasRows = false; @endphp
+
+                            {{-- Purchases --}}
+                            @foreach($product->purchaseItems as $item)
+                            @php
+                            $hasRows = true;
+                            $runningStock += $item->quantity;
+                            $lineTotal = $item->quantity * $item->price;
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ $item->purchase->created_at->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
+                                <td class="text-start p-2">#{{ $item->purchase->id }}</td>
+                                <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
+                                <td class="text-start p-2">+{{ $item->quantity }}</td>
+                                <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                                <td class="text-start p-2">{{ number_format($lineTotal,2) }}</td>
+                                <td class="text-end p-2 fw-bold">{{ $runningStock }}</td>
+                            </tr>
+                            @endforeach
+
+                            {{-- Sales --}}
+                            @foreach($product->saleItems as $item)
+                            @php
+                            $hasRows = true;
+                            $runningStock -= $item->quantity;
+                            $lineTotal = $item->quantity * $item->price;
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ $item->sale->created_at->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-danger">Sale</span></td>
+                                <td class="text-start p-2">#{{ $item->sale->id }}</td>
+                                <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
+                                <td class="text-start p-2">-{{ $item->quantity }}</td>
+                                <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                                <td class="text-start p-2">{{ number_format($lineTotal,2) }}</td>
+                                <td class="text-end p-2 fw-bold">{{ $runningStock }}</td>
+                            </tr>
+                            @endforeach
+
+                            {{-- If no records --}}
+                            @unless($hasRows)
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">No records found for this product.</td>
+                            </tr>
+                            @endunless
+                        </tbody>
+                    </table>
+                </div>
+                @empty
+                <div class="alert alert-warning">No products found.</div>
+                @endforelse
+
+                {{-- Pagination --}}
+                @if ($productsLedger instanceof \Illuminate\Contracts\Pagination\Paginator && $productsLedger->hasPages())
+                <div class="d-flex justify-content-center">
+                    {!! $productsLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
+                </div>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="downloadProductsPdf">Export PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Purchases Modal -->
 <div class="modal fade" id="purchasesModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -494,6 +592,9 @@
     }
 
     // Attach Export Buttons
+    document.getElementById("downloadProductsPdf").addEventListener("click", () => {
+        exportPdf("productsReportContent", "Products_Ledger.pdf", "Products Ledger Report");
+    });
     document.getElementById("downloadSalesPdf").addEventListener("click", () => {
         exportPdf("salesReportContent", "Sales_Report.pdf", "Sales Report");
     });

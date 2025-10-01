@@ -21,4 +21,14 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function purchaseItems()
+    {
+        return $this->hasMany(\App\Models\PurchaseItem::class);
+    }
+
+    public function saleItems()
+    {
+        return $this->hasMany(\App\Models\SaleItem::class);
+    }
 }

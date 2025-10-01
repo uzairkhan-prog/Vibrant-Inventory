@@ -11,11 +11,14 @@
                     <label for="report_type" class="form-label">Report Type</label>
                     <select name="report_type" id="report_type" class="form-select">
                         <option value="all" {{ $reportType == 'all' ? 'selected' : '' }}>All Reports</option>
-                        <option value="sales" {{ $reportType == 'sales' ? 'selected' : '' }}>Sales</option>
+                        <option value="products" {{ $reportType == 'products' ? 'selected' : '' }}>Products</option>
                         <option value="purchases" {{ $reportType == 'purchases' ? 'selected' : '' }}>Purchases</option>
+                        <option value="sales" {{ $reportType == 'sales' ? 'selected' : '' }}>Sales</option>
+                        <!-- <option value="returns" {{ $reportType == 'returns' ? 'selected' : '' }}>Sale Returns</option> -->
                         <option value="expenses" {{ $reportType == 'expenses' ? 'selected' : '' }}>Expenses</option>
-                        <option value="customers" {{ $reportType == 'customers' ? 'selected' : '' }}>Customers Ledger</option>
-                        <option value="suppliers" {{ $reportType == 'suppliers' ? 'selected' : '' }}>Suppliers Ledger</option>
+                        <option value="customers" {{ $reportType == 'customers' ? 'selected' : '' }}>Customers</option>
+                        <option value="suppliers" {{ $reportType == 'suppliers' ? 'selected' : '' }}>Suppliers</option>
+                        <option value="assets" {{ $reportType == 'assets' ? 'selected' : '' }}>Assets</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -73,6 +76,102 @@
         @endif
     </div> -->
 
+    <!-- Products Ledger Report -->
+    @if($reportType == 'products' || $reportType == 'all')
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Products Report</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#productsModal">Export</button>
+        </div>
+        <div class="card-body">
+            @forelse($productsLedger as $product)
+            <div class="mb-5">
+                <h6 class="fw-bold">
+                    {{ $product->name }}
+                    <span class="text-muted">(Stock: {{ $product->quantity }})</span>
+                    <span class="badge bg-info ms-2">{{ $product->category->name ?? 'Uncategorized' }}</span>
+                </h6>
+
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-start p-2">Date</th>
+                            <th class="text-start p-2">Type</th>
+                            <th class="text-start p-2">Invoice</th>
+                            <th class="text-start p-2">Category</th> {{-- ✅ Added --}}
+                            <th class="text-start p-2">Qty</th>
+                            <th class="text-start p-2">Price</th>
+                            <th class="text-start p-2">Total</th>
+                            <th class="text-end p-2">Running Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                        $runningStock = 0;
+                        $hasRows = false;
+                        @endphp
+
+                        {{-- Purchases --}}
+                        @foreach($product->purchaseItems as $item)
+                        @php
+                        $hasRows = true;
+                        $runningStock += $item->quantity;
+                        $lineTotal = $item->quantity * $item->price;
+                        @endphp
+                        <tr>
+                            <td class="text-start p-2">{{ $item->purchase->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
+                            <td class="text-start p-2">#{{ $item->purchase->id }}</td>
+                            <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td> {{-- ✅ --}}
+                            <td class="text-start p-2">+{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($lineTotal,2) }}</td>
+                            <td class="text-end p-2 fw-bold">{{ $runningStock }}</td>
+                        </tr>
+                        @endforeach
+
+                        {{-- Sales --}}
+                        @foreach($product->saleItems as $item)
+                        @php
+                        $hasRows = true;
+                        $runningStock -= $item->quantity;
+                        $lineTotal = $item->quantity * $item->price;
+                        @endphp
+                        <tr>
+                            <td class="text-start p-2">{{ $item->sale->created_at->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-danger">Sale</span></td>
+                            <td class="text-start p-2">#{{ $item->sale->id }}</td>
+                            <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td> {{-- ✅ --}}
+                            <td class="text-start p-2">-{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                            <td class="text-start p-2">{{ number_format($lineTotal,2) }}</td>
+                            <td class="text-end p-2 fw-bold">{{ $runningStock }}</td>
+                        </tr>
+                        @endforeach
+
+                        {{-- If no records --}}
+                        @unless($hasRows)
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No records found for this product.</td>
+                        </tr>
+                        @endunless
+                    </tbody>
+                </table>
+            </div>
+            @empty
+            <div class="alert alert-warning">No products found.</div>
+            @endforelse
+
+            {{-- Pagination --}}
+            @if ($productsLedger instanceof \Illuminate\Contracts\Pagination\Paginator && $productsLedger->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $productsLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Purchases Report -->
     @if($reportType == 'purchases' || $reportType == 'all')
     <div class="card mb-4">
@@ -119,7 +218,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="table-total">
-                        <td colspan="8" class="text-end">Total Purchases:</td>
+                        <td colspan="8" class="text-end p-2">Total Purchases:</td>
                         <td class="text-start p-2">{{ number_format($totalPurchases, 2) }}</td>
                     </tr>
                 </tfoot>
@@ -179,7 +278,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="table-total">
-                        <td colspan="8" class="text-end">Total Sales:</td>
+                        <td colspan="8" class="text-end p-2">Total Sales:</td>
                         <td class="text-start p-2">{{ number_format($totalSales, 2) }}</td>
                     </tr>
                 </tfoot>
@@ -192,6 +291,64 @@
         </div>
     </div>
     @endif
+
+    <!-- Sale Return Report -->
+    {{-- @if($reportType == 'returns' || $reportType == 'all') --}}
+    <!-- <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Sale Returns Report</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#returnsModal">Export</button>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-start p-2">ID</th>
+                        <th class="text-start p-2">Customer</th>
+                        <th class="text-start p-2">Product</th>
+                        <th class="text-start p-2">Quantity</th>
+                        <th class="text-start p-2">Unit Price</th>
+                        <th class="text-start p-2">Tax</th>
+                        <th class="text-start p-2">Discount</th>
+                        <th class="text-start p-2">Amount Deducted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $returnRow = 1; @endphp
+                    @forelse($saleReturns as $return)
+                    @foreach($return->items as $item)
+                    <tr>
+                        <td class="text-start p-2">{{ $returnRow++ }}</td>
+                        <td class="text-start p-2">{{ $return->sale->customer->name ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $item->product->name }}</td>
+                        <td class="text-start p-2">{{ $item->quantity }}</td>
+                        <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->tax,2) }}</td>
+                        <td class="text-start p-2">{{ number_format($item->discount,2) }}</td>
+                        <td class="text-start p-2">{{ number_format($return->amount_deducted,2) }}</td>
+                    </tr>
+                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No sale returns found.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                <tfoot>
+                    <tr class="table-total">
+                        <td colspan="7" class="text-end p-2">Total Sale Returns:</td>
+                        <td class="text-start p-2">{{ number_format($totalSaleReturns, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            @if ($saleReturns->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $saleReturns->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div> -->
+    {{-- @endif --}}
 
     <!-- Expenses Report -->
     @if($reportType == 'expenses' || $reportType == 'all')
@@ -229,7 +386,7 @@
                 </tbody>
                 <tfoot>
                     <tr class="table-total">
-                        <td colspan="4" class="text-end">Total Expenses:</td>
+                        <td colspan="4" class="text-end p-2">Total Expenses:</td>
                         <td class="text-start p-2">{{ number_format($totalExpenses, 2) }}</td>
                     </tr>
                 </tfoot>
@@ -243,10 +400,11 @@
     </div>
     @endif
 
+    <!-- Customers Report -->
     @if($reportType == 'customers' || $reportType == 'all')
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between">
-            <h5>Customers Ledger</h5>
+            <h5>Customers Report</h5>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customersModal">Export</button>
         </div>
         <div class="card-body">
@@ -268,9 +426,9 @@
                             <th class="text-start p-2">Price</th>
                             <th class="text-start p-2">Tax</th>
                             <th class="text-start p-2">Discount</th>
-                            <th class="text-end">Debit (+)</th>
-                            <th class="text-end">Credit (-)</th>
-                            <th class="text-end">Balance</th>
+                            <th class="text-end p-2">Debit (+)</th>
+                            <th class="text-end p-2">Credit (-)</th>
+                            <th class="text-end p-2">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -299,9 +457,9 @@
                             <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
                             <td class="text-start p-2">{{ number_format($sale->tax,2) }}</td>
                             <td class="text-start p-2">{{ number_format($sale->discount,2) }}</td>
-                            <td class="text-end text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
-                            <td class="text-end">-</td>
-                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
+                            <td class="text-end p-2">-</td>
+                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                         @endforeach
                         @endforeach
@@ -322,9 +480,9 @@
                             <td class="text-start p-2">-</td>
                             <td class="text-start p-2">-</td>
                             <td class="text-start p-2">-</td>
-                            <td class="text-end">-</td>
-                            <td class="text-end text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
-                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            <td class="text-end p-2">-</td>
+                            <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
+                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                         @endforeach
 
@@ -340,10 +498,10 @@
                     @if($hasRows)
                     <tfoot class="table-light fw-bold">
                         <tr>
-                            <td colspan="8" class="text-end">Totals:</td>
-                            <td class="text-end text-success">+{{ number_format($totalDebit,2) }}</td>
-                            <td class="text-end text-danger">-{{ number_format($totalCredit,2) }}</td>
-                            <td class="text-end">{{ number_format($runningBalance,2) }}</td>
+                            <td colspan="8" class="text-end p-2">Totals:</td>
+                            <td class="text-end p-2 text-success">+{{ number_format($totalDebit,2) }}</td>
+                            <td class="text-end p-2 text-danger">-{{ number_format($totalCredit,2) }}</td>
+                            <td class="text-end p-2">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                     </tfoot>
                     @endif
@@ -363,10 +521,11 @@
     </div>
     @endif
 
+    <!-- Suppliers Report -->
     @if($reportType == 'suppliers' || $reportType == 'all')
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between">
-            <h5>Suppliers Ledger</h5>
+            <h5>Suppliers Report</h5>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#suppliersModal">Export</button>
         </div>
         <div class="card-body">
@@ -388,9 +547,9 @@
                             <th class="text-start p-2">Price</th>
                             <th class="text-start p-2">Tax</th>
                             <th class="text-start p-2">Discount</th>
-                            <th class="text-end">Debit (+)</th>
-                            <th class="text-end">Credit (-)</th>
-                            <th class="text-end">Balance</th>
+                            <th class="text-end p-2">Debit (+)</th>
+                            <th class="text-end p-2">Credit (-)</th>
+                            <th class="text-end p-2">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -419,9 +578,9 @@
                             <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
                             <td class="text-start p-2">{{ number_format($item->tax,2) }}</td>
                             <td class="text-start p-2">{{ number_format($item->discount,2) }}</td>
-                            <td class="text-end text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
-                            <td class="text-end">-</td>
-                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
+                            <td class="text-end p-2">-</td>
+                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                         @endforeach
                         @endforeach
@@ -442,9 +601,9 @@
                             <td class="text-start p-2">-</td>
                             <td class="text-start p-2">-</td>
                             <td class="text-start p-2">-</td>
-                            <td class="text-end">-</td>
-                            <td class="text-end text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
-                            <td class="text-end fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            <td class="text-end p-2">-</td>
+                            <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
+                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                         @endforeach
 
@@ -460,10 +619,10 @@
                     @if($hasRows)
                     <tfoot class="table-light fw-bold">
                         <tr>
-                            <td colspan="8" class="text-end">Totals:</td>
-                            <td class="text-end text-success">+{{ number_format($totalDebit,2) }}</td>
-                            <td class="text-end text-danger">-{{ number_format($totalCredit,2) }}</td>
-                            <td class="text-end">{{ number_format($runningBalance,2) }}</td>
+                            <td colspan="8" class="text-end p-2">Totals:</td>
+                            <td class="text-end p-2 text-success">+{{ number_format($totalDebit,2) }}</td>
+                            <td class="text-end p-2 text-danger">-{{ number_format($totalCredit,2) }}</td>
+                            <td class="text-end p-2">{{ number_format($runningBalance,2) }}</td>
                         </tr>
                     </tfoot>
                     @endif
@@ -477,6 +636,54 @@
             @if ($suppliersLedger->hasPages())
             <div class="d-flex justify-content-center">
                 {!! $suppliersLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    <!-- Assets Report -->
+    @if($reportType == 'assets' || $reportType == 'all')
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Assets Report</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assetsModal">Export</button>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-start p-2">ID</th>
+                        <th class="text-start p-2">Title</th>
+                        <th class="text-start p-2">Date</th>
+                        <th class="text-start p-2">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $assetRow = 1; @endphp
+                    @forelse($assetsLedger as $asset)
+                    <tr>
+                        <td class="text-start p-2">{{ $assetRow++ }}</td>
+                        <td class="text-start p-2">{{ $asset->title }}</td>
+                        <td class="text-start p-2">{{ $asset->date }}</td>
+                        <td class="text-start p-2">{{ number_format($asset->value, 2) }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No assets found.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+                <tfoot>
+                    <tr class="table-total">
+                        <td colspan="3" class="text-end p-2">Total Assets Value:</td>
+                        <td class="text-start p-2">{{ number_format($totalAssets, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            @if ($assetsLedger->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $assetsLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
             </div>
             @endif
         </div>
