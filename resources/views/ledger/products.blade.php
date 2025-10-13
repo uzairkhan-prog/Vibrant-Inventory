@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    table.table td {
+        padding: 0 12px;
+        text-align: left;
+    }
+</style>
 
 <div class="table-responsive">
     <div class="table-wrapper">
@@ -15,35 +21,58 @@
         </div>
 
         <!-- Filters -->
-        <div class="row mb-3 align-items-center">
-            <div class="col-md-10 d-flex align-items-center">
-                <label class="me-2 fw-semibold">Search:</label>
-                <input type="text" id="searchInput" class="form-control" placeholder="Search expense name, description...">
+        <form method="GET" action="">
+            <!-- Row 1: Search + Show Entries -->
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-10 d-flex align-items-center">
+                    <label class="me-2 fw-semibold">Search:</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search product...">
+                </div>
+                <div class="col-md-2 d-flex justify-content-end align-items-center">
+                    <label class="me-2 fw-semibold">Show</label>
+                    <select id="rowsPerPage" name="per_page" class="form-select w-auto">
+                        @foreach ([20, 50, 100] as $value)
+                        <option value="{{ $value }}" {{ request('per_page', $perPage) == $value ? 'selected' : '' }}>
+                            {{ $value }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <label class="ms-2 fw-semibold">entries</label>
+                </div>
             </div>
-            <div class="col-md-2 d-flex justify-content-end align-items-center">
-                <label class="me-2 fw-semibold">Show</label>
-                <select id="rowsPerPage" class="form-select w-auto">
-                    @foreach ([20, 50, 100] as $value)
-                    <option value="{{ $value }}" {{ request('per_page', $perPage) == $value ? 'selected' : '' }}>
-                        {{ $value }}
-                    </option>
-                    @endforeach
-                </select>
-                <label class="ms-2 fw-semibold">entries</label>
+
+            <!-- Row 2: Date filters + Show All + Apply/Clear buttons -->
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="fw-semibold">From:</label>
+                    <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="fw-semibold">To:</label>
+                    <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
+                </div>
+                <div class="col-md-3 mt-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="show_all" value="1" {{ request('show_all') ? 'checked' : '' }}>
+                        <label class="form-check-label fw-semibold">Show All Products</label>
+                    </div>
+                </div>
+                <div class="col-md-3 mt-4 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ route('ledger.products') }}" class="btn btn-secondary">Clear Filters</a>
+                </div>
             </div>
-        </div>
+        </form>
 
         @if($ledgerEntries->count())
         <table class="table table-striped table-hover" id="ledgerTable">
             <thead>
                 <tr>
                     <th>Invoice No</th>
-                    <!-- <th>#</th>
-                    <th>Date</th> -->
                     <th>Type</th>
                     <th>Product Name</th>
                     <th>QTY</th>
-                    <th>Unit Price</th> <!-- New Column -->
+                    <th>Unit Price</th>
                     <th>Invoice Value</th>
                 </tr>
             </thead>
@@ -51,12 +80,10 @@
                 @foreach ($ledgerEntries as $index => $entry)
                 <tr>
                     <td>#{{ $entry['invoice_no'] }}</td>
-                    <!-- <td>{{ ($ledgerEntries->currentPage() - 1) * $ledgerEntries->perPage() + $loop->iteration }}</td>
-                    <td>{{ $entry['date'] }}</td> -->
                     <td>{{ $entry['type'] }}</td>
                     <td>{{ $entry['product_name'] }}</td>
                     <td>{{ $entry['qty'] }}</td>
-                    <td>Rs {{ number_format($entry['unit_price'], 2) }}</td> <!-- New Column Value -->
+                    <td>Rs {{ number_format($entry['unit_price'], 2) }}</td>
                     <td>Rs {{ number_format($entry['invoice_value'], 2) }}</td>
                 </tr>
                 @endforeach
@@ -65,7 +92,7 @@
 
         <!-- Pagination -->
         <div class="d-flex justify-content-center mt-3">
-            {!! $ledgerEntries->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
+            {!! $ledgerEntries->appends(request()->query())->links('pagination::bootstrap-5') !!}
         </div>
 
         <!-- Totals Section -->
