@@ -1,314 +1,247 @@
 @extends('layouts.app')
 
 @section('content')
-@if(session('status'))
-<div class="alert alert-success">
-  {{ session('status') }}
-</div>
-@endif
+<div class="my-5" id="reportContent">
 
-<style>
-    .dashboard-wrapper {
-        background: #f8f9fa;
-        border-radius: 20px;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-        padding: 40px;
-        transition: all 0.3s ease-in-out;
-        border: 1px solid #dee2e6;
-    }
-    .dashboard-wrapper:hover {
-        box-shadow: 0 18px 36px rgba(0, 0, 0, 0.12);
-        transform: scale(1.01);
-    }
-
-    /* Colorful metric cards with gradients */
-    .card-metric {
-        border-radius: 16px;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease-in-out;
-        color: white;
-        font-weight: 700;
-        cursor: default;
-    }
-    .card-metric:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    }
-    /* Individual colors for each card */
-    .card-products {
-        background: linear-gradient(135deg, #0d6efd, #0a58ca);
-        border: none;
-    }
-    .card-categories {
-        background: linear-gradient(135deg, #198754, #146c43);
-        border: none;
-    }
-    .card-suppliers {
-        background: linear-gradient(135deg, #fd7e14, #cc6400);
-        border: none;
-    }
-    .card-customers {
-        background: linear-gradient(135deg, #dc3545, #a52729);
-        border: none;
-    }
-    .card-purchases {
-        background: linear-gradient(135deg, #6f42c1, #4a2788);
-        border: none;
-    }
-    .card-sales {
-        background: linear-gradient(135deg, #20c997, #198754);
-        border: none;
-    }
-    .card-expenses {
-        background: linear-gradient(135deg, #0dcaf0, #0a8abf);
-        border: none;
-    }
-    .card-assets {
-        background: linear-gradient(135deg, #ffc107, #cc9a06);
-        border: none;
-    }
-    .card-ledgers {
-        background: linear-gradient(135deg, #6610f2, #440dbf);
-        border: none;
-    }
-    .card-total {
-        background: linear-gradient(135deg, #343a40, #212529);
-        border: none;
-    }
-
-    .metric-label {
-        font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.05rem;
-        opacity: 0.8;
-        margin-bottom: 4px;
-    }
-    .metric-value {
-        font-size: 32px;
-        font-weight: 900;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-    }
-
-    /* Colorful heading */
-    .dashboard-heading {
-        font-size: 36px;
-        font-weight: 900;
-        color: #0d6efd;
-        text-transform: uppercase;
-        letter-spacing: 0.15rem;
-        text-shadow: 2px 2px 6px rgba(13, 110, 253, 0.4);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin-bottom: 30px;
-        user-select: none;
-        transition: color 0.3s ease;
-    }
-    .dashboard-heading:hover {
-        color: #6610f2;
-        text-shadow: 3px 3px 8px rgba(102, 16, 242, 0.5);
-        cursor: default;
-    }
-
-    .chart-section {
-        background: linear-gradient(135deg, #ffffff, #f8f9fa);
-        border-radius: 16px;
-        padding: 30px;
-        border: 1px solid #dee2e6;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
-        transition: all 0.3s ease;
-    }
-    .chart-section:hover {
-        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.10);
-        transform: translateY(-5px);
-    }
-    .chart-section:hover .section-title {
-        color: #0d6efd;
-        text-shadow: 1px 1px 3px rgba(13, 110, 253, 0.1);
-    }
-    .section-title {
-        font-weight: bold;
-        font-size: 20px;
-        color: #495057;
-        text-align: center;
-        margin-bottom: 25px;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-</style>
-
-<div class="container-fluid py-4">
-    <div class="dashboard-wrapper">
-        <!-- Title -->
-        <div class="d-flex align-items-center mb-4">
-            <i class="bi bi-graph-up-arrow text-primary fs-2 me-2"></i>
-            <h2 class="dashboard-heading mb-0">Inventory Status Dashboard</h2>
-        </div>
-
-        <!-- Metric Cards -->
-        <div class="row g-4 flex-nowrap overflow-auto">
-            @foreach ([
-                ['title' => 'Products', 'value' => $totalProducts, 'class' => 'card-products'],
-                ['title' => 'Categories', 'value' => $totalCategories, 'class' => 'card-categories'],
-                ['title' => 'Suppliers', 'value' => $totalSuppliers, 'class' => 'card-suppliers'],
-                ['title' => 'Customers', 'value' => $totalCustomers, 'class' => 'card-customers'],
-                ['title' => 'Purchases', 'value' => $totalPurchases, 'class' => 'card-purchases'],
-                ['title' => 'Sales', 'value' => $totalSales, 'class' => 'card-sales'],
-                ['title' => 'Expenses', 'value' => $totalExpenses, 'class' => 'card-expenses'],
-                ['title' => 'Assets', 'value' => $totalAssets, 'class' => 'card-assets'],
-                ['title' => 'Ledgers', 'value' => $totalLedgers, 'class' => 'card-ledgers'],
-            ] as $item)
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 {{ $item['class'] }}">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">{{ $item['title'] }}</div>
-                        <div class="metric-value">{{ $item['value'] }}</div>
-                    </div>
+    <!-- ===== Header Filter Section ===== -->
+    <form method="GET" action="{{ route('analytics.index') }}">
+        <div class="filter-section mb-4 p-4 bg-white shadow rounded-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4 col-sm-6">
+                    <label for="from_date" class="form-label fw-semibold">From Date</label>
+                    <input type="date" id="from_date" name="from_date" class="form-control shadow-sm"
+                           value="{{ request('from_date') }}">
                 </div>
-            </div>
-            @endforeach
-        </div>
-
-        <!-- Metric Cards -->
-        <div class="row g-4 flex-nowrap overflow-auto pt-4">
-
-            <!-- Totals Cards -->
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 card-total">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">Total Purchases Amount</div>
-                        <div class="metric-value">Rs {{ number_format($sumPurchasesAmount, 2) }}</div>
-                    </div>
+                <div class="col-md-4 col-sm-6">
+                    <label for="to_date" class="form-label fw-semibold">To Date</label>
+                    <input type="date" id="to_date" name="to_date" class="form-control shadow-sm"
+                           value="{{ request('to_date') }}">
                 </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 card-total">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">Total Sales Amount</div>
-                        <div class="metric-value">Rs {{ number_format($sumSalesAmount, 2) }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 card-total">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">Total Expenses Amount</div>
-                        <div class="metric-value">Rs {{ number_format($sumExpensesAmount, 2) }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 card-total">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">Total Assets Amount</div>
-                        <div class="metric-value">Rs {{ number_format($sumAssetsAmount, 2) }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-metric text-center p-3 card-total">
-                    <div class="card-body">
-                        <div class="metric-label mb-1">Total Ledger Balance</div>
-                        <div class="metric-value">Rs {{ number_format($totalLedgerBalance, 2) }}</div>
-                    </div>
+                <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                    <a href="{{ route('analytics.index') }}" class="btn btn-warning me-2">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                    <button type="button" class="btn btn-danger" id="exportPdfBtn">
+                        <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                    </button>
                 </div>
             </div>
         </div>
+    </form>
 
-        @include('products.partials.charts')
-
-        <!-- Charts -->
-        <div class="row mt-5">
-            <div class="col-lg-6 mb-4">
-                <div class="chart-section">
-                    <h4 class="section-title">📦 Inventory Category Breakdown</h4>
-                    <div id="inventory-pie" style="height: 350px;"></div>
+    <!-- ===== Info Cards Section (Visible on Page) ===== -->
+    <div class="row g-4">
+        @foreach ([
+            ['label'=>'Total Sales','amount'=>$sumSalesAmount,'bg'=>'bg-blue','icon'=>'bi-cart4'],
+            ['label'=>'Cost of Goods Sold','amount'=>$sumPurchasesAmount,'bg'=>'bg-orange','icon'=>'bi-box-seam'],
+            ['label'=>'Gross Profit','amount'=>$sumSalesAmount-$sumPurchasesAmount,'bg'=>'bg-green','icon'=>'bi-graph-up'],
+            ['label'=>'Expenses','amount'=>$sumExpensesAmount,'bg'=>'bg-purple','icon'=>'bi-wallet2'],
+            ['label'=>'Net Profit','amount'=>$sumSalesAmount-$sumPurchasesAmount-$sumExpensesAmount,'bg'=>'bg-dark','icon'=>'bi-cash-coin'],
+            ['label'=>'Total Purchases','amount'=>$sumPurchasesAmount,'bg'=>'bg-cyan','icon'=>'bi-basket2-fill']
+        ] as $card)
+        <div class="col-md-4">
+            <div class="card-box {{ $card['bg'] }}">
+                <div>
+                    <h5>{{ $card['label'] }}</h5>
+                    <p>PKR <span>{{ number_format($card['amount'], 2) }}</span></p>
                 </div>
+                <i class="bi {{ $card['icon'] }} icon"></i>
             </div>
-            <div class="col-lg-6 mb-4">
-                <div class="chart-section">
-                    <h4 class="section-title">📉 Monthly Sales vs Purchases (Zig-Zag)</h4>
-                    <div id="financial-bar" style="height: 350px;"></div>
-                </div>
+        </div>
+        @endforeach
+    </div>
+
+    <!-- ===== Charts Section (Page Only) ===== -->
+    <div class="row mt-2 g-4">
+        <div class="col-lg-12 col-md-6">
+            <div class="chart-section">
+                <h4><i class="bi bi-bar-chart-line"></i> Profit & Loss Overview</h4>
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-8 col-md-6">
+            <div class="chart-section">
+                <h4><i class="bi bi-graph-up-arrow"></i> Sales vs Purchases Trend</h4>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-12">
+            <div class="chart-section">
+                <h4><i class="bi bi-circle"></i> Summary Distribution</h4>
+                <canvas id="summaryChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Chart Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<!-- ===== PDF Export Section (Centered Table) ===== -->
+<div id="pdfContent" style="width:210mm; padding:40px; font-family: Arial, sans-serif; background:#fff; text-align:center; display: none;">
+
+    <!-- Company Header (Centered) -->
+    <div style="text-align:center; margin-bottom:30px;">
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}"
+            alt="Vibrant Engineering Logo" style="max-height: 60px;border-radius: 10px;margin-bottom: 10px;background: #11142d;padding: 5px;">
+        <p class="mb-1">Head Office: Shop #13, Falak Park View Near Inquiry Office Nazimabad #2, Karachi</p>
+        <p class="mb-1">Phone: +92 335 2385773</p>
+        <p class="mb-0">Email: info@vibrantengineering.pk</p>
+        <h2 style="margin-top:20px; color:#1a73e8;">Profit & Loss Report</h2>
+        <p><strong>Date:</strong> {{ now()->format('d M, Y') }}</p>
+        <p><strong>Payment Terms:</strong> Due on receipt</p>
+    </div>
+
+    <!-- Table for Totals (Centered) -->
+    <table style="margin: 0 auto; width:80%; border-collapse: collapse; margin-top:20px;">
+        <thead>
+            <tr style="background:#f2f2f2;">
+                <th style="border:1px solid #ccc; padding:10px; text-align:left;">Description</th>
+                <th style="border:1px solid #ccc; padding:10px; text-align:right;">Amount (PKR)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Total Sales</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumSalesAmount, 2) }}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Cost of Goods Sold</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumPurchasesAmount, 2) }}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Gross Profit</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumSalesAmount-$sumPurchasesAmount, 2) }}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Expenses</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumExpensesAmount, 2) }}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Net Profit</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumSalesAmount-$sumPurchasesAmount-$sumExpensesAmount, 2) }}</td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ccc; padding:10px; text-align:left;">Total Purchases</td>
+                <td style="border:1px solid #ccc; padding:10px; text-align:right;">{{ number_format($sumPurchasesAmount, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Sign of COD (Centered) -->
+    <div style="margin-top:80px; text-align:center; font-weight:bold; font-size:16px;">
+        Sign of COD: ______________________
+    </div>
+</div>
+
+<!-- ===== Styles ===== -->
+<style>
+.card-box {
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+.card-box:hover { transform: translateY(-6px); }
+.icon { font-size: 2.2rem; opacity: 0.9; }
+.bg-blue { background: linear-gradient(135deg, #36d1dc, #5b86e5); }
+.bg-cyan { background: linear-gradient(135deg, #43cea2, #185a9d); }
+.bg-orange { background: linear-gradient(135deg, #f7971e, #ffd200); }
+.bg-green { background: linear-gradient(135deg, #56ab2f, #a8e063); }
+.bg-purple { background: linear-gradient(135deg, #8e2de2, #4a00e0); }
+.bg-dark { background: linear-gradient(135deg, #232526, #414345); }
+.card-box h5 { color: #fff; font-size: 1.1rem; font-weight: 600; }
+.card-box p { font-size: 28px; margin-bottom: 0; font-weight: 700; }
+.chart-section { background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+.chart-section h4 { font-weight: 600; margin-bottom: 20px; color: #333; }
+@media (max-width: 992px) { .chart-section { margin-bottom: 20px; } }
+</style>
+
+<!-- ===== Libraries ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <script>
-    const pieSeries = [
-        {{ $totalProducts }},
-        {{ $totalSuppliers }},
-        {{ $totalCustomers }},
-        {{ $totalAssets }}
-    ];
+// ===== Charts Data =====
+const totalSales = {{ $sumSalesAmount }};
+const totalPurchases = {{ $sumPurchasesAmount }};
+const totalExpenses = {{ $sumExpensesAmount }};
+const grossProfit = totalSales - totalPurchases;
+const netProfit = grossProfit - totalExpenses;
 
-    new ApexCharts(document.querySelector("#inventory-pie"), {
-        chart: { type: 'donut', height: 350 },
-        series: pieSeries,
-        labels: ['Products', 'Suppliers', 'Customers', 'Assets'],
-        colors: ['#0d6efd', '#198754', '#fd7e14', '#dc3545'],
-        legend: { position: 'bottom' },
-        dataLabels: { enabled: true },
-        title: {
-            text: 'Current Inventory Composition',
-            align: 'center',
-            style: { fontSize: '16px', fontWeight: '600' }
-        }
-    }).render();
+const salesData = @json($monthlySales->pluck('total'));
+const purchaseData = @json($monthlyPurchases->pluck('total'));
+const months = @json($monthlySales->pluck('month')->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M')));
 
-    const salesData = [
-        @foreach($monthlySales as $sale)
-            {{ $sale->total }},
-        @endforeach
-    ];
-    const purchasesData = [
-        @foreach($monthlyPurchases as $purchase)
-            {{ $purchase->total }},
-        @endforeach
-    ];
-    const months = [
-        @foreach($monthlySales as $sale)
-            '{{ \Carbon\Carbon::create()->month($sale->month)->format("F") }}',
-        @endforeach
-    ];
+// ===== Charts =====
+new Chart(document.getElementById("profitChart"), {
+    type: "bar",
+    data: {
+        labels: ["Sales", "COGS", "Gross Profit", "Expenses", "Net Profit", "Purchases"],
+        datasets: [{
+            label: "Amount (PKR)",
+            data: [totalSales, totalPurchases, grossProfit, totalExpenses, netProfit, totalPurchases],
+            backgroundColor: ["#36d1dc","#f7971e","#56ab2f","#8e2de2","#232526","#43cea2"],
+            borderRadius: 8
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
 
-    new ApexCharts(document.querySelector("#financial-bar"), {
-        chart: {
-            type: 'line',
-            height: 350,
-            zoom: { enabled: false },
-            animations: {
-                enabled: true,
-                easing: 'easeinout',
-                speed: 800,
-                animateGradually: { enabled: true, delay: 150 },
-                dynamicAnimation: { enabled: true, speed: 350 }
-            }
-        },
-        series: [
-            { name: 'Sales', data: salesData },
-            { name: 'Purchases', data: purchasesData }
-        ],
-        xaxis: {
-            categories: months,
-            title: { text: 'Month', style: { fontWeight: 600, fontSize: '14px' } }
-        },
-        yaxis: {
-            title: { text: 'Amount (Rs)', style: { fontWeight: 600, fontSize: '14px' } }
-        },
-        stroke: {
-            curve: 'stepline',
-            width: 3
-        },
-        colors: ['#6610f2', '#20c997'],
-        markers: { size: 6 },
-        dataLabels: { enabled: false },
-        tooltip: {
-            y: {
-                formatter: val => 'Rs ' + val.toLocaleString()
-            }
-        },
-        legend: { position: 'top' }
-    }).render();
+// Trend Chart
+const trendCtx = document.getElementById("trendChart").getContext("2d");
+const gradientSales = trendCtx.createLinearGradient(0, 0, 0, 400);
+gradientSales.addColorStop(0, "rgba(54, 209, 220, 0.6)");
+gradientSales.addColorStop(1, "rgba(54, 209, 220, 0.1)");
+const gradientPurchases = trendCtx.createLinearGradient(0, 0, 0, 400);
+gradientPurchases.addColorStop(0, "rgba(67, 206, 162, 0.6)");
+gradientPurchases.addColorStop(1, "rgba(67, 206, 162, 0.1)");
+
+new Chart(trendCtx, {
+    type: "line",
+    data: {
+        labels: months,
+        datasets: [
+            { label: "Sales", data: salesData, borderColor: "#36d1dc", backgroundColor: gradientSales, fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: "#36d1dc", pointHoverRadius: 7, borderWidth: 3 },
+            { label: "Purchases", data: purchaseData, borderColor: "#43cea2", backgroundColor: gradientPurchases, fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: "#43cea2", pointHoverRadius: 7, borderWidth: 3 }
+        ]
+    },
+    options: { responsive: true }
+});
+
+// Doughnut Chart
+new Chart(document.getElementById("summaryChart"), {
+    type: "doughnut",
+    data: {
+        labels: ["Total Sales","COGS","Gross Profit","Expenses","Net Profit","Total Purchases"],
+        datasets: [{
+            data: [totalSales,totalPurchases,grossProfit,totalExpenses,netProfit,totalPurchases],
+            backgroundColor: ["#36d1dc","#f7971e","#56ab2f","#8e2de2","#232526","#43cea2"],
+            borderColor: "#fff",
+            borderWidth: 2
+        }]
+    },
+    options: { responsive: true }
+});
+
+// ===== PDF Export Function =====
+document.getElementById('exportPdfBtn').addEventListener('click', function() {
+    const element = document.getElementById('pdfContent');
+    element.style.display = 'block';
+
+    html2pdf().set({
+        margin: 0.5,
+        filename: 'Profit_Loss_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(element).save().then(() => {
+        element.style.display = 'none';
+    });
+});
 </script>
 @endsection
