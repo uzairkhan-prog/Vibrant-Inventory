@@ -16,7 +16,7 @@
                     <label for="to_date" class="form-label fw-semibold">To Date</label>
                     <input type="date" id="to_date" name="to_date" class="form-control shadow-sm"
                            value="{{ request('to_date') }}">
-                </div>
+                </div>                
                 <div class="col-md-4 text-md-end text-center mt-3 mt-md-0">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="bi bi-funnel"></i> Filter

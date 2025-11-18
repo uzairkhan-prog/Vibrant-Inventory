@@ -29,23 +29,26 @@ class ReportsController extends Controller
 
     public function index(Request $request)
     {
-        $reportType = $request->report_type ?? 'all';
-        $startDate  = $request->start_date;
-        $endDate    = $request->end_date;
+        $reportType  = $request->report_type ?? 'all';
+        $startDate   = $request->start_date;
+        $endDate     = $request->end_date;
+        $customerId  = $request->customer_id;
+        $supplierId  = $request->supplier_id;
 
-        // Base queries
+        // Base queries (we will apply customer/supplier filters where appropriate)
         $purchasesQuery  = Purchase::query();
         $salesQuery      = Sale::query();
         $saleReturnQuery = SaleReturn::query();
         $expensesQuery   = Expense::query();
         $assetsQuery     = Asset::query();
 
-        // ✅ Apply date filters globally
+        // Apply date filters globally (keeps behaviour you had)
         if ($startDate && $endDate) {
             $purchasesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $saleReturnQuery->whereBetween('created_at', [$startDate, $endDate]);
-            $expensesQuery->whereBetween('created_at', [$startDate, $endDate]); // ✅ using "date" column in assets
+            $expensesQuery->whereBetween('created_at', [$startDate, $endDate]);
+            $assetsQuery->whereDate('date', '>=', $startDate)->whereDate('date', '<=', $endDate);
         } elseif ($startDate) {
             $purchasesQuery->whereDate('created_at', '>=', $startDate);
             $salesQuery->whereDate('created_at', '>=', $startDate);
@@ -60,7 +63,20 @@ class ReportsController extends Controller
             $assetsQuery->whereDate('date', '<=', $endDate);
         }
 
-        // ✅ Totals
+        // Apply customer / supplier filters to sales & purchases queries as well
+        if ($customerId) {
+            // if a customer filter is selected, apply it to sales
+            $salesQuery->where('customer_id', $customerId);
+            // Also apply to sale returns (if you want)
+            $saleReturnQuery->whereHas('sale', fn($q) => $q->where('customer_id', $customerId));
+        }
+
+        if ($supplierId) {
+            // if supplier filter selected, apply it to purchases
+            $purchasesQuery->where('supplier_id', $supplierId);
+        }
+
+        // Totals (clone queries so pagination later is unaffected)
         $totalPurchases       = (clone $purchasesQuery)->sum('total_amount');
         $totalSales           = (clone $salesQuery)->sum('total_amount');
         $totalSaleReturns     = (clone $saleReturnQuery)->sum('amount_deducted');
@@ -74,7 +90,7 @@ class ReportsController extends Controller
         $totalCustomerBalance = Customer::sum('balance');
         $totalSupplierBalance = Supplier::sum('balance');
 
-        // ✅ Default paginators
+        // Default empty paginators
         $productsLedger  = $this->emptyPaginator();
         $purchases       = $this->emptyPaginator();
         $sales           = $this->emptyPaginator();
@@ -84,7 +100,7 @@ class ReportsController extends Controller
         $customersLedger = $this->emptyPaginator();
         $suppliersLedger = $this->emptyPaginator();
 
-        // ✅ Products Ledger
+        // Products ledger (unchanged)
         if ($reportType === 'products' || $reportType === 'all') {
             $productsLedger = Product::with([
                 'category',
@@ -111,38 +127,40 @@ class ReportsController extends Controller
             ])->paginate(10);
         }
 
-        // ✅ Purchases
+        // Purchases (respecting supplier filter if provided)
         if ($reportType === 'purchases' || $reportType === 'all') {
             $purchases = $purchasesQuery->with(['items.product.category', 'supplier'])->paginate(10);
         }
 
-        // ✅ Sales
+        // Sales (respecting customer filter if provided)
         if ($reportType === 'sales' || $reportType === 'all') {
             $sales = $salesQuery->with(['items.product.category', 'customer'])->paginate(10);
         }
 
-        // ✅ Sale Returns
+        // Sale returns
         if ($reportType === 'returns' || $reportType === 'all') {
             $saleReturns = $saleReturnQuery->with(['items.product.category', 'sale.customer'])->paginate(10);
         }
 
-        // ✅ Expenses
+        // Expenses
         if ($reportType === 'expenses' || $reportType === 'all') {
             $expenses = $expensesQuery->with('expenseName')->paginate(10);
         }
 
-        // ✅ Assets
+        // Assets
         if ($reportType === 'assets' || $reportType === 'all') {
             $assetsLedger = $assetsQuery->paginate(10);
         }
 
-        // ✅ Customers Ledger
+        // Customers ledger (if report_type customers OR all)
         if ($reportType === 'customers' || $reportType === 'all') {
-            $customersLedger = Customer::with([
-                'sales' => function ($q) use ($startDate, $endDate) {
+            $customersQuery = Customer::with([
+                'sales' => function ($q) use ($startDate, $endDate, $customerId) {
                     if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
                     elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
                     elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
+
+                    if ($customerId) $q->where('customer_id', $customerId); // optional, safe
                 },
                 'sales.items.product.category',
                 'payments' => function ($q) use ($startDate, $endDate) {
@@ -150,16 +168,24 @@ class ReportsController extends Controller
                     elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
                     elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
                 }
-            ])->paginate(10);
+            ]);
+
+            if ($customerId) {
+                $customersQuery->where('id', $customerId);
+            }
+
+            $customersLedger = $customersQuery->paginate(10);
         }
 
-        // ✅ Suppliers Ledger
+        // Suppliers ledger
         if ($reportType === 'suppliers' || $reportType === 'all') {
-            $suppliersLedger = Supplier::with([
-                'purchases' => function ($q) use ($startDate, $endDate) {
+            $suppliersQuery = Supplier::with([
+                'purchases' => function ($q) use ($startDate, $endDate, $supplierId) {
                     if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
                     elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
                     elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
+
+                    if ($supplierId) $q->where('supplier_id', $supplierId); // optional, safe
                 },
                 'purchases.items.product.category',
                 'payments' => function ($q) use ($startDate, $endDate) {
@@ -167,8 +193,18 @@ class ReportsController extends Controller
                     elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
                     elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
                 }
-            ])->paginate(10);
+            ]);
+
+            if ($supplierId) {
+                $suppliersQuery->where('id', $supplierId);
+            }
+
+            $suppliersLedger = $suppliersQuery->paginate(10);
         }
+
+        // dropdown source lists
+        $customersList = Customer::orderBy('name')->get();
+        $suppliersList = Supplier::orderBy('name')->get();
 
         return view('reports.index', compact(
             'reportType',
@@ -193,7 +229,11 @@ class ReportsController extends Controller
             'customerCount',
             'assetCount',
             'totalCustomerBalance',
-            'totalSupplierBalance'
+            'totalSupplierBalance',
+            'customerId',
+            'supplierId',
+            'customersList',
+            'suppliersList'
         ));
     }
 }

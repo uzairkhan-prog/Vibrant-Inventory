@@ -6,33 +6,65 @@
     <!-- Filters -->
     <div class="card mb-4 shadow">
         <div class="card-body">
-            <form method="GET" action="{{ route('reports.index') }}" class="row g-3">
+            <form method="GET" action="{{ route('reports.index') }}" class="row g-3" id="reportsFilterForm">
+
+                <!-- Report Type -->
                 <div class="col-md-3">
-                    <label for="report_type" class="form-label">Report Type</label>
+                    <label class="form-label">Report Type</label>
                     <select name="report_type" id="report_type" class="form-select">
                         <option value="all" {{ $reportType == 'all' ? 'selected' : '' }}>All Reports</option>
                         <option value="products" {{ $reportType == 'products' ? 'selected' : '' }}>Products</option>
                         <option value="purchases" {{ $reportType == 'purchases' ? 'selected' : '' }}>Purchases</option>
                         <option value="sales" {{ $reportType == 'sales' ? 'selected' : '' }}>Sales</option>
-                        <!-- <option value="returns" {{ $reportType == 'returns' ? 'selected' : '' }}>Sale Returns</option> -->
                         <option value="expenses" {{ $reportType == 'expenses' ? 'selected' : '' }}>Expenses</option>
                         <option value="customers" {{ $reportType == 'customers' ? 'selected' : '' }}>Customers</option>
                         <option value="suppliers" {{ $reportType == 'suppliers' ? 'selected' : '' }}>Suppliers</option>
                         <option value="assets" {{ $reportType == 'assets' ? 'selected' : '' }}>Assets</option>
                     </select>
                 </div>
+
+                <!-- Customer -->
+                <div class="col-md-3" id="customerDropdownWrapper" style="display:none;">
+                    <label class="form-label">Customer</label>
+                    <select name="customer_id" id="customer_id" class="form-select">
+                        <option value="">All Customers</option>
+                        @foreach($customersList as $c)
+                        <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>
+                            {{ $c->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Supplier -->
+                <div class="col-md-3" id="supplierDropdownWrapper" style="display:none;">
+                    <label class="form-label">Supplier</label>
+                    <select name="supplier_id" id="supplier_id" class="form-select">
+                        <option value="">All Suppliers</option>
+                        @foreach($suppliersList as $s)
+                        <option value="{{ $s->id }}" {{ $supplierId == $s->id ? 'selected' : '' }}>
+                            {{ $s->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Dates -->
                 <div class="col-md-3">
-                    <label for="start_date" class="form-label">Start Date</label>
+                    <label class="form-label">Start Date</label>
                     <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
                 </div>
+
                 <div class="col-md-3">
-                    <label for="end_date" class="form-label">End Date</label>
+                    <label class="form-label">End Date</label>
                     <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
                 </div>
+
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary w-100">Filter</button>
                     <a href="{{ route('reports.index') }}" class="btn btn-danger w-100">Clear</a>
                 </div>
+
             </form>
         </div>
     </div>
@@ -693,4 +725,76 @@
 </div>
 
 @include('reports.modals')
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const reportType = document.getElementById('report_type');
+        const customerDD = document.getElementById('customerDropdownWrapper');
+        const supplierDD = document.getElementById('supplierDropdownWrapper');
+        const customer = document.getElementById('customer_id');
+        const supplier = document.getElementById('supplier_id');
+
+        function updateUI() {
+
+            // Hide both first
+            customerDD.style.display = "none";
+            supplierDD.style.display = "none";
+
+            let rt = reportType.value;
+            let hasCustomer = customer.value !== "";
+            let hasSupplier = supplier.value !== "";
+
+            // 🔥 PRIORITY 1: If customer selected → show only customer
+            if (hasCustomer) {
+                customerDD.style.display = "block";
+                supplier.value = ""; // reset supplier
+                return;
+            }
+
+            // 🔥 PRIORITY 2: If supplier selected → show only supplier
+            if (hasSupplier) {
+                supplierDD.style.display = "block";
+                customer.value = ""; // reset customer
+                return;
+            }
+
+            // 🔥 PRIORITY 3: Show based on Report Type
+            switch (rt) {
+
+                case "customers":
+                case "sales":
+                    customerDD.style.display = "block";
+                    break;
+
+                case "suppliers":
+                case "purchases":
+                    supplierDD.style.display = "block";
+                    break;
+            }
+        }
+
+        // When selecting customer → hide supplier
+        customer.addEventListener("change", () => {
+            supplier.value = "";
+            updateUI();
+        });
+
+        // When selecting supplier → hide customer
+        supplier.addEventListener("change", () => {
+            customer.value = "";
+            updateUI();
+        });
+
+        // When changing report type
+        reportType.addEventListener("change", () => {
+            customer.value = "";
+            supplier.value = "";
+            updateUI();
+        });
+
+        updateUI(); // run on load
+    });
+</script>
+
 @endsection
