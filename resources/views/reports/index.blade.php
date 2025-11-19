@@ -23,6 +23,19 @@
                     </select>
                 </div>
 
+                <!-- Product -->
+                <div class="col-md-3" id="productDropdownWrapper" style="display:none;">
+                    <label class="form-label">Product</label>
+                    <select name="product_id" id="product_id" class="form-select">
+                        <option value="">All Products</option>
+                        @foreach($productsList as $p)
+                        <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <!-- Customer -->
                 <div class="col-md-3" id="customerDropdownWrapper" style="display:none;">
                     <label class="form-label">Customer</label>
@@ -794,6 +807,24 @@
         });
 
         updateUI(); // run on load
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const reportType = document.getElementById('report_type');
+        const productDD = document.getElementById('productDropdownWrapper');
+
+        function toggleProductDropdown() {
+            if (reportType.value === 'products') {
+                productDD.style.display = "block";
+            } else {
+                productDD.style.display = "none";
+            }
+        }
+
+        reportType.addEventListener('change', toggleProductDropdown);
+        toggleProductDropdown(); // initial load
     });
 </script>
 

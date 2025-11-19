@@ -100,9 +100,9 @@ class ReportsController extends Controller
         $customersLedger = $this->emptyPaginator();
         $suppliersLedger = $this->emptyPaginator();
 
-        // Products ledger (unchanged)
+        // Products ledger (respecting product_id filter)
         if ($reportType === 'products' || $reportType === 'all') {
-            $productsLedger = Product::with([
+            $productsQuery = Product::with([
                 'category',
                 'purchaseItems.product.category',
                 'saleItems.product.category',
@@ -124,7 +124,14 @@ class ReportsController extends Controller
                         $q->whereHas('sale', fn($s) => $s->whereDate('created_at', '<=', $endDate));
                     }
                 }
-            ])->paginate(10);
+            ]);
+
+            // ✅ Apply product_id filter if selected
+            if ($request->product_id) {
+                $productsQuery->where('id', $request->product_id);
+            }
+
+            $productsLedger = $productsQuery->paginate(10);
         }
 
         // Purchases (respecting supplier filter if provided)
@@ -205,6 +212,9 @@ class ReportsController extends Controller
         // dropdown source lists
         $customersList = Customer::orderBy('name')->get();
         $suppliersList = Supplier::orderBy('name')->get();
+        // Add products list for dropdown
+        $productsList = Product::orderBy('name')->get();
+
 
         return view('reports.index', compact(
             'reportType',
@@ -233,7 +243,8 @@ class ReportsController extends Controller
             'customerId',
             'supplierId',
             'customersList',
-            'suppliersList'
+            'suppliersList',
+            'productsList'
         ));
     }
 }
