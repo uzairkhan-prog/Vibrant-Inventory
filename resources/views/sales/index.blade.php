@@ -45,21 +45,21 @@
         <table class="table table-striped table-hover table-bordered align-middle text-center" id="salesTable">
             <thead class="table-light">
                 <tr>
-                    <th>#</th>
+                    <th>Date</th>
+                    <th>Invoice no</th>
                     <th>Customer</th>
                     <th>Total Amount</th>
-                    <th>Date</th>
-                    <th>Sale Invoices</th>
+                    <th>View Invoice</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($sales as $sale)
                 <tr>
-                    <td>{{ ($sales->currentPage() - 1) * $sales->perPage() + $loop->iteration }}</td>
+                    <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
+                    <td>{{ $sale->id }}</td>
                     <td>{{ $sale->customer->name }}</td>
                     <td>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
-                    <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
                     <td>
                         <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info me-1">
                             Invoice <i class="material-icons">&#xE8F4;</i>
