@@ -52,7 +52,7 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item">
+                <!-- <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('suppliers.index') }}">
                         <i class="ti ti-truck"></i>
                         <span class="hide-menu">Suppliers</span>
@@ -64,7 +64,7 @@
                         <i class="ti ti-users"></i>
                         <span class="hide-menu">Customers</span>
                     </a>
-                </li>
+                </li> -->
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('purchases.index') }}">
@@ -114,14 +114,6 @@
                     </ul>
                 </li>
 
-                <!-- Product Ledger -->
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('ledger.products') }}">
-                        <i class="ti ti-clipboard"></i>
-                        <span class="hide-menu">Product Ledger</span>
-                    </a>
-                </li>
-
                 <!-- General Ledger -->
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="javascript:void(0)">
@@ -130,20 +122,25 @@
                     </a>
                     <ul class="collapse first-level">
                         <li class="sidebar-item">
-                            <a class="sidebar-link" href="{{ route('customer-ledgers.index') }}">
-                                <i class="ti ti-user"></i>
-                                <span class="hide-menu">Customer Ledger</span>
+                            <a class="sidebar-link" href="{{ route('ledger.products') }}">
+                                <i class="ti ti-clipboard"></i>
+                                <span class="hide-menu">Product Ledger</span>
                             </a>
                         </li>
                         <li class="sidebar-item">
-                            <a class="sidebar-link" href="{{ route('supplier-ledgers.index') }}">
+                            <a class="sidebar-link" href="{{ route('suppliers.index') }}">
                                 <i class="ti ti-truck-loading"></i>
                                 <span class="hide-menu">Supplier Ledger</span>
                             </a>
                         </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('customers.index') }}">
+                                <i class="ti ti-user"></i>
+                                <span class="hide-menu">Customer Ledger</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
-
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('assets-inventory.index') }}">

@@ -52,8 +52,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('expense-name', ExpenseNameController::class);
     Route::resource('payment-types', PaymentTypeController::class);
     // Route::resource('ledgers', LedgerController::class);
-    Route::resource('customer-ledgers', CustomerLedgerController::class);
     Route::resource('supplier-ledgers', SupplierLedgerController::class);
+    Route::resource('customer-ledgers', CustomerLedgerController::class);
     Route::resource('assets-inventory', AssetController::class);
     Route::resource('sale-returns', SaleReturnController::class);
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
