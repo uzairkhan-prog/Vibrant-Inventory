@@ -15,6 +15,13 @@ class CustomerController extends Controller
         return view('customers.index', compact('customers'));
     }
 
+    public function details(Request $request)
+    {
+        $perPage = $request->get('per_page', 20); // default 20
+        $customers = Customer::paginate($perPage);
+        return view('customers.details', compact('customers'));
+    }
+
     public function create()
     {
         return view('customers.create');
@@ -24,6 +31,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'name'    => 'required',
+            'company_name' => 'nullable',
             'phone'   => 'nullable',
             'email'   => 'nullable|email',
             'address' => 'nullable',
@@ -32,7 +40,7 @@ class CustomerController extends Controller
 
         Customer::create($request->all());
 
-        return redirect()->route('customers.index')->with('success', 'Customer created successfully.');
+        return redirect()->route('customers.details')->with('success', 'Customer created successfully.');
     }
 
     public function edit(Customer $customer)
@@ -44,6 +52,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'name'    => 'required',
+            'company_name' => 'nullable',
             'phone'   => 'nullable',
             'email'   => 'nullable|email',
             'address' => 'nullable',
@@ -52,14 +61,14 @@ class CustomerController extends Controller
 
         $customer->update($request->all());
 
-        return redirect()->route('customers.index')->with('success', 'Customer updated successfully.');
+        return redirect()->route('customers.details')->with('success', 'Customer updated successfully.');
     }
 
     public function destroy(Customer $customer)
     {
         $customer->delete();
 
-        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+        return redirect()->route('customers.details')->with('success', 'Customer deleted successfully.');
     }
 
     public function show(Customer $customer)

@@ -23,6 +23,21 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for=" " class="form-label">Company Name</label>
+                    <input name="company_name" id="company_name" class="form-control" value="{{ old('name', $customer->company_name) }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input name="phone" id="phone" class="form-control" value="{{ old('name', $customer->phone) }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input name="email" id="email" class="form-control" value="{{ old('name', $customer->email) }}" required>
+                </div>
+
+                <div class="mb-3">
                     <label for="address" class="form-label">Address</label>
                     <textarea name="address" id="address" class="form-control" rows="4">{{ old('address', $customer->address) }}</textarea>
                 </div>

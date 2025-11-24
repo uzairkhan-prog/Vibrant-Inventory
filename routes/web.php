@@ -42,8 +42,12 @@ Route::middleware('auth')->group(function () {
     Route::post('products/import', [ProductController::class, 'importCSV'])->name('products.import');
     Route::get('ledger/products', [ProductLedgerController::class, 'index'])->name('ledger.products');
     Route::resource('categories', CategoryController::class);
+
+    Route::get('suppliers/details', [SupplierController::class, 'details'])->name('suppliers.details');
     Route::resource('suppliers', SupplierController::class);
+    Route::get('customers/details', [CustomerController::class, 'details'])->name('customers.details');
     Route::resource('customers', CustomerController::class);
+
     Route::resource('purchases', PurchaseController::class);
     Route::get('/products/by-category/{id}', [PurchaseController::class, 'getProductsByCategory'])->name('products.byCategory');
 

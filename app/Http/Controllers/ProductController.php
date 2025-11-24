@@ -12,9 +12,14 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
+        $categoryId = $request->get('category_id'); // new filter
 
-        // Load products with categories for listing
-        $products = Product::with('category')->paginate($perPage);
+        // Load products with categories, optionally filter by category
+        $productsQuery = Product::with('category');
+        if ($categoryId) {
+            $productsQuery->where('category_id', $categoryId);
+        }
+        $products = $productsQuery->paginate($perPage)->withQueryString();
 
         // Calculate overall totals
         $totalQuantity = Product::sum('quantity');
@@ -40,6 +45,9 @@ class ProductController extends Controller
         $prodCountMap = $productsPerCategoryRaw->pluck('prod_count', 'category_name')->toArray();
         $productsPerCategory = array_map(fn($label) => $prodCountMap[$label] ?? 0, $categoryLabels);
 
+        // Get all categories for dropdown
+        $categories = \App\Models\Category::orderBy('name')->get();
+
         return view('products.index', compact(
             'products',
             'totalQuantity',
@@ -47,7 +55,9 @@ class ProductController extends Controller
             'categoryLabels',
             'quantityData',
             'valueData',
-            'productsPerCategory'
+            'productsPerCategory',
+            'categories',
+            'categoryId'
         ));
     }
 
@@ -63,7 +73,7 @@ class ProductController extends Controller
             'name' => 'required',
             'packing' => 'required|integer|min:1',
             'price_per_unit' => 'required|numeric',
-            'quantity' => 'required|integer',
+            // 'quantity' => 'required|integer',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
@@ -84,7 +94,7 @@ class ProductController extends Controller
             'name' => 'required',
             'packing' => 'required|integer|min:1',
             'price_per_unit' => 'required|numeric',
-            'quantity' => 'required|integer',
+            // 'quantity' => 'required|integer',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
@@ -124,7 +134,7 @@ class ProductController extends Controller
                 'name' => $data['name'] ?? null, // if missing -> null
                 'packing' => $data['packing'] ?? 0,
                 'price_per_unit' => is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0,
-                'quantity' => is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0,
+                // 'quantity' => is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0,
                 'category_id' => null, // always null
                 'description' => $data['description'] ?? null,
                 'total' => (is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0)

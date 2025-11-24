@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Response;
 
 class PurchaseController extends Controller
 {
-
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
@@ -47,6 +46,7 @@ class PurchaseController extends Controller
             'tax.*'       => 'nullable|numeric|min:0',
         ]);
 
+        /*
         // ✅ Custom quantity vs stock validation
         foreach ($request->product_id as $index => $productId) {
             $product = Product::find($productId);
@@ -58,6 +58,7 @@ class PurchaseController extends Controller
                     ->withInput();
             }
         }
+        */
 
         DB::transaction(function () use ($request) {
             $purchase = Purchase::create([
@@ -90,7 +91,7 @@ class PurchaseController extends Controller
                 ]);
 
                 $product = Product::find($productId);
-                $product->quantity -= $quantity; // ✅ Deduct stock
+                $product->quantity -= $quantity; // Deduct stock
                 $product->save();
 
                 $totalAmount += $subtotal;
@@ -105,7 +106,7 @@ class PurchaseController extends Controller
     public function edit(Purchase $purchase)
     {
         $suppliers  = Supplier::all();
-        $categories = Category::all(); // ✅ add categories
+        $categories = Category::all(); // Add categories
         $purchase->load('items.product');
 
         return view('purchases.edit', compact('purchase', 'suppliers', 'categories'));

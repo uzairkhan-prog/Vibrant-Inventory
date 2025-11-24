@@ -52,19 +52,19 @@
                     </a>
                 </li>
 
-                <!-- <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('suppliers.index') }}">
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('suppliers.details') }}">
                         <i class="ti ti-truck"></i>
                         <span class="hide-menu">Suppliers</span>
                     </a>
                 </li>
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('customers.index') }}">
+                    <a class="sidebar-link" href="{{ route('customers.details') }}">
                         <i class="ti ti-users"></i>
                         <span class="hide-menu">Customers</span>
                     </a>
-                </li> -->
+                </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('purchases.index') }}">

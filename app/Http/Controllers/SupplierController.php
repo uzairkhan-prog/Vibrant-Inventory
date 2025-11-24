@@ -15,6 +15,13 @@ class SupplierController extends Controller
         return view('suppliers.index', compact('suppliers'));
     }
 
+    public function details(Request $request)
+    {
+        $perPage = $request->get('per_page', 20);
+        $suppliers = Supplier::paginate($perPage);
+        return view('suppliers.details', compact('suppliers'));
+    }
+
     public function create()
     {
         return view('suppliers.create');
@@ -24,6 +31,7 @@ class SupplierController extends Controller
     {
         $request->validate([
             'name'    => 'required',
+            'company_name' => 'nullable',
             'phone'   => 'nullable',
             'email'   => 'nullable|email',
             'address' => 'nullable',
@@ -32,7 +40,7 @@ class SupplierController extends Controller
 
         Supplier::create($request->all());
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier created successfully.');
+        return redirect()->route('suppliers.details')->with('success', 'Supplier created successfully.');
     }
 
     public function edit(Supplier $supplier)
@@ -44,6 +52,7 @@ class SupplierController extends Controller
     {
         $request->validate([
             'name'    => 'required',
+            'company_name' => 'nullable',
             'phone'   => 'nullable',
             'email'   => 'nullable|email',
             'address' => 'nullable',
@@ -52,14 +61,14 @@ class SupplierController extends Controller
 
         $supplier->update($request->all());
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier updated successfully.');
+        return redirect()->route('suppliers.details')->with('success', 'Supplier updated successfully.');
     }
 
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier deleted successfully.');
+        return redirect()->route('suppliers.details')->with('success', 'Supplier deleted successfully.');
     }
 
     public function show(Supplier $supplier)
