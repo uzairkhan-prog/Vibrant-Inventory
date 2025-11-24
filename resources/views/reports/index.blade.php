@@ -124,10 +124,32 @@
     <!-- Products Ledger Report -->
     @if($reportType == 'products' || $reportType == 'all')
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between">
+        <div class="card-header d-flex justify-content-between align-items-center bg-light py-3">
             <h5>Products Report</h5>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#productsModal">Export</button>
+            <div class="d-flex align-items-center gap-2">
+                <form method="GET" class="d-flex align-items-center gap-2 m-0">
+                    <select name="product_type"
+                        class="form-select form-select-sm shadow-sm border-primary"
+                        style="min-width: 150px;"
+                        onchange="this.form.submit()">
+
+                        <option value="">All Types</option>
+                        <option value="purchases" {{ request('product_type')=='purchases'?'selected':'' }}>Purchases</option>
+                        <option value="sales" {{ request('product_type')=='sales'?'selected':'' }}>Sales</option>
+                    </select>
+                    <input type="hidden" name="report_type" value="{{ $reportType }}">
+                    <input type="hidden" name="product_id" value="{{ request('product_id') }}">
+                    <input type="hidden" name="start_date" value="{{ request('start_date') }}">
+                    <input type="hidden" name="end_date" value="{{ request('end_date') }}">
+                </form>
+                <button class="btn btn-primary btn-sm shadow-sm px-3"
+                    data-bs-toggle="modal"
+                    data-bs-target="#productsModal">
+                    Export
+                </button>
+            </div>
         </div>
+
         <div class="card-body">
             @forelse($productsLedger as $product)
             <div class="mb-5">

@@ -100,37 +100,84 @@ class ReportsController extends Controller
         $customersLedger = $this->emptyPaginator();
         $suppliersLedger = $this->emptyPaginator();
 
-        // Products ledger (respecting product_id filter)
+        // Products ledger (respecting product_id + type filters)
         if ($reportType === 'products' || $reportType === 'all') {
+
+            // NEW: purchase/sale type filter
+            $typeFilter = $request->product_type;   // values: purchases | sales | null
+
             $productsQuery = Product::with([
                 'category',
+
+                // Purchase items
                 'purchaseItems.product.category',
-                'saleItems.product.category',
-                'purchaseItems' => function ($q) use ($startDate, $endDate) {
+                'purchaseItems' => function ($q) use ($startDate, $endDate, $typeFilter) {
+
+                    // ❌ If user selected "Sales Only", then remove purchases
+                    if ($typeFilter === 'sales') {
+                        return $q->whereNull('id'); // returns empty
+                    }
+
+                    // Date filtering
                     if ($startDate && $endDate) {
-                        $q->whereHas('purchase', fn($p) => $p->whereBetween('created_at', [$startDate, $endDate]));
+                        $q->whereHas(
+                            'purchase',
+                            fn($p) =>
+                            $p->whereBetween('created_at', [$startDate, $endDate])
+                        );
                     } elseif ($startDate) {
-                        $q->whereHas('purchase', fn($p) => $p->whereDate('created_at', '>=', $startDate));
+                        $q->whereHas(
+                            'purchase',
+                            fn($p) =>
+                            $p->whereDate('created_at', '>=', $startDate)
+                        );
                     } elseif ($endDate) {
-                        $q->whereHas('purchase', fn($p) => $p->whereDate('created_at', '<=', $endDate));
+                        $q->whereHas(
+                            'purchase',
+                            fn($p) =>
+                            $p->whereDate('created_at', '<=', $endDate)
+                        );
                     }
                 },
-                'saleItems' => function ($q) use ($startDate, $endDate) {
+
+                // Sale items
+                'saleItems.product.category',
+                'saleItems' => function ($q) use ($startDate, $endDate, $typeFilter) {
+
+                    // ❌ If user selected "Purchases Only", then remove sales
+                    if ($typeFilter === 'purchases') {
+                        return $q->whereNull('id'); // returns empty
+                    }
+
+                    // Date filtering
                     if ($startDate && $endDate) {
-                        $q->whereHas('sale', fn($s) => $s->whereBetween('created_at', [$startDate, $endDate]));
+                        $q->whereHas(
+                            'sale',
+                            fn($s) =>
+                            $s->whereBetween('created_at', [$startDate, $endDate])
+                        );
                     } elseif ($startDate) {
-                        $q->whereHas('sale', fn($s) => $s->whereDate('created_at', '>=', $startDate));
+                        $q->whereHas(
+                            'sale',
+                            fn($s) =>
+                            $s->whereDate('created_at', '>=', $startDate)
+                        );
                     } elseif ($endDate) {
-                        $q->whereHas('sale', fn($s) => $s->whereDate('created_at', '<=', $endDate));
+                        $q->whereHas(
+                            'sale',
+                            fn($s) =>
+                            $s->whereDate('created_at', '<=', $endDate)
+                        );
                     }
                 }
             ]);
 
-            // ✅ Apply product_id filter if selected
+            // Product filter
             if ($request->product_id) {
                 $productsQuery->where('id', $request->product_id);
             }
 
+            // Final result
             $productsLedger = $productsQuery->paginate(10);
         }
 
