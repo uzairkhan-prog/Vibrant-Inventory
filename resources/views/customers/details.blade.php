@@ -104,7 +104,7 @@
         </div>
 
         @else
-        <div class="alert alert-info text-center">No customers found. <a href="{{ route('customers.create') }}">Create one</a>.</div>
+        <div class="alert alert-info text-center">No customers found. <a href="{{ route('customers.create') }}" class="text-dark">Create one</a>.</div>
         @endif
     </div>
 </div>

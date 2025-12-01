@@ -47,7 +47,7 @@
             </tbody>
         </table>
         @else
-        <div class="alert alert-info text-center">No payment types found. <a href="{{ route('payment-types.create') }}">Create one</a>.</div>
+        <div class="alert alert-info text-center">No payment types found. <a href="{{ route('payment-types.create') }}" class="text-dark">Create one</a>.</div>
         @endif
     </div>
 </div>

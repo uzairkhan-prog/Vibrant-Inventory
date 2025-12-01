@@ -88,7 +88,7 @@
     </div>
 
     @else
-    <div class="alert alert-info text-center mt-4">No purchases found. <a href="{{ route('purchases.create') }}">Create one</a>.</div>
+    <div class="alert alert-info text-center mt-4">No purchases found. <a href="{{ route('purchases.create') }}" class="text-dark">Create one</a>.</div>
     @endif
 </div>
 

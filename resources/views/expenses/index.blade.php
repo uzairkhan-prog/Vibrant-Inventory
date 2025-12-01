@@ -88,7 +88,7 @@
         </div>
 
         @else
-        <div class="alert alert-info text-center">No expenses found. <a href="{{ route('expenses.create') }}">Create one</a>.</div>
+        <div class="alert alert-info text-center">No expenses found. <a href="{{ route('expenses.create') }}" class="text-dark">Create one</a>.</div>
         @endif
     </div>
 </div>

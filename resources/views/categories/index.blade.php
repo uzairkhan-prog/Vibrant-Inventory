@@ -56,7 +56,7 @@
             </tbody>
         </table>
         @else
-        <div class="alert alert-info text-center">No categories found. <a href="{{ route('categories.create') }}">Create one</a>.</div>
+        <div class="alert alert-info text-center">No categories found. <a href="{{ route('categories.create') }}" class="text-dark">Create one</a>.</div>
         @endif
     </div>
 </div>

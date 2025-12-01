@@ -47,7 +47,7 @@
             </tbody>
         </table>
         @else
-        <div class="alert alert-info text-center">No expense name found. <a href="{{ route('expense-name.create') }}">Create one</a>.</div>
+        <div class="alert alert-info text-center">No expense name found. <a href="{{ route('expense-name.create') }}" class="text-dark">Create one</a>.</div>
         @endif
     </div>
 </div>
