@@ -8,6 +8,7 @@ use App\Models\PurchaseItem;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Expense;
+use App\Models\SaleReturn;
 use Carbon\Carbon;
 
 class AnalyticsController extends Controller
@@ -20,16 +21,42 @@ class AnalyticsController extends Controller
         $sales = Sale::query();
         $purchases = Purchase::query();
         $expenses = Expense::query();
+        $saleReturns = SaleReturn::query();
 
         if ($fromDate && $toDate) {
             $sales->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
             $purchases->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
             $expenses->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
+            $saleReturns->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
         }
 
         $totalSales = $sales->sum('total_amount');
+
+        /** =========================
+         *   SALE RETURN ADDED
+         *  ========================= */
+        $totalSaleReturn = $saleReturns->sum('amount_deducted');
+        $returnQty = $saleReturns->sum('qty_return');
+
+        // COGS of returned items
+        $returnCOGS = 0;
+        foreach ($saleReturns->get() as $ret) {
+            if ($ret->product) {
+                $returnCOGS += $ret->qty_return * $ret->product->purchase_price;
+                // Add returned quantity back to stock
+                $ret->product->increment('quantity', $ret->qty_return);
+            }
+        }
+
         $totalPurchases = $purchases->sum('total_amount');
         $totalExpenses = $expenses->sum('amount');
+
+        // Adjusted Sales & COGS for P&L
+        $adjustedSales = $totalSales - $totalSaleReturn;
+        $adjustedCOGS = $totalPurchases - $returnCOGS;
+
+        $grossProfit = $adjustedSales - $adjustedCOGS;
+        $netProfit = $grossProfit - $totalExpenses;
 
         $purchaseItems = PurchaseItem::with('product')
             ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
@@ -38,18 +65,19 @@ class AnalyticsController extends Controller
             ->get();
 
         $purchaseQty = $purchaseItems->sum('quantity');
-        $purchasePercent = $totalSales > 0 ? ($totalPurchases / $totalSales) * 100 : 0;
 
-        $grossProfit = $totalSales - $totalPurchases;
-        $netProfit = $grossProfit - $totalExpenses;
-
-        $gpPercent = $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : 0;
-        $expensePercent = $totalSales > 0 ? ($totalExpenses / $totalSales) * 100 : 0;
-        $npPercent = $totalSales > 0 ? ($netProfit / $totalSales) * 100 : 0;
-        $overallPercent = $totalSales > 0 ? ($netProfit / $totalSales) * 100 : 0;
+        $gpPercent = $adjustedSales > 0 ? ($grossProfit / $adjustedSales) * 100 : 0;
+        $expensePercent = $adjustedSales > 0 ? ($totalExpenses / $adjustedSales) * 100 : 0;
+        $npPercent = $adjustedSales > 0 ? ($netProfit / $adjustedSales) * 100 : 0;
+        $purchasePercent = $adjustedSales > 0 ? ($totalPurchases / $adjustedSales) * 100 : 0;
 
         return view('analytics.index', compact(
             'totalSales',
+            'totalSaleReturn',
+            'returnCOGS',
+            'returnQty',
+            'adjustedSales',
+            'adjustedCOGS',
             'totalPurchases',
             'totalExpenses',
             'grossProfit',
@@ -57,9 +85,8 @@ class AnalyticsController extends Controller
             'gpPercent',
             'expensePercent',
             'npPercent',
-            'overallPercent',
-            'purchaseQty',
             'purchasePercent',
+            'purchaseQty',
             'purchaseItems',
             'fromDate',
             'toDate'

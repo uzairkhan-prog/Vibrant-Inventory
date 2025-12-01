@@ -66,6 +66,17 @@
             cursor: pointer;
             font-weight: bold;
         }
+
+        /* Make Select2 match Bootstrap */
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            padding: 5px !important;
+            border: 1px solid #ced4da !important;
+        }
+
+        .select2-selection__arrow {
+            top: 6px !important;
+        }
     </style>
 </head>
 
@@ -149,6 +160,23 @@
     <script src="{{ asset('assets/libs/simplebar/dist/simplebar.js') }}"></script>
     <script src="{{ asset('assets/js/dashboard.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+
+    <!-- SELECT2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            // INIT SELECT2 FOR ALL SELECT BOXES
+            $('.select2').select2({
+                width: '100%',
+                placeholder: "Select an option",
+                allowClear: true
+            });
+
+        });
+    </script>
 
     <!-- Toast Notification JS -->
     <script>

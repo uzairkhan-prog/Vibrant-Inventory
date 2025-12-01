@@ -92,39 +92,39 @@
         <div class="row summary-box">
             <!-- LEFT SUMMARY -->
             <div class="col-md-6 border-end">
+
                 <strong>Total Sales:</strong> <span class="label-line"></span>
-                {{ number_format($totalSales, 2) }} -
-                <span class="percent-value">(100%)</span> <br>
+                {{ number_format($totalSales, 2) }} - <span class="percent-value">(100%)</span> <br>
+
+                <!-- Total Sale Return -->
+                <strong>Total Sale Return:</strong> <span class="label-line"></span>
+                {{ number_format($totalSaleReturn, 2) }} <br>
 
                 <strong>COGS:</strong> <span class="label-line"></span>
-                {{ number_format($totalPurchases, 2) }} -
-                <span class="percent-value">(
+                {{ number_format($totalPurchases, 2) }} - <span class="percent-value">(
                     {{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%
                 )</span> <br>
 
                 <strong>Gross Profit:</strong> <span class="label-line"></span>
-                {{ number_format($grossProfit, 2) }} -
-                <span class="percent-value">({{ number_format($gpPercent, 2) }}%)</span><br>
+                {{ number_format($grossProfit, 2) }} - <span class="percent-value">({{ number_format($gpPercent, 2) }}%)</span><br>
 
                 <strong>Expenses:</strong> <span class="label-line"></span>
-                {{ number_format($totalExpenses, 2) }} -
-                <span class="percent-value">({{ number_format($expensePercent, 2) }}%)</span><br>
+                {{ number_format($totalExpenses, 2) }} - <span class="percent-value">({{ number_format($expensePercent, 2) }}%)</span><br>
 
                 <hr>
 
                 <strong>Net Profit:</strong> <span class="label-line"></span>
-                {{ number_format($netProfit, 2) }} -
-                <span class="percent-value">({{ number_format($npPercent, 2) }}%)</span><br>
+                {{ number_format($netProfit, 2) }} - <span class="percent-value">({{ number_format($npPercent, 2) }}%)</span><br>
             </div>
 
-            <!-- PERCENT CIRCLE CHART -->
+            <!-- RIGHT SIDE CIRCLE CHART -->
             <div class="col-md-6 d-flex justify-content-center align-items-center">
                 <div class="chart-card">
                     <h5 class="fw-bold text-center">Profit % Breakdown</h5>
                     <canvas id="donutChart" height="260"></canvas>
                 </div>
             </div>
-                <hr>
+            <hr>
         </div>
 
         <h3 class="section-title">Percent Summary</h3>
@@ -250,14 +250,15 @@ document.getElementById('exportPdfBtn').addEventListener('click', function() {
 new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
-        labels: ['Gross Profit %', 'Expenses %', 'Net Profit %'],
+        labels: ['Gross Profit %', 'Expenses %', 'Net Profit %', 'Sale Return %'],
         datasets: [{
             data: [
                 {{ $gpPercent }},
                 {{ $expensePercent }},
-                {{ $npPercent }}
+                {{ $npPercent }},
+                {{ $totalSales > 0 ? number_format(($totalSaleReturn / $totalSales) * 100, 2) : 0 }}
             ],
-            backgroundColor: ['#4caf50', '#f44336', '#2196f3'],
+            backgroundColor: ['#4caf50', '#f44336', '#2196f3', '#ff9800'],
             borderColor: '#fff',
             borderWidth: 3,
             hoverOffset: 10
@@ -269,5 +270,4 @@ new Chart(document.getElementById('donutChart'), {
     }
 });
 </script>
-
 @endsection

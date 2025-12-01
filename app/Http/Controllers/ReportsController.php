@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\Customer;
@@ -29,7 +30,9 @@ class ReportsController extends Controller
 
     public function index(Request $request)
     {
-        $reportType  = $request->report_type ?? 'all';
+        // Hide all data from starting page
+        // $reportType  = $request->report_type ?? 'all';
+        $reportType  = $request->report_type ?? 'dashboard';
         $startDate   = $request->start_date;
         $endDate     = $request->end_date;
         $customerId  = $request->customer_id;
@@ -262,6 +265,60 @@ class ReportsController extends Controller
         // Add products list for dropdown
         $productsList = Product::orderBy('name')->get();
 
+        // ====== DASHBOARD DEFAULTS ======
+        $D_totalSales       = 0;
+        $D_totalPurchases   = 0;
+        $D_totalExpenses    = 0;
+        $D_grossProfit      = 0;
+        $D_netProfit        = 0;
+        $D_gpPercent        = 0;
+        $D_expensePercent   = 0;
+        $D_npPercent        = 0;
+        $D_overallPercent   = 0;
+        $D_purchaseQty      = 0;
+        $D_purchasePercent  = 0;
+        $D_purchaseItems    = collect([]);
+        $D_totalSaleReturn  = 0;
+        $D_returnCOGS       = 0;
+        $D_returnQty        = 0;
+        $D_adjustedSales    = 0;
+        $D_adjustedCOGS     = 0;
+
+        if ($reportType === 'dashboard') {
+            $D_sales       = Sale::query();
+            $D_purchases   = Purchase::query();
+            $D_expenses    = Expense::query();
+            $D_saleReturns = SaleReturn::query();
+
+            $D_totalSales      = $D_sales->sum('total_amount');
+            $D_totalPurchases  = $D_purchases->sum('total_amount');
+            $D_totalExpenses   = $D_expenses->sum('amount');
+            $D_totalSaleReturn = $D_saleReturns->sum('amount_deducted');
+            $D_returnQty       = $D_saleReturns->sum('qty_return');
+
+            foreach ($D_saleReturns->get() as $ret) {
+                if ($ret->product) {
+                    $D_returnCOGS += $ret->qty_return * $ret->product->purchase_price;
+                    $ret->product->increment('quantity', $ret->qty_return);
+                }
+            }
+
+            $D_purchaseItems   = PurchaseItem::with('product')->get();
+            $D_purchaseQty     = $D_purchaseItems->sum('quantity');
+            $D_purchasePercent = $D_totalSales > 0 ? ($D_totalPurchases / $D_totalSales) * 100 : 0;
+
+            // ===== Adjusted Sales & COGS =====
+            $D_adjustedSales  = $D_totalSales - $D_totalSaleReturn;
+            $D_adjustedCOGS   = $D_totalPurchases - $D_returnCOGS;
+
+            $D_grossProfit    = $D_adjustedSales - $D_adjustedCOGS;
+            $D_netProfit      = $D_grossProfit - $D_totalExpenses;
+
+            $D_gpPercent      = $D_adjustedSales > 0 ? ($D_grossProfit / $D_adjustedSales) * 100 : 0;
+            $D_expensePercent = $D_adjustedSales > 0 ? ($D_totalExpenses / $D_adjustedSales) * 100 : 0;
+            $D_npPercent      = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
+            $D_overallPercent = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
+        }
 
         return view('reports.index', compact(
             'reportType',
@@ -291,7 +348,24 @@ class ReportsController extends Controller
             'supplierId',
             'customersList',
             'suppliersList',
-            'productsList'
+            'productsList',
+            'D_totalSales',
+            'D_totalPurchases',
+            'D_totalExpenses',
+            'D_grossProfit',
+            'D_netProfit',
+            'D_gpPercent',
+            'D_expensePercent',
+            'D_npPercent',
+            'D_overallPercent',
+            'D_purchaseQty',
+            'D_purchasePercent',
+            'D_purchaseItems',
+            'D_totalSaleReturn',
+            'D_returnCOGS',
+            'D_returnQty',
+            'D_adjustedSales',
+            'D_adjustedCOGS'
         ));
     }
 }
