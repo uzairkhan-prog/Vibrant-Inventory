@@ -39,16 +39,16 @@
                 </li> -->
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('products.index') }}">
-                        <i class="ti ti-package"></i>
-                        <span class="hide-menu">Products</span>
+                    <a class="sidebar-link" href="{{ route('categories.index') }}">
+                        <i class="ti ti-category"></i>
+                        <span class="hide-menu">Stock Categories</span>
                     </a>
                 </li>
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('categories.index') }}">
-                        <i class="ti ti-category"></i>
-                        <span class="hide-menu">Categories</span>
+                    <a class="sidebar-link" href="{{ route('products.index') }}">
+                        <i class="ti ti-package"></i>
+                        <span class="hide-menu">Stock</span>
                     </a>
                 </li>
 
