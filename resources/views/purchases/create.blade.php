@@ -188,12 +188,13 @@
         productSelect.html('<option>Loading...</option>');
         if (categoryId) {
             $.ajax({
-                url: '/products/by-category/' + categoryId,
+                url: "{{ url('products/by-category') }}/" + categoryId,
                 type: 'GET',
                 success: function(products) {
                     productSelect.empty().append('<option value="">Select Product</option>');
                     $.each(products, function(index, product) {
-                        productSelect.append('<option value="' + product.id + '">' + product.name + ' (Stock: ' + product.quantity + ')</option>');
+                        productSelect.append('<option value="' + product.id + '">' +
+                            product.name + ' (Stock: ' + product.quantity + ')</option>');
                     });
                 }
             });
