@@ -195,7 +195,7 @@
         productSelect.html('<option>Loading...</option>');
 
         if (categoryId) {
-            $.getJSON('/products/by-category/' + categoryId, function(products) {
+            $.getJSON("{{ url('products/by-category') }}/" + categoryId, function(products) {
                 productSelect.empty().append('<option value="">Select Product</option>');
                 $.each(products, function(index, product) {
                     const isSelected = selectedProductId == product.id ? 'selected' : '';
