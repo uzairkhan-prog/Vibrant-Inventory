@@ -12,10 +12,25 @@ class ExpenseController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
-        $expenses = Expense::with('paymentType', 'expenseName')->orderBy('created_at', 'desc')->paginate($perPage);
+
+        $query = Expense::with('paymentType', 'expenseName')->orderBy('created_at', 'desc');
+
+        // Date range filter
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+
+        if ($fromDate && $toDate) {
+            $query->whereBetween('created_at', [$fromDate, $toDate]);
+        } elseif ($fromDate) {
+            $query->whereDate('created_at', '>=', $fromDate);
+        } elseif ($toDate) {
+            $query->whereDate('created_at', '<=', $toDate);
+        }
+
+        $expenses = $query->paginate($perPage)->appends($request->all());
         $subtotal = $expenses->sum('amount'); // Sum only current page
 
-        return view('expenses.index', compact('expenses', 'subtotal'));
+        return view('expenses.index', compact('expenses', 'subtotal', 'fromDate', 'toDate'));
     }
 
     public function create()

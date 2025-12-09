@@ -17,8 +17,38 @@ class PurchaseController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
-        $purchases = Purchase::with('supplier')->orderBy('date', 'desc')->paginate($perPage);
-        return view('purchases.index', compact('purchases'));
+
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $search = $request->input('search'); // optional search input
+
+        // Initialize empty collection for first load
+        $purchases = collect();
+
+        // Only fetch records if any filter is applied
+        if ($fromDate || $toDate || $search) {
+            $query = Purchase::with('supplier')->orderBy('date', 'desc');
+
+            // Date range filter
+            if ($fromDate && $toDate) {
+                $query->whereBetween('date', [$fromDate, $toDate]);
+            } elseif ($fromDate) {
+                $query->whereDate('date', '>=', $fromDate);
+            } elseif ($toDate) {
+                $query->whereDate('date', '<=', $toDate);
+            }
+
+            // Optional search filter by supplier name
+            if ($search) {
+                $query->whereHas('supplier', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            }
+
+            $purchases = $query->paginate($perPage)->appends($request->all());
+        }
+
+        return view('purchases.index', compact('purchases', 'fromDate', 'toDate', 'search'));
     }
 
     public function create()

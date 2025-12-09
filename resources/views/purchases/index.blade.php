@@ -20,19 +20,30 @@
         </div>
     </div>
 
+    <!-- Filters Row -->
     <div class="row mb-3 align-items-center">
-        <div class="col-md-9 d-flex align-items-center">
+        <!-- Existing Search -->
+        <div class="col-md-4 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
             <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by supplier, date or amount">
         </div>
-        <div class="col-md-3 d-flex align-items-center justify-content-end">
-            <label class="me-2 fw-semibold">Show</label>
-            <select id="rowsPerPage" class="form-select w-auto">
-                @foreach ([20, 50, 100] as $value)
-                <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
-                @endforeach
-            </select>
-            <label class="ms-2 fw-semibold">entries</label>
+
+        <!-- Date Filters -->
+        <div class="col-md-8 d-flex align-items-center justify-content-end">
+            <form method="GET" action="{{ route('purchases.index') }}" class="d-flex align-items-center">
+                <label class="me-2 fw-semibold">From:</label>
+                <input type="date" name="from_date" class="form-control me-2" value="{{ $fromDate ?? '' }}">
+                <label class="me-2 fw-semibold">To:</label>
+                <input type="date" name="to_date" class="form-control me-2" value="{{ $toDate ?? '' }}">
+                <button type="submit" class="btn btn-primary me-2">Filter</button>
+                <a href="{{ route('purchases.index') }}" class="btn btn-secondary me-3">Reset</a>
+                <label class="ms-3 me-2 fw-semibold">Show</label>
+                <select id="rowsPerPage" name="per_page" class="form-select w-auto">
+                    @foreach ([20, 50, 100] as $value)
+                    <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
+                    @endforeach
+                </select>
+            </form>
         </div>
     </div>
 
@@ -84,9 +95,8 @@
     </div>
 
     <div class="d-flex justify-content-center mt-4">
-        {!! $purchases->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
+        {!! $purchases->appends(request()->all())->links('pagination::bootstrap-5') !!}
     </div>
-
     @else
     <div class="alert alert-info text-center mt-4">No purchases found. <a href="{{ route('purchases.create') }}" class="text-dark">Create one</a>.</div>
     @endif
@@ -131,6 +141,7 @@
 </style>
 
 <script>
+    // Existing search input
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const searchVal = this.value.toLowerCase();
         const rows = document.querySelectorAll('#purchaseTable tbody tr');
@@ -140,6 +151,7 @@
         });
     });
 
+    // Rows per page select
     document.getElementById('rowsPerPage').addEventListener('change', function() {
         const selected = this.value;
         const url = new URL(window.location.href);

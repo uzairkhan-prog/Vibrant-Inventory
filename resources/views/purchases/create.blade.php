@@ -194,7 +194,7 @@
                     productSelect.empty().append('<option value="">Select Product</option>');
                     $.each(products, function(index, product) {
                         productSelect.append('<option value="' + product.id + '">' +
-                            product.name + ' (Stock: ' + product.quantity + ')</option>');
+                            product.name + '</option>');
                     });
                 }
             });

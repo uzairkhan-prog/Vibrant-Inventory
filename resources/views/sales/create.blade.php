@@ -63,7 +63,7 @@
                                 <option value="" disabled>Select a Product</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}" {{ $oldProductId == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }} (Stock: {{ $product->quantity }})
+                                    {{ $product->name }} (Stock: {{ $product->fifo_stock }})
                                 </option>
                                 @endforeach
                             </select>
@@ -93,7 +93,7 @@
                             <select name="product_id[]" class="form-select" required>
                                 <option value="" disabled selected>Select a Product</option>
                                 @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }})</option>
+                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->fifo_stock }})</option>
                                 @endforeach
                             </select>
                         </td>

@@ -9,10 +9,46 @@ use Illuminate\Http\Request;
 
 class SaleReturnController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $returns = SaleReturn::with(['customer', 'product'])->latest()->paginate(20);
-        return view('sale_returns.index', compact('returns'));
+        $perPage = $request->get('per_page', 20);
+
+        $fromDate = $request->input('from_date');
+        $toDate = $request->input('to_date');
+        $search = $request->input('search'); // optional search input
+
+        // Initialize empty collection for first load
+        $returns = collect();
+
+        // Only fetch records if any filter is applied
+        if ($fromDate || $toDate || $search) {
+            $query = SaleReturn::with(['customer', 'product'])->latest();
+
+            // Date range filter
+            if ($fromDate && $toDate) {
+                $query->whereBetween('created_at', [$fromDate, $toDate]);
+            } elseif ($fromDate) {
+                $query->whereDate('created_at', '>=', $fromDate);
+            } elseif ($toDate) {
+                $query->whereDate('created_at', '<=', $toDate);
+            }
+
+            // Optional search filter by customer or product name
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('customer', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    })
+                        ->orWhereHas('product', function ($q2) use ($search) {
+                            $q2->where('name', 'like', "%{$search}%");
+                        });
+                });
+            }
+
+            $returns = $query->paginate($perPage)->appends($request->all());
+        }
+
+        return view('sale_returns.index', compact('returns', 'fromDate', 'toDate', 'search'));
     }
 
     public function create()
