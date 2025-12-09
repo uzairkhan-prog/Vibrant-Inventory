@@ -76,7 +76,7 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('sales.index') }}">
                         <i class="ti ti-currency-dollar"></i>
-                        <span class="hide-menu">Sales</span>
+                        <span class="hide-menu">Invoice</span>
                     </a>
                 </li>
 
