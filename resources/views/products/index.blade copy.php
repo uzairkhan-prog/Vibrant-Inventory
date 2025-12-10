@@ -23,7 +23,7 @@
         </div>
 
         <!-- Subtotal Calculation -->
-        <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mt-4">
+        <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
             <div class="d-flex justify-content-between">
                 <span>Total Stock Value (table):</span>
                 @php

@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="purchase-wrapper p-4 my-5 bg-white shadow rounded">
+<div class="p-4 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Purchase Invoice Management</h2>
         <div>
@@ -53,45 +53,47 @@
 
     @if($purchases->count())
     <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered align-middle text-center" id="purchaseTable">
-            <thead class="table-light">
-                <tr>
-                    <th>Date</th>
-                    <th>Invoice no</th>
-                    <th>Supplier</th>
-                    <th>Total Amount</th>
-                    <th>View Invoice</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($purchases as $purchase)
-                <tr>
-                    <td>{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}</td>
-                    <td>{{ $purchase->id }}</td>
-                    <td>{{ $purchase->supplier->name }}</td>
-                    <td>Rs {{ number_format($purchase->total_amount, 2) }}</td>
-                    <td>
-                        <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info me-1">
-                            Invoice <i class="material-icons">&#xE8F4;</i>
-                        </a>
-                    </td>
-                    <td class="d-flex justify-content-center">
-                        <a href="{{ route('purchases.edit', $purchase) }}" class="btn btn-sm btn-warning me-1">
-                            Edit <i class="material-icons">&#xE3C9;</i>
-                        </a>
-                        <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete purchase?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                Delete <i class="material-icons">&#xE872;</i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table class="table table-striped table-hover table-bordered align-middle text-center" id="purchaseTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice no</th>
+                        <th>Supplier</th>
+                        <th>Total Amount</th>
+                        <th>View Invoice</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($purchases as $purchase)
+                    <tr>
+                        <td>{{ \Carbon\Carbon::parse($purchase->date)->format('Y-m-d') }}</td>
+                        <td>{{ $purchase->id }}</td>
+                        <td>{{ $purchase->supplier->name }}</td>
+                        <td>Rs {{ number_format($purchase->total_amount, 2) }}</td>
+                        <td>
+                            <a href="{{ route('purchases.show', $purchase) }}" class="btn btn-sm btn-info me-1">
+                                Invoice <i class="material-icons">&#xE8F4;</i>
+                            </a>
+                        </td>
+                        <td class="d-flex justify-content-center">
+                            <a href="{{ route('purchases.edit', $purchase) }}" class="btn btn-sm btn-warning me-1">
+                                Edit <i class="material-icons">&#xE3C9;</i>
+                            </a>
+                            <form action="{{ route('purchases.destroy', $purchase) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete purchase?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    Delete <i class="material-icons">&#xE872;</i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="d-flex justify-content-center mt-4">
@@ -101,44 +103,6 @@
     <div class="alert alert-info text-center mt-4">No purchases found. <a href="{{ route('purchases.create') }}" class="text-dark">Create one</a>.</div>
     @endif
 </div>
-
-<style>
-    .purchase-wrapper {
-        max-width: 1200px;
-        margin: auto;
-    }
-
-    .table th,
-    .table td {
-        font-size: 0.875rem;
-        vertical-align: middle;
-    }
-
-    .btn-info {
-        background-color: #0dcaf0;
-        border: none;
-        color: #fff;
-        font-weight: 500;
-    }
-
-    .btn-info:hover {
-        background-color: #0bbbe6;
-    }
-
-    .btn-danger {
-        font-weight: 500;
-    }
-
-    .form-select,
-    .form-control {
-        font-size: 0.85rem;
-    }
-
-    .material-icons {
-        vertical-align: middle;
-        font-size: 1rem;
-    }
-</style>
 
 <script>
     // Existing search input

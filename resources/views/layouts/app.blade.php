@@ -131,7 +131,7 @@
             <!--  Header End -->
 
             <div class="body-wrapper-inner">
-                <div class="container-fluid">
+                <div class="container">
                     <!-- Page Content -->
                     @yield('content')
                 </div>

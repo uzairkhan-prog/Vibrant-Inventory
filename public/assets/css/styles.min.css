@@ -18532,11 +18532,11 @@ fieldset:disabled .btn {
   /* top: 65px; */
 }
 
-@media (max-width: 991.98px) {
+/* @media (max-width: 991.98px) {
   .app-header {
     top: 131px;
   }
-}
+} */
 
 .app-header .container-fluid,
 .app-header .container-sm,
@@ -18635,6 +18635,7 @@ body {
 
 .body-wrapper .body-wrapper-inner {
   min-height: calc(100vh - 110px);
+  padding-top: 100px;
 }
 
 .body-wrapper .container-fluid,

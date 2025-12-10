@@ -2,10 +2,10 @@
 
 @section('content')
 
-<div class="container py-5">
+<div id="reportContent">
 
     <!-- Filters -->
-    <div class="card mb-4 shadow">
+    <div class="card mb-3 shadow">
         <div class="card-body">
             <form method="GET" action="{{ route('reports.index') }}" class="row g-3" id="reportsFilterForm">
 
@@ -151,7 +151,7 @@
             </div>
         </div>
 
-        <div class="card-body">
+        <div class="card-body table-responsive">
             @forelse($productsLedger as $product)
             <div class="mb-5">
                 <h6 class="fw-bold">
@@ -475,7 +475,7 @@
             <h5>Customers Report</h5>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#customersModal">Export</button>
         </div>
-        <div class="card-body">
+        <div class="card-body table-responsive">
             @forelse($customersLedger as $customer)
             <div class="mb-5">
                 <h6 class="fw-bold">
@@ -596,7 +596,7 @@
             <h5>Suppliers Report</h5>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#suppliersModal">Export</button>
         </div>
-        <div class="card-body">
+        <div class="card-body table-responsive">
             @forelse($suppliersLedger as $supplier)
             <div class="mb-5">
                 <h6 class="fw-bold">
@@ -760,66 +760,9 @@
 
     <!-- Dashboard Report -->
     @if($reportType == 'dashboard')
-    <style>
-        /* GENERAL SUMMARY STYLE */
-        .col-md-6 {
-            color: #11142d;
-            padding: 30px 20px;
-        }
-
-        .summary-box strong {
-            font-weight: 700;
-            color: #11142d;
-        }
-
-        .summary-box {
-            font-size: 18px;
-            line-height: 40px;
-        }
-
-        /* SECTION HEADINGS */
-        .section-title {
-            font-weight: 800;
-            font-size: 26px;
-            color: #4d75e3;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* LABEL LINES */
-        .label-line {
-            display: inline-block;
-            width: 220px;
-            border-bottom: 2px dotted #999;
-            margin: 0 10px;
-        }
-
-        /* HIGHLIGHT % VALUES */
-        .percent-value {
-            font-weight: 800;
-            color: #d32f2f;
-        }
-
-        /* FILTER BUTTONS */
-        .btn-primary,
-        .btn-warning,
-        .btn-danger {
-            min-width: 100px;
-        }
-
-        .border-end {
-            border-right: 2px solid #eee;
-        }
-
-        hr {
-            border-top: 2px solid #11142d5c;
-        }
-
-        /* CHART CARD */
-        .chart-card {
-            position: absolute;
-        }
-    </style>
+    
+    <!-- Page JS -->
+    @include('analytics.css')
     <!-- SUMMARY SECTION -->
     <div class="p-4 bg-white shadow rounded-4">
         <h3 class="section-title">Profit & Loss Summary</h3>

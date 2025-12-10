@@ -1,68 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<style>
-    /* GENERAL SUMMARY STYLE */
-    .col-md-6 {
-        color: #11142d;
-        padding: 30px 20px;
-    }
+<!-- Page JS -->
+@include('analytics.css')
 
-    .summary-box strong {
-        font-weight: 700;
-        color: #11142d;
-    }
-
-    .summary-box {
-        font-size: 18px;
-        line-height: 40px;
-    }
-
-    /* SECTION HEADINGS */
-    .section-title {
-        font-weight: 800;
-        font-size: 26px;
-        color: #4d75e3;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    /* LABEL LINES */
-    .label-line {
-        display: inline-block;
-        width: 220px;
-        border-bottom: 2px dotted #999;
-        margin: 0 10px;
-    }
-
-    /* HIGHLIGHT % VALUES */
-    .percent-value {
-        font-weight: 800;
-        color: #d32f2f;
-    }
-
-    /* FILTER BUTTONS */
-    .btn-primary,
-    .btn-warning,
-    .btn-danger {
-        min-width: 100px;
-    }
-
-    .border-end {
-        border-right: 2px solid #eee;
-    }
-
-    hr {
-        border-top: 2px solid #11142d5c;
-    }
-
-    /* CHART CARD */
-    .chart-card {
-        position: absolute;
-    }
-</style>
-
-<div class="container my-5" id="reportContent">
+<div id="reportContent">
 
     <!-- FILTER SECTION -->
     <form method="GET" action="{{ route('analytics.index') }}">
@@ -76,7 +18,7 @@
                     <label class="form-label fw-semibold">To Date</label>
                     <input type="date" class="form-control" name="to_date" value="{{ request('to_date') }}">
                 </div>
-                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="col-md-4 text-md-end mt-3 mt-md-0" style="text-align: center;">
                     <button class="btn btn-primary">Filter</button>
                     <a href="{{ route('dashboard') }}" class="btn btn-warning">Clear</a>
                     <button type="button" id="exportPdfBtn" class="btn btn-danger">Export PDF</button>
@@ -103,7 +45,7 @@
                 <strong>COGS:</strong> <span class="label-line"></span>
                 {{ number_format($totalPurchases, 2) }} - <span class="percent-value">(
                     {{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%
-                )</span> <br>
+                    )</span> <br>
 
                 <strong>Gross Profit:</strong> <span class="label-line"></span>
                 {{ number_format($grossProfit, 2) }} - <span class="percent-value">({{ number_format($gpPercent, 2) }}%)</span><br>
@@ -119,9 +61,11 @@
 
             <!-- RIGHT SIDE CIRCLE CHART -->
             <div class="col-md-6 d-flex justify-content-center align-items-center">
-                <div class="chart-card">
-                    <h5 class="fw-bold text-center">Profit % Breakdown</h5>
-                    <canvas id="donutChart" height="260"></canvas>
+                <div class="chart-container">
+                    <div class="chart-card">
+                        <h5 class="fw-bold text-center">Profit % Breakdown</h5>
+                        <canvas id="donutChart"></canvas>
+                    </div>
                 </div>
             </div>
             <hr>
@@ -149,7 +93,7 @@
                 {{ number_format($totalPurchases, 2) }} -
                 <span class="percent-value">(
                     {{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%
-                )</span> <br>
+                    )</span> <br>
 
                 <strong>Purchased Qty:</strong> <span class="label-line"></span> {{ $purchaseQty }} <br>
 
@@ -167,8 +111,8 @@
     <!-- ================= PDF HEADER ADDED HERE ================= -->
     <div style="margin-bottom:20px;">
         <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}"
-             alt="Vibrant Engineering Logo"
-             style="max-height: 60px; border-radius: 10px; margin-bottom: 10px; background: linear-gradient(43deg, #11142d 29%, #0B4168 80%);">
+            alt="Vibrant Engineering Logo"
+            style="max-height: 60px; border-radius: 10px; margin-bottom: 10px; background: linear-gradient(43deg, #11142d 29%, #0B4168 80%);">
 
         <p class="mb-1">Head Office: Shop #13, Falak Park View Near <br> Inquiry Office Nazimabad #2, Karachi</p>
         <p class="mb-1">Phone: +92 335 2385773</p>
@@ -222,52 +166,6 @@
     </div>
 </div>
 
-
-<!-- PDF JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script>
-document.getElementById('exportPdfBtn').addEventListener('click', function() {
-    const element = document.getElementById('pdfContent');
-    element.style.display = 'block';
-
-    html2pdf()
-        .set({
-            margin: 10,
-            filename: 'Profit_Loss_Report.pdf',
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        })
-        .from(element)
-        .save()
-        .then(() => element.style.display = 'none');
-});
-</script>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-new Chart(document.getElementById('donutChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Gross Profit %', 'Expenses %', 'Net Profit %', 'Sale Return %'],
-        datasets: [{
-            data: [
-                {{ $gpPercent }},
-                {{ $expensePercent }},
-                {{ $npPercent }},
-                {{ $totalSales > 0 ? number_format(($totalSaleReturn / $totalSales) * 100, 2) : 0 }}
-            ],
-            backgroundColor: ['#4caf50', '#f44336', '#2196f3', '#ff9800'],
-            borderColor: '#fff',
-            borderWidth: 3,
-            hoverOffset: 10
-        }]
-    },
-    options: {
-        plugins: { legend: { position: 'bottom' } },
-        layout: { padding: 20 }
-    }
-});
-</script>
+<!-- Page JS -->
+@include('analytics.js')
 @endsection

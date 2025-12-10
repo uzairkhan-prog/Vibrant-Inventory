@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="sales-wrapper p-4 my-5 bg-white shadow rounded">
+<div class="p-4 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Sales Invoice Management</h2>
         <div>
@@ -53,45 +53,47 @@
 
     @if($sales->count())
     <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered align-middle text-center" id="salesTable">
-            <thead class="table-light">
-                <tr>
-                    <th>Date</th>
-                    <th>Invoice no</th>
-                    <th>Customer</th>
-                    <th>Total Amount</th>
-                    <th>View Invoice</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($sales as $sale)
-                <tr>
-                    <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
-                    <td>{{ $sale->id }}</td>
-                    <td>{{ $sale->customer->name }}</td>
-                    <td>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
-                    <td>
-                        <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info me-1">
-                            Invoice <i class="material-icons">&#xE8F4;</i>
-                        </a>
-                    </td>
-                    <td class="d-flex justify-content-center">
-                        <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-warning me-1">
-                            Edit <i class="material-icons">&#xE3C9;</i>
-                        </a>
-                        <form action="{{ route('sales.destroy', $sale) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete sale?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                Delete <i class="material-icons">&#xE872;</i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="table-wrapper">
+            <table class="table table-striped table-hover table-bordered align-middle text-center" id="salesTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice no</th>
+                        <th>Customer</th>
+                        <th>Total Amount</th>
+                        <th>View Invoice</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($sales as $sale)
+                    <tr>
+                        <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
+                        <td>{{ $sale->id }}</td>
+                        <td>{{ $sale->customer->name }}</td>
+                        <td>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
+                        <td>
+                            <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info me-1">
+                                Invoice <i class="material-icons">&#xE8F4;</i>
+                            </a>
+                        </td>
+                        <td class="d-flex justify-content-center">
+                            <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-warning me-1">
+                                Edit <i class="material-icons">&#xE3C9;</i>
+                            </a>
+                            <form action="{{ route('sales.destroy', $sale) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete sale?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    Delete <i class="material-icons">&#xE872;</i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="d-flex justify-content-center mt-4">
@@ -102,44 +104,6 @@
     <div class="alert alert-info text-center mt-4">No sales found. <a href="{{ route('sales.create') }}" class="text-dark">Create one</a>.</div>
     @endif
 </div>
-
-<style>
-    .sales-wrapper {
-        max-width: 1200px;
-        margin: auto;
-    }
-
-    .table th,
-    .table td {
-        font-size: 0.875rem;
-        vertical-align: middle;
-    }
-
-    .btn-info {
-        background-color: #0dcaf0;
-        border: none;
-        color: #fff;
-        font-weight: 500;
-    }
-
-    .btn-info:hover {
-        background-color: #0bbbe6;
-    }
-
-    .btn-danger {
-        font-weight: 500;
-    }
-
-    .form-select,
-    .form-control {
-        font-size: 0.85rem;
-    }
-
-    .material-icons {
-        vertical-align: middle;
-        font-size: 1rem;
-    }
-</style>
 
 <script>
     // Search input (existing)

@@ -27,15 +27,10 @@
 
 /* Start - Table CSS */
 
-.table-responsive {
-    margin: 30px 0;
-    overflow-x: auto;
-}
-
 .table-wrapper {
     min-width: 1000px;
     background: linear-gradient(145deg, #ffffff, #f7f9fb);
-    padding: 25px 30px;
+    /* padding: 25px 30px; */
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -111,7 +106,7 @@ table.table {
 }
 
 table.table thead th {
-    font-size: 15px;
+    font-size: 14px;
     background-color: #11142d;
     font-weight: 600;
     color: #ffffff;
@@ -202,10 +197,7 @@ table.table td button.btn-sm {
 
 /* Responsive Adjustments */
 
-@media (max-width: 768px) {
-    .table-wrapper {
-        padding: 20px 15px;
-    }
+@media (max-width: 1500px) {
 
     .table-title h2 {
         font-size: 16px;
@@ -222,8 +214,29 @@ table.table td button.btn-sm {
 
     table.table th,
     table.table td {
-        padding: 10px 12px;
+        font-size: 10px;
+    }
+}
+/* Responsive Adjustments */
+
+@media (max-width: 768px) {
+
+    .table-title h2 {
+        font-size: 16px;
+    }
+
+    .table-title .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .alert {
         font-size: 14px;
+    }
+
+    table.table th,
+    table.table td {
+        font-size: 10px;
     }
 }
 
