@@ -94,9 +94,12 @@
         <div class="body-wrapper">
             <!--  Header Start -->
             <header class="app-header">
-                <nav class="navbar navbar-expand-lg navbar-light">
+                <nav class="container navbar navbar-expand-lg navbar-light">
                     <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
-                        <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
+                        <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-between">
+                            <button class="btn sidebar-toggle-btn d-xl-none ms-3" id="hamburgerBtn">
+                                <i class="ti ti-menu-2 fs-8"></i>
+                            </button>
                             <li class="nav-item dropdown">
                                 <a class="nav-link " href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
                                     aria-expanded="false">
@@ -188,6 +191,33 @@
                     if (toast) toast.classList.remove('show');
                 }, 4000); // hide after 4 seconds
             }
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const sidebar = document.querySelector(".left-sidebar");
+            const hamburger = document.getElementById("hamburgerBtn");
+            const closeBtn = document.getElementById("sidebarCollapse");
+            const overlay = document.getElementById("sidebarOverlay");
+
+            // Open sidebar
+            hamburger?.addEventListener("click", function() {
+                sidebar.classList.add("sidebar-open");
+                overlay.classList.add("active");
+            });
+
+            // Close sidebar
+            closeBtn?.addEventListener("click", function() {
+                sidebar.classList.remove("sidebar-open");
+                overlay.classList.remove("active");
+            });
+
+            // Click outside closes sidebar
+            overlay?.addEventListener("click", function() {
+                sidebar.classList.remove("sidebar-open");
+                overlay.classList.remove("active");
+            });
         });
     </script>
 </body>
