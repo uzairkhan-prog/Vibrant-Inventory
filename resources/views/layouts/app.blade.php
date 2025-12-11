@@ -201,23 +201,41 @@
             const closeBtn = document.getElementById("sidebarCollapse");
             const overlay = document.getElementById("sidebarOverlay");
 
-            // Open sidebar
+            // OPEN SIDEBAR
             hamburger?.addEventListener("click", function() {
                 sidebar.classList.add("sidebar-open");
                 overlay.classList.add("active");
             });
 
-            // Close sidebar
+            // CLOSE SIDEBAR (CROSS BTN)
             closeBtn?.addEventListener("click", function() {
                 sidebar.classList.remove("sidebar-open");
                 overlay.classList.remove("active");
             });
 
-            // Click outside closes sidebar
+            // CLOSE ON OVERLAY CLICK
             overlay?.addEventListener("click", function() {
                 sidebar.classList.remove("sidebar-open");
                 overlay.classList.remove("active");
             });
+
+            // CLOSE ON CLICK ANYWHERE OUTSIDE SIDEBAR
+            document.addEventListener("click", function(event) {
+
+                // ignore clicks if sidebar is not open
+                if (!sidebar.classList.contains("sidebar-open")) return;
+
+                const clickedInsideSidebar = sidebar.contains(event.target);
+                const clickedHamburger = hamburger?.contains(event.target);
+
+                // If clicked OUTSIDE sidebar and NOT on hamburger → close
+                if (!clickedInsideSidebar && !clickedHamburger) {
+                    sidebar.classList.remove("sidebar-open");
+                    overlay.classList.remove("active");
+                }
+
+            });
+
         });
     </script>
 </body>
