@@ -51,8 +51,8 @@
                 </div>
             </div>
             <div class="col-md-3 mt-4 d-flex justify-content-end gap-2">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="{{ route('ledger.products') }}" class="btn btn-secondary">Clear Filters</a>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{{ route('ledger.products') }}" class="btn btn-secondary">Clear</a>
             </div>
         </div>
     </form>

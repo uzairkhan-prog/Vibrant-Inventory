@@ -23,7 +23,7 @@
 
                 <!-- Button wrapper for mobile -->
                 <div class="col-md-4 filter-btn-wrapper text-md-end">
-                    <button class="btn btn-primary">Filter</button>
+                    <button class="btn btn-primary">Search</button>
                     <a href="{{ route('dashboard') }}" class="btn btn-warning">Clear</a>
                     <button type="button" id="exportPdfBtn" class="btn btn-danger">Export PDF</button>
                 </div>

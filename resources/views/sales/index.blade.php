@@ -35,7 +35,7 @@
                 <input type="date" name="from_date" class="form-control me-2" value="{{ $fromDate ?? '' }}">
                 <label class="me-2 fw-semibold">To:</label>
                 <input type="date" name="to_date" class="form-control me-2" value="{{ $toDate ?? '' }}">
-                <button type="submit" class="btn btn-primary me-2">Filter</button>
+                <button type="submit" class="btn btn-primary me-2">Search</button>
                 <a href="{{ route('sales.index') }}" class="btn btn-secondary">Reset</a>
                 <label class="ms-3 me-2 fw-semibold">Show</label>
                 <select id="rowsPerPage" name="per_page" class="form-select w-auto">
