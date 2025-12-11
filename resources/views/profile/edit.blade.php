@@ -50,7 +50,7 @@
     }
 
     /* Buttons */
-    button,
+    .flex.items-center.gap-4 button,
     .x-primary-button,
     .x-secondary-button,
     .x-danger-button {
@@ -116,7 +116,7 @@
             padding: 8px 10px !important;
         }
 
-        button,
+        .flex.items-center.gap-4 button,
         .x-primary-button,
         .x-secondary-button,
         .x-danger-button {
@@ -139,7 +139,7 @@
         }
     }
 
-    button {
+    .flex.items-center.gap-4 button {
         background: #11142d;
         color: #ffffff !important;
     }
@@ -175,7 +175,7 @@
             padding: 7px 8px !important;
         }
 
-        button,
+        .flex.items-center.gap-4 button,
         .x-primary-button,
         .x-secondary-button,
         .x-danger-button {
