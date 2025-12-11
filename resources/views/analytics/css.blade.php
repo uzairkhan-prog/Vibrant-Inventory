@@ -169,9 +169,9 @@
             padding: 10px;
         }
 
-        .chart-card canvas {
+        /* .chart-card canvas {
             max-height: 180px !important;
-        }
+        } */
 
         .label-line {
             width: 20px;
