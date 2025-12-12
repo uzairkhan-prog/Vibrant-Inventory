@@ -269,9 +269,9 @@
                     <tr>
                         <td class="text-start p-2">{{ $purchaseRow++ }}</td>
                         <td class="text-start p-2">{{ $purchase->supplier->name ?? 'N/A' }}</td>
-                        <td class="text-start p-2">{{ $item->product->name }}</td>
+                        <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
-                        <td class="text-start p-2">{{ $item->quantity }}</td>
+                        <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ number_format($item->price, 2) }}</td>
                         <td class="text-start p-2">{{ number_format($item->discount, 2) }}</td>
                         <td class="text-start p-2">{{ number_format($item->tax, 2) }}</td>
@@ -329,9 +329,9 @@
                     <tr>
                         <td class="text-start p-2">{{ $saleRow++ }}</td>
                         <td class="text-start p-2">{{ $sale->customer->name ?? 'N/A' }}</td>
-                        <td class="text-start p-2">{{ $item->product->name }}</td>
+                        <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ $item->product->category->name ?? 'N/A' }}</td>
-                        <td class="text-start p-2">{{ $item->quantity }}</td>
+                        <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ number_format($item->price, 2) }}</td>
                         <td class="text-start p-2">{{ number_format($item->discount, 2) }}</td>
                         <td class="text-start p-2">{{ number_format($item->tax, 2) }}</td>
@@ -443,7 +443,7 @@
                         <td class="text-start p-2">{{ $expenseRow++ }}</td>
                         <td class="text-start p-2">{{ $expense->created_at->format('Y-m-d') }}</td>
                         <td class="text-start p-2">{{ $expense->expenseName->name ?? 'N/A' }}</td>
-                        <td class="text-start p-2">{{ $expense->description }}</td>
+                        <td class="text-start p-2">{{ $expense->description ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ number_format($expense->amount, 2) }}</td>
                     </tr>
                     @empty
@@ -520,8 +520,8 @@
                             <td class="text-start p-2">{{ $sale->created_at->format('Y-m-d') }}</td>
                             <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
                             <td class="text-start p-2">Invoice #{{ $sale->id }}</td>
-                            <td class="text-start p-2">{{ $item->product->name }}</td>
-                            <td class="text-start p-2">{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
+                            <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
                             <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
                             <td class="text-start p-2">{{ number_format($sale->tax,2) }}</td>
                             <td class="text-start p-2">{{ number_format($sale->discount,2) }}</td>
@@ -641,8 +641,8 @@
                             <td class="text-start p-2">{{ $purchase->date }}</td>
                             <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
                             <td class="text-start p-2">Invoice #{{ $purchase->id }}</td>
-                            <td class="text-start p-2">{{ $item->product->name }}</td>
-                            <td class="text-start p-2">{{ $item->quantity }}</td>
+                            <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
+                            <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
                             <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
                             <td class="text-start p-2">{{ number_format($item->tax,2) }}</td>
                             <td class="text-start p-2">{{ number_format($item->discount,2) }}</td>
@@ -732,8 +732,8 @@
                     @forelse($assetsLedger as $asset)
                     <tr>
                         <td class="text-start p-2">{{ $assetRow++ }}</td>
-                        <td class="text-start p-2">{{ $asset->title }}</td>
-                        <td class="text-start p-2">{{ $asset->date }}</td>
+                        <td class="text-start p-2">{{ $asset->title ?? 'N/A' }}</td>
+                        <td class="text-start p-2">{{ $asset->date ?? 'N/A' }}</td>
                         <td class="text-start p-2">{{ number_format($asset->value, 2) }}</td>
                     </tr>
                     @empty

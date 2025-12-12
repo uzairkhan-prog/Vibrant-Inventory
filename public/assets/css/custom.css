@@ -335,12 +335,6 @@ table.table td button.btn-sm {
    FILTER ROW (SEARCH + DATE FILTERS + SHOW)
    ===================================================== */
 
-
-
-/* ===========================================================
-   GENERAL FILTER ROW STRUCTURE (3 columns of col-md-4)
-   =========================================================== */
-
 /* ---------- MOBILE (360px – 575px) ---------- */
 @media (max-width: 1200px) {
 
@@ -433,11 +427,6 @@ table.table td button.btn-sm {
     }
 }
 
-
-
-
-
-
 /* ============================
    FILTERS ROW RESPONSIVE
    ============================ */
@@ -505,7 +494,6 @@ table.table td button.btn-sm {
         max-width: 100% !important;
     }
 }
-
 
 /* End - Table CSS */
 
