@@ -17,7 +17,7 @@
     @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
-            <span>Total Suppliers Value:</span>s
+            <span>Total Suppliers Value:</span>
             <span>Rs {{ number_format($subtotal, 2) }}</span>
         </div>
     </div>

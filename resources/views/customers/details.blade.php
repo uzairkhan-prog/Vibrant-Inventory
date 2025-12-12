@@ -7,7 +7,7 @@
         <h2 class="fw-bold text-primary mb-0">Customer Details</h2>
         <div>
             <a href="{{ route('customers.create') }}" class="btn btn-secondary">
-                <i class="material-icons me-1">&#xE147;</i> Add New Customer
+                <i class="material-icons me-1">&#xE147;</i> Add Customer
             </a>
         </div>
     </div>

@@ -217,6 +217,7 @@ table.table td button.btn-sm {
         font-size: 10px;
     }
 }
+
 /* Responsive Adjustments */
 
 @media (max-width: 768px) {
@@ -231,14 +232,280 @@ table.table td button.btn-sm {
     }
 
     .alert {
-        font-size: 14px;
+        font-size: 14px !important;
     }
 
     table.table th,
     table.table td {
         font-size: 10px;
     }
+
+    /* .d-flex.justify-content-between.align-items-center.mb-4 h2 {
+        font-size: 16px;
+    }
+
+    .d-flex.justify-content-between.align-items-center.mb-4 a {
+        font-size: 12px;
+    } */
 }
+
+/* ============================
+   HEADER (Category Management)
+   ============================ */
+
+/* =====================================================
+   HEADER (Purchase Invoice Management)
+   ===================================================== */
+@media (max-width: 575.98px) {
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .d-flex.justify-content-between.align-items-center.mb-4 a.btn {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+}
+
+/* Medium screen spacing improvements */
+@media (min-width: 576px) and (max-width: 768px) {
+    .d-flex.justify-content-between.align-items-center.mb-4 h2 {
+        font-size: 1.6rem !important;
+    }
+}
+
+/* Tablet / small laptop adjustments */
+@media (min-width: 768px) and (max-width: 1200px) {
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
+}
+
+/* =====================================================
+   TOTAL PURCHASE VALUE BOX
+   ===================================================== */
+.alert.alert-success.shadow-sm.rounded-3.fs-6.fw-bold.mb-4 {
+    font-size: 0.95rem !important;
+}
+
+/* Mobile: make value box text wrap cleanly */
+@media (max-width: 575.98px) {
+    .alert.alert-success.shadow-sm.rounded-3.fs-6.fw-bold.mb-4 .d-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px;
+    }
+}
+
+/* =====================================================
+   FILTERS ROW (Search + Date Filters + Show)
+   ===================================================== */
+/* =====================================================
+   HEADER (Purchase Invoice Management)
+   ===================================================== */
+@media (max-width: 575.98px) {
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .d-flex.justify-content-between.align-items-center.mb-4 a.btn {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center;
+    }
+}
+
+/* ============================
+   TOTAL PURCHASE VALUE BOX
+   ============================ */
+@media (max-width: 575.98px) {
+    .alert.alert-success.shadow-sm.rounded-3.fs-6.fw-bold.mb-4 .d-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px;
+    }
+}
+
+/* =====================================================
+   FILTER ROW (SEARCH + DATE FILTERS + SHOW)
+   ===================================================== */
+
+
+
+/* ===========================================================
+   GENERAL FILTER ROW STRUCTURE (3 columns of col-md-4)
+   =========================================================== */
+
+/* ---------- MOBILE (360px – 575px) ---------- */
+@media (max-width: 1200px) {
+
+    /* Each column stacks full width */
+    .row.mb-3.align-items-center .col-md-4 {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        margin-bottom: 12px !important;
+        gap: 10px !important;
+    }
+
+    /* Labels spacing clean */
+    .row.mb-3.align-items-center .col-md-4 label {
+        margin-bottom: 4px !important;
+    }
+
+    /* Search input full width */
+    .row.mb-3.align-items-center .col-md-4 input.form-control {
+        width: 100% !important;
+    }
+
+    /* Date inputs full width */
+    .row.mb-3.align-items-center input[type="date"] {
+        width: 100% !important;
+    }
+
+    /* Buttons full width */
+    .row.mb-3.align-items-center button.btn,
+    .row.mb-3.align-items-center a.btn {
+        width: 100% !important;
+        text-align: center !important;
+    }
+
+    /* Show dropdown full width */
+    .row.mb-3.align-items-center select.form-select {
+        width: 100% !important;
+    }
+
+    .row.mb-3.align-items-center .col-md-4 form {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+}
+
+/* ===========================================================
+   TABLET VIEW (576px – 900px)
+   =========================================================== */
+@media (min-width: 576px) and (max-width: 900px) {
+
+    .row.mb-3.align-items-center .col-md-4 {
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+
+    .row.mb-3.align-items-center input[type="date"] {
+        width: 180px !important;
+    }
+
+    .row.mb-3.align-items-center select.form-select {
+        width: auto !important;
+    }
+}
+
+/* ===========================================================
+   SMALL LAPTOP (900px – 1200px)
+   =========================================================== */
+@media (min-width: 900px) and (max-width: 1200px) {
+
+    .row.mb-3.align-items-center .col-md-4 {
+        gap: 10px !important;
+    }
+
+    .row.mb-3.align-items-center input[type="date"] {
+        width: 200px !important;
+    }
+}
+
+/* ===========================================================
+   LARGE SCREENS (1200px – 1500px)
+   =========================================================== */
+@media (min-width: 1200px) and (max-width: 1500px) {
+    .row.mb-3.align-items-center input[type="date"] {
+        width: 220px !important;
+    }
+
+    .row.mb-3.align-items-center select.form-select {
+        width: auto !important;
+    }
+}
+
+
+
+
+
+
+/* ============================
+   FILTERS ROW RESPONSIVE
+   ============================ */
+
+/* Base fixes */
+.row.mb-3.align-items-center input.form-control {
+    min-width: 150px;
+    background: #ffffff;
+}
+
+/* ------ MOBILE VIEW < 576px ------ */
+@media (max-width: 575.98px) {
+    .row.mb-3.align-items-center {
+        row-gap: 12px !important;
+    }
+
+    /* Search column (col-md-10) */
+    .row.mb-3.align-items-center .col-md-10 {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .row.mb-3.align-items-center .col-md-10 label {
+        margin-bottom: 5px !important;
+    }
+
+    .row.mb-3.align-items-center .col-md-10 input {
+        width: 100% !important;
+    }
+
+    /* Show Entries column (col-md-2) */
+    .row.mb-3.align-items-center .col-md-2 {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 6px;
+    }
+
+    .row.mb-3.align-items-center .col-md-2 select {
+        width: 100% !important;
+    }
+
+    .row.mb-3.align-items-center .col-md-2 span.ms-2 {
+        margin-left: 0 !important;
+    }
+}
+
+/* ------ TABLETS & SMALL LAPTOPS (576px - 991px) ------ */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .row.mb-3.align-items-center .col-md-10 {
+        flex-wrap: wrap !important;
+        gap: 10px;
+    }
+
+    .row.mb-3.align-items-center .col-md-2 {
+        justify-content: flex-end !important;
+        gap: 5px;
+    }
+}
+
+/* ------ LARGE SCREENS 992px - 1500px ------ */
+@media (min-width: 992px) and (max-width: 1500px) {
+    .row.mb-3.align-items-center .col-md-10 input {
+        max-width: 100% !important;
+    }
+}
+
 
 /* End - Table CSS */
 

@@ -4,7 +4,7 @@
 <div class="table-responsive">
     <div class="table-wrapper">
         <div class="table-title">
-            <h2>Add New <b>Payment Type</b></h2>
+            <h2>Add Payment Type</h2>
         </div>
 
         <div class="p-3">

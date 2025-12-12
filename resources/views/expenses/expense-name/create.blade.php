@@ -4,7 +4,7 @@
 <div class="table-responsive">
     <div class="table-wrapper">
         <div class="table-title">
-            <h2>Add New <b>Expense Name Type</b></h2>
+            <h2>Add Expense Name Type</h2>
         </div>
 
         <div class="p-3">

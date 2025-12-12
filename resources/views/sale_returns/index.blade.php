@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="p-4 bg-white shadow rounded">
+<div class="p-3 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Sale Returns Management</h2>
         <div>
@@ -21,28 +21,27 @@
     </div>
 
     <!-- Filters Row -->
-    <div class="row mb-3 align-items-center">
-        <!-- Search -->
-        <div class="col-md-4 d-flex align-items-center">
+    <div class="row mb-3 align-items-center gap-2">
+        <!-- Existing Search -->
+        <div class="col-xl-12 col-md-4 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
-            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by customer or product">
+            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by customer, date or amount">
         </div>
 
-        <!-- Date + Per Page Filters -->
-        <div class="col-md-8 d-flex align-items-center justify-content-end">
+        <!-- Date Filters -->
+        <div class="col-xl-12 col-md-4 d-flex align-items-center justify-content-center">
             <form method="GET" action="{{ route('sale-returns.index') }}" class="d-flex align-items-center">
                 <label class="me-2 fw-semibold">From:</label>
                 <input type="date" name="from_date" class="form-control me-2" value="{{ $fromDate ?? '' }}">
                 <label class="me-2 fw-semibold">To:</label>
                 <input type="date" name="to_date" class="form-control me-2" value="{{ $toDate ?? '' }}">
+                <br>
                 <button type="submit" class="btn btn-primary me-2">Search</button>
-                <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary me-3">Reset</a>
-                <label class="ms-2 me-2 fw-semibold">Show</label>
+                <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Reset</a>
+                <label class="ms-3 me-2 fw-semibold">Show</label>
                 <select id="rowsPerPage" name="per_page" class="form-select w-auto">
                     @foreach ([20, 50, 100] as $value)
-                    <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>
-                        {{ $value }}
-                    </option>
+                    <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
                     @endforeach
                 </select>
             </form>

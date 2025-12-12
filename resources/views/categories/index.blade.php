@@ -7,7 +7,7 @@
         <h2 class="fw-bold text-primary mb-0">Category Management</h2>
         <div>
             <a href="{{ route('categories.create') }}" class="btn btn-secondary">
-                <i class="material-icons me-1">&#xE147;</i> Add New Category
+                <i class="material-icons me-1">&#xE147;</i> Add Category
             </a>
         </div>
     </div>
@@ -22,7 +22,7 @@
             <label class="me-2 fw-semibold">Show</label>
             <select id="rowsPerPage" class="form-select w-auto">
                 @foreach ([20, 50, 100] as $value)
-                <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
+                <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</`option`>
                 @endforeach
             </select>
             <span class="ms-2 fw-semibold">entries</span>
