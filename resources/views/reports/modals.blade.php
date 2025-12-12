@@ -434,7 +434,7 @@
                                 <td class="text-start p-2">{{ $purchase->created_at->format('Y-m-d') }}</td>
                                 <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
                                 <td class="text-start p-2">Invoice #{{ $purchase->id }}</td>
-                                <td class="text-start p-2">{{ $item->product->nam ?? 'N/A'e }}</td>
+                                <td class="text-start p-2">{{ $item->product->nam ?? 'N/A' }}</td>
                                 <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
                                 <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
                                 <td class="text-start p-2">{{ number_format($purchase->tax,2) }}</td>
