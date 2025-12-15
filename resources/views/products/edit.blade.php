@@ -17,6 +17,16 @@
             @method('PUT')
 
             <div class="mb-3">
+                <label for="category_id" class="form-label">Category</label>
+                <select name="category_id" id="category_id" class="form-select select2">
+                    <option value="">-- None --</option>
+                    @foreach($categories as $cat)
+                    <option value="{{ $cat->id }}" @if($product->category_id == $cat->id) selected @endif>{{ $cat->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label for="name" class="form-label">Name</label>
                 <input name="name" id="name" class="form-control" value="{{ old('name', $product->name) }}" required>
             </div>
@@ -35,16 +45,6 @@
                     <label for="quantity" class="form-label">Total QTY</label>
                     <input name="quantity" id="quantity" type="number" class="form-control" value="{{ $product->quantity }}" required>
                 </div> -->
-
-            <div class="mb-3">
-                <label for="category_id" class="form-label">Category</label>
-                <select name="category_id" id="category_id" class="form-select">
-                    <option value="">-- None --</option>
-                    @foreach($categories as $cat)
-                    <option value="{{ $cat->id }}" @if($product->category_id == $cat->id) selected @endif>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
-            </div>
 
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Update</button>

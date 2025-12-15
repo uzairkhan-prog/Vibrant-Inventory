@@ -25,7 +25,7 @@
         <div class="row mb-4">
             <div class="col-md-6">
                 <label for="customer_id" class="form-label">Customer</label>
-                <select name="customer_id" id="customer_id" class="form-select" required>
+                <select name="customer_id" id="customer_id" class="form-select select2" required>
                     <option value="" disabled {{ old('customer_id') ? '' : 'selected' }}>-- Select Customer --</option>
                     @foreach($customers as $customer)
                     <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
                     @foreach(old('product_id') as $index => $oldProductId)
                     <tr class="product-row">
                         <td>
-                            <select name="product_id[]" class="form-select" required>
+                            <select name="product_id[]" class="form-select select2" required>
                                 <option value="" disabled>Select a Product</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}" {{ $oldProductId == $product->id ? 'selected' : '' }}>
@@ -90,7 +90,7 @@
                     @else
                     <tr class="product-row">
                         <td>
-                            <select name="product_id[]" class="form-select" required>
+                            <select name="product_id[]" class="form-select select2" required>
                                 <option value="" disabled selected>Select a Product</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->fifo_stock }})</option>

@@ -13,7 +13,7 @@
 
             <div class="mb-3">
                 <label class="form-label">Expense Name</label>
-                <select name="expense_name_id" class="form-select" required>
+                <select name="expense_name_id" class="form-select select2" required>
                     <option value="">-- Select Expense Name --</option>
                     @foreach ($expenseNames as $name)
                     <option value="{{ $name->id }}" {{ $expense->expense_name_id == $name->id ? 'selected' : '' }}>
@@ -25,7 +25,7 @@
 
             <div class="mb-3">
                 <label class="form-label">Payment Type</label>
-                <select name="payment_type_id" class="form-select" required>
+                <select name="payment_type_id" class="form-select select2" required>
                     <option value="">-- Select Payment Type --</option>
                     @foreach ($paymentTypes as $type)
                     <option value="{{ $type->id }}" {{ $expense->payment_type_id == $type->id ? 'selected' : '' }}>

@@ -26,7 +26,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label>Customer</label>
-                        <select name="customer_id" id="customerSelect" class="form-select" required>
+                        <select name="customer_id" id="customerSelect" class="form-select select2" required>
                             <option value="">-- Select Customer --</option>
                             @foreach($customers as $c)
                             <option value="{{ $c->id }}" data-balance="{{ $c->balance }}">{{ $c->name }}</option>
@@ -37,7 +37,7 @@
 
                     <div class="col-md-6">
                         <label>Product</label>
-                        <select name="product_id" id="productSelect" class="form-select" required>
+                        <select name="product_id" id="productSelect" class="form-select select2" required>
                             <option value="">-- Select Product --</option>
                             @foreach($products as $p)
                             <option value="{{ $p->id }}"

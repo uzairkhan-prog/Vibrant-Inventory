@@ -27,7 +27,7 @@
                 <!-- Product -->
                 <div class="col-md-3" id="productDropdownWrapper" style="display:none;">
                     <label class="form-label">Product</label>
-                    <select name="product_id" id="product_id" class="form-select">
+                    <select name="product_id" id="product_id" class="form-select select2">
                         <option value="">All Products</option>
                         @foreach($productsList as $p)
                         <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
                 <!-- Customer -->
                 <div class="col-md-3" id="customerDropdownWrapper" style="display:none;">
                     <label class="form-label">Customer</label>
-                    <select name="customer_id" id="customer_id" class="form-select">
+                    <select name="customer_id" id="customer_id" class="form-select select2">
                         <option value="">All Customers</option>
                         @foreach($customersList as $c)
                         <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>
@@ -53,7 +53,7 @@
                 <!-- Supplier -->
                 <div class="col-md-3" id="supplierDropdownWrapper" style="display:none;">
                     <label class="form-label">Supplier</label>
-                    <select name="supplier_id" id="supplier_id" class="form-select">
+                    <select name="supplier_id" id="supplier_id" class="form-select select2">
                         <option value="">All Suppliers</option>
                         @foreach($suppliersList as $s)
                         <option value="{{ $s->id }}" {{ $supplierId == $s->id ? 'selected' : '' }}>

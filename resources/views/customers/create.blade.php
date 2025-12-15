@@ -47,7 +47,7 @@
 
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Submit</button>
-                <a href="{{ route('customers.index') }}" class="btn btn-dark">Back</a>
+                <a href="{{ route('customers.details') }}" class="btn btn-dark">Back</a>
             </div>
         </form>
     </div>
