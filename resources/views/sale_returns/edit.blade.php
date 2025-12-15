@@ -3,84 +3,82 @@
 @section('content')
 
 <div class="table-responsive">
-    <div class="table-wrapper">
-        <div class="table-title">
-            <div class="row">
-                <div class="col-sm-6">
-                    <h2>Edit <b>Sale Return</b></h2>
-                </div>
-                <div class="col-sm-6 text-end">
-                    <a href="{{ route('sale-returns.index') }}" class="btn btn-dark">Back to Returns</a>
-                </div>
+    <div class="table-title">
+        <div class="row">
+            <div class="col-sm-6">
+                <h2>Edit <b>Sale Return</b></h2>
+            </div>
+            <div class="col-sm-6 text-end">
+                <a href="{{ route('sale-returns.index') }}" class="btn btn-dark">Back to Returns</a>
             </div>
         </div>
+    </div>
 
-        @if(session('success'))
-        <div class="alert alert-success text-center">{{ session('success') }}</div>
-        @endif
+    @if(session('success'))
+    <div class="alert alert-success text-center">{{ session('success') }}</div>
+    @endif
 
-        <div class="p-3">
-            <form method="POST" action="{{ route('sale-returns.update', $saleReturn->id) }}">
-                @csrf
-                @method('PUT')
+    <div class="p-3">
+        <form method="POST" action="{{ route('sale-returns.update', $saleReturn->id) }}">
+            @csrf
+            @method('PUT')
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label>Customer</label>
-                        <select name="customer_id" id="customerSelect" class="form-select select2" required>
-                            <option value="">-- Select Customer --</option>
-                            @foreach($customers as $c)
-                            <option value="{{ $c->id }}"
-                                data-balance="{{ $c->balance }}"
-                                {{ $c->id == $saleReturn->customer_id ? 'selected' : '' }}>{{ $c->name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="form-text text-primary fw-bold">Current Balance: Rs <span id="customerBalance">0.00</span></div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label>Product</label>
-                        <select name="product_id" id="productSelect" class="form-select select2" required>
-                            <option value="">-- Select Product --</option>
-                            @foreach($products as $p)
-                            <option value="{{ $p->id }}"
-                                data-qty="{{ $p->quantity }}"
-                                data-price="{{ $p->price_per_unit }}"
-                                data-packing="{{ $p->packing }}"
-                                {{ $p->id == $saleReturn->product_id ? 'selected' : '' }}>
-                                {{ $p->name }}
-                            </option>
-                            @endforeach
-                        </select>
-                        <div class="form-text">
-                            <span class="text-success fw-bold">Qty Available:</span> <span id="productQty">-</span> |
-                            <span class="text-info fw-bold">Price/Unit:</span> Rs <span id="productPrice">-</span> |
-                            <span class="text-muted">Packing:</span> <span id="productPack">-</span>
-                        </div>
-                    </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Customer</label>
+                    <select name="customer_id" id="customerSelect" class="form-select select2" required>
+                        <option value="">-- Select Customer --</option>
+                        @foreach($customers as $c)
+                        <option value="{{ $c->id }}"
+                            data-balance="{{ $c->balance }}"
+                            {{ $c->id == $saleReturn->customer_id ? 'selected' : '' }}>{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="form-text text-primary fw-bold">Current Balance: Rs <span id="customerBalance">0.00</span></div>
                 </div>
 
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label>Packing</label>
-                        <input type="text" name="packing" id="packingInput" class="form-control" value="{{ $saleReturn->packing }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label>Quantity Returned</label>
-                        <input type="number" name="qty_return" id="qtyReturn" class="form-control" value="{{ $saleReturn->qty_return }}" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label>Amount Deducted (Rs)</label>
-                        <input type="number" name="amount_deducted" id="amountDeducted" step="0.01" class="form-control" value="{{ $saleReturn->amount_deducted }}" required>
+                <div class="col-md-6">
+                    <label>Product</label>
+                    <select name="product_id" id="productSelect" class="form-select select2" required>
+                        <option value="">-- Select Product --</option>
+                        @foreach($products as $p)
+                        <option value="{{ $p->id }}"
+                            data-qty="{{ $p->quantity }}"
+                            data-price="{{ $p->price_per_unit }}"
+                            data-packing="{{ $p->packing }}"
+                            {{ $p->id == $saleReturn->product_id ? 'selected' : '' }}>
+                            {{ $p->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">
+                        <span class="text-success fw-bold">Qty Available:</span> <span id="productQty">-</span> |
+                        <span class="text-info fw-bold">Price/Unit:</span> Rs <span id="productPrice">-</span> |
+                        <span class="text-muted">Packing:</span> <span id="productPack">-</span>
                     </div>
                 </div>
+            </div>
 
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary">Update Return</button>
-                    <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Cancel</a>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label>Packing</label>
+                    <input type="text" name="packing" id="packingInput" class="form-control" value="{{ $saleReturn->packing }}">
                 </div>
-            </form>
-        </div>
+                <div class="col-md-4">
+                    <label>Quantity Returned</label>
+                    <input type="number" name="qty_return" id="qtyReturn" class="form-control" value="{{ $saleReturn->qty_return }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label>Amount Deducted (Rs)</label>
+                    <input type="number" name="amount_deducted" id="amountDeducted" step="0.01" class="form-control" value="{{ $saleReturn->amount_deducted }}" required>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary">Update Return</button>
+                <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
 
