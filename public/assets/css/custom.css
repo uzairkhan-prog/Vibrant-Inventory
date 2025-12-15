@@ -418,13 +418,13 @@ table.table td button.btn-sm {
    LARGE SCREENS (1200px – 1500px)
    =========================================================== */
 @media (min-width: 1200px) and (max-width: 1500px) {
-    .row.mb-3.align-items-center input[type="date"] {
+    /* .row.mb-3.align-items-center input[type="date"] {
         width: 220px !important;
-    }
+    } */
 
-    .row.mb-3.align-items-center select.form-select {
+    /* .row.mb-3.align-items-center select.form-select {
         width: auto !important;
-    }
+    } */
 }
 
 /* ============================
