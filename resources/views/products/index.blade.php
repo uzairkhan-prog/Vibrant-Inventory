@@ -132,9 +132,9 @@
 
     // Rows per page
     document.getElementById('rowsPerPage').addEventListener('change', function() {
-        const selected = this.value;
         const url = new URL(window.location.href);
-        url.searchParams.set('per_page', selected);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.set('page', 1); // reset page
         window.location.href = url.toString();
     });
 
@@ -142,8 +142,17 @@
     document.getElementById('categoryFilter').addEventListener('change', function() {
         const categoryId = this.value;
         const url = new URL(window.location.href);
-        if (categoryId) url.searchParams.set('category_id', categoryId);
-        else url.searchParams.delete('category_id');
+
+        // set / remove category
+        if (categoryId) {
+            url.searchParams.set('category_id', categoryId);
+        } else {
+            url.searchParams.delete('category_id');
+        }
+
+        // 🔥 RESET PAGE
+        url.searchParams.set('page', 1);
+
         window.location.href = url.toString();
     });
 
