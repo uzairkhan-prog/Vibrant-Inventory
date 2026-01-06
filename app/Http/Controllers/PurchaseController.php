@@ -76,7 +76,6 @@ class PurchaseController extends Controller
             'tax.*'       => 'nullable|numeric|min:0',
         ]);
 
-        /*
         // ✅ Custom quantity vs stock validation
         foreach ($request->product_id as $index => $productId) {
             $product = Product::find($productId);
@@ -88,7 +87,6 @@ class PurchaseController extends Controller
                     ->withInput();
             }
         }
-        */
 
         DB::transaction(function () use ($request) {
             $purchase = Purchase::create([
@@ -145,47 +143,43 @@ class PurchaseController extends Controller
     public function update(Request $request, Purchase $purchase)
     {
         $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'date'        => 'required|date',
+            'supplier_id'  => 'required|exists:suppliers,id',
+            'date'         => 'required|date',
             'product_id.*' => 'required|exists:products,id',
-            'quantity.*'  => 'required|integer|min:1',
-            'price.*'     => 'required|numeric|min:0',
-            'discount.*'  => 'nullable|numeric|min:0',
-            'tax.*'       => 'nullable|numeric|min:0',
+            'quantity.*'   => 'required|integer|min:1',
+            'price.*'      => 'required|numeric|min:0',
+            'discount.*'   => 'nullable|numeric|min:0',
+            'tax.*'        => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($request, $purchase) {
-            // Revert previous stock
+
+            // Load items once
+            $purchase->load('items');
+
+            /** 🔁 Revert previous stock */
             foreach ($purchase->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->quantity -= $item->quantity;
-                    $product->save();
-                }
+                Product::where('id', $item->product_id)
+                    ->decrement('quantity', $item->quantity);
             }
 
-            // Delete old items
+            /** ❌ Remove old items */
             $purchase->items()->delete();
-
-            $purchase->update([
-                'supplier_id' => $request->supplier_id,
-                'date'        => $request->date,
-                'total_amount' => 0,
-            ]);
 
             $totalAmount = 0;
 
+            /** ➕ Add new items */
             foreach ($request->product_id as $index => $productId) {
                 $quantity = (float) $request->quantity[$index];
                 $price    = (float) $request->price[$index];
                 $discount = (float) ($request->discount[$index] ?? 0);
                 $tax      = (float) ($request->tax[$index] ?? 0);
 
-                $base = $quantity * $price;
-                $discountAmount = ($discount / 100) * $base;
-                $taxable = $base - $discountAmount;
-                $taxAmount = ($tax / 100) * $taxable;
-                $subtotal = $taxable + $taxAmount;
+                $base             = $quantity * $price;
+                $discountAmount   = ($discount / 100) * $base;
+                $taxable          = $base - $discountAmount;
+                $taxAmount        = ($tax / 100) * $taxable;
+                $subtotal         = $taxable + $taxAmount;
 
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
@@ -196,18 +190,23 @@ class PurchaseController extends Controller
                     'tax'         => $tax,
                 ]);
 
-                // Update product stock
-                $product = Product::find($productId);
-                $product->quantity += $quantity;
-                $product->save();
+                Product::where('id', $productId)
+                    ->increment('quantity', $quantity);
 
                 $totalAmount += $subtotal;
             }
 
-            $purchase->update(['total_amount' => $totalAmount]);
+            /** ✅ Update purchase ONCE with final total */
+            $purchase->update([
+                'supplier_id'  => $request->supplier_id,
+                'date'         => $request->date,
+                'total_amount' => round($totalAmount, 2),
+            ]);
         });
 
-        return redirect()->route('purchases.index')->with('success', 'Purchase updated successfully.');
+        return redirect()
+            ->route('purchases.index')
+            ->with('success', 'Purchase updated successfully.');
     }
 
     public function show(Purchase $purchase)

@@ -19,7 +19,7 @@ class ProductController extends Controller
         if ($categoryId) {
             $productsQuery->where('category_id', $categoryId);
         }
-        $products = $productsQuery->paginate($perPage)->withQueryString();
+        $products = $productsQuery->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         // Calculate overall totals
         $totalQuantity = Product::sum('quantity');
@@ -73,7 +73,7 @@ class ProductController extends Controller
             'name' => 'required',
             'packing' => 'required|integer|min:1',
             'price_per_unit' => 'required|numeric',
-            // 'quantity' => 'required|integer',
+            'quantity' => 'required|integer',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
@@ -94,7 +94,7 @@ class ProductController extends Controller
             'name' => 'required',
             'packing' => 'required|integer|min:1',
             'price_per_unit' => 'required|numeric',
-            // 'quantity' => 'required|integer',
+            'quantity' => 'required|integer',
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
@@ -119,34 +119,89 @@ class ProductController extends Controller
 
     public function importCSV(Request $request)
     {
-        $file = $request->file('csv_file');
-        $rows = array_map('str_getcsv', file($file->getRealPath()));
+        try {
+            if (!$request->hasFile('csv_file')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file uploaded'
+                ], 422);
+            }
 
-        $header = array_map('trim', $rows[0]); // CSV headers
-        unset($rows[0]); // remove header row
+            $file = $request->file('csv_file');
 
-        $inserted = 0;
+            if (!$file->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file'
+                ], 422);
+            }
 
-        foreach ($rows as $row) {
-            $data = array_combine($header, $row);
+            $rows = array_map('str_getcsv', file($file->getRealPath()));
 
-            Product::create([
-                'name' => $data['name'] ?? null, // if missing -> null
-                'packing' => $data['packing'] ?? 0,
-                'price_per_unit' => is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0,
-                // 'quantity' => is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0,
-                'category_id' => null, // always null
-                'description' => $data['description'] ?? null,
-                'total' => (is_numeric($data['price_per_unit'] ?? null) ? $data['price_per_unit'] : 0)
-                    * (is_numeric($data['quantity'] ?? null) ? $data['quantity'] : 0),
+            if (count($rows) < 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'CSV file is empty'
+                ], 422);
+            }
+
+            // Normalize headers
+            $headers = array_map(fn($h) => strtolower(trim($h)), $rows[0]);
+            unset($rows[0]);
+
+            $requiredHeaders = ['name', 'packing', 'quantity', 'category', 'price'];
+
+            foreach ($requiredHeaders as $col) {
+                if (!in_array($col, $headers)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Missing column: $col"
+                    ], 422);
+                }
+            }
+
+            $inserted = 0;
+
+            foreach ($rows as $row) {
+
+                if (count($row) !== count($headers)) {
+                    continue;
+                }
+
+                $data = array_combine($headers, $row);
+
+                // CATEGORY NAME → ID
+                $categoryId = null;
+                if (!empty($data['category'])) {
+                    $category = Category::firstOrCreate([
+                        'name' => trim($data['category'])
+                    ]);
+                    $categoryId = $category->id;
+                }
+
+                Product::create([
+                    'name' => trim($data['name']),
+                    'packing' => (int)$data['packing'],
+                    'quantity' => (int)$data['quantity'],
+                    'price_per_unit' => (float)$data['price'],
+                    'category_id' => $categoryId,
+                    'description' => null,
+                ]);
+
+                $inserted++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "$inserted products imported successfully"
             ]);
+        } catch (\Throwable $e) {
 
-            $inserted++;
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => "$inserted products imported successfully."
-        ]);
     }
 }

@@ -37,14 +37,14 @@
             </div>
 
             <div class="mb-3">
+                <label for="quantity" class="form-label">Total QTY</label>
+                <input name="quantity" id="quantity" type="number" class="form-control" value="{{ $product->quantity }}" required>
+            </div>
+
+            <div class="mb-3">
                 <label for="price_per_unit" class="form-label">Rate (Price per Unit)</label>
                 <input name="price_per_unit" id="price_per_unit" type="number" step="0.01" class="form-control" value="{{ $product->price_per_unit }}" required>
             </div>
-
-            <!-- <div class="mb-3">
-                    <label for="quantity" class="form-label">Total QTY</label>
-                    <input name="quantity" id="quantity" type="number" class="form-control" value="{{ $product->quantity }}" required>
-                </div> -->
 
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Update</button>
