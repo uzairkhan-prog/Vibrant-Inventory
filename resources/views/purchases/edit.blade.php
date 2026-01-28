@@ -16,7 +16,7 @@
         <div class="row mb-4">
             <div class="col-md-6">
                 <label for="supplier_id" class="form-label">Supplier</label>
-                <select name="supplier_id" id="supplier_id" class="form-select" required>
+                <select name="supplier_id" id="supplier_id" class="form-select select2" required>
                     @foreach($suppliers as $supplier)
                     <option value="{{ $supplier->id }}" {{ $supplier->id == $purchase->supplier_id ? 'selected' : '' }}>
                         {{ $supplier->name }}
@@ -59,7 +59,7 @@
                     <tr class="product-row">
                         <!-- Category -->
                         <td>
-                            <select name="category_id[]" class="form-select category-select" required>
+                            <select name="category_id[]" class="form-select category-select select2" required>
                                 <option value="">Select Category</option>
                                 @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ $cat->id == $categoryId ? 'selected' : '' }}>
@@ -71,7 +71,7 @@
 
                         <!-- Product -->
                         <td>
-                            <select name="product_id[]" class="form-select product-select" required>
+                            <select name="product_id[]" class="form-select product-select select2" required>
                                 <option value="">Select Product</option>
                                 <!-- Will be loaded by AJAX -->
                             </select>

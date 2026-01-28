@@ -58,13 +58,14 @@ class SaleController extends Controller
         $customers = Customer::all();
 
         // Instead of using products.quantity, calculate stock from purchases & purchase_items
-        $products = Product::with(['purchaseItems' => function ($q) {
-            $q->select('product_id', 'quantity');
-        }])->get();
+        // $products = Product::with(['purchaseItems' => function ($q) {
+        //     $q->select('product_id', 'quantity');
+        // }])->get();
 
-        foreach ($products as $product) {
-            $product->fifo_stock = $product->purchaseItems->sum('quantity');
-        }
+        // foreach ($products as $product) {
+        //     $product->fifo_stock = $product->purchaseItems->sum('quantity');
+        // }
+        $products = Product::withSum('purchaseItems as fifo_stock', 'quantity')->get();
 
         return view('sales.create', compact('customers', 'products'));
     }
@@ -148,13 +149,15 @@ class SaleController extends Controller
         $customers = Customer::all();
 
         // Instead of using products.quantity, calculate stock from purchases & purchase_items
-        $products = Product::with(['purchaseItems' => function ($q) {
-            $q->select('product_id', 'quantity');
-        }])->get();
+        // $products = Product::with(['purchaseItems' => function ($q) {
+        //     $q->select('product_id', 'quantity');
+        // }])->get();
 
-        foreach ($products as $product) {
-            $product->fifo_stock = $product->purchaseItems->sum('quantity');
-        }
+        // foreach ($products as $product) {
+        //     $product->fifo_stock = $product->purchaseItems->sum('quantity');
+        // }
+
+        $products = Product::withSum('purchaseItems as fifo_stock', 'quantity')->get();
         $sale->load('items.product');
         return view('sales.edit', compact('sale', 'customers', 'products'));
     }

@@ -23,7 +23,7 @@
             <select id="rowsPerPage" class="form-select w-auto">
                 @foreach ([20, 50, 100] as $value)
                 <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</`option`>
-                @endforeach
+                    @endforeach
             </select>
             <span class="ms-2 fw-semibold">entries</span>
         </div>
@@ -49,7 +49,7 @@
                 <tbody>
                     @foreach ($categories as $index => $category)
                     <tr>
-                        <td>{{ $category->id }}</td>
+                        <td>{{ $index + 1 }}</td>
                         <td>{{ $category->name }}</td>
                         <td>{{ $category->description }}</td>
                         <td class="d-flex justify-content-center">

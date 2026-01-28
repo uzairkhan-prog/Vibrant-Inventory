@@ -28,6 +28,12 @@
         </div>
 
         <div class="row mb-3 align-items-center">
+            <div class="col-md-2 mt-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="show_all" value="1" {{ request('show_all') ? 'checked' : '' }}>
+                    <label class="form-check-label fw-semibold">Show All Products</label>
+                </div>
+            </div>
             <div class="col-md-3">
                 <label class="fw-semibold">Type:</label>
                 <select name="type_filter" class="form-select">
@@ -43,12 +49,6 @@
             <div class="col-md-2">
                 <label class="fw-semibold">To:</label>
                 <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
-            </div>
-            <div class="col-md-2 mt-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="show_all" value="1" {{ request('show_all') ? 'checked' : '' }}>
-                    <label class="form-check-label fw-semibold">Show All Products</label>
-                </div>
             </div>
             <div class="col-md-3 mt-4 d-flex justify-content-end gap-2">
                 <button type="submit" class="btn btn-primary">Search</button>

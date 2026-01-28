@@ -80,6 +80,7 @@
                         <th>Name</th>
                         <th>Category</th>
                         <th>Packing</th>
+                        <th>Qty</th>
                         <th>Value</th>
                         <th>Actions</th>
                     </tr>
@@ -91,6 +92,7 @@
                         <td>{{ $product->name }}</td>
                         <td>{{ $product->category->name ?? 'Uncategorized' }}</td>
                         <td>{{ $product->packing }}</td>
+                        <td>{{ number_format($product->quantity) }}</td>
                         <td>{{ number_format($product->price_per_unit, 2) }}</td>
                         <td class="d-flex justify-content-center gap-1">
                             <a href="{{ route('products.show', $product) }}" class="btn btn-sm btn-info text-white">Show</a>
@@ -130,9 +132,9 @@
 
     // Rows per page
     document.getElementById('rowsPerPage').addEventListener('change', function() {
-        const selected = this.value;
         const url = new URL(window.location.href);
-        url.searchParams.set('per_page', selected);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.set('page', 1); // reset page
         window.location.href = url.toString();
     });
 
@@ -140,8 +142,17 @@
     document.getElementById('categoryFilter').addEventListener('change', function() {
         const categoryId = this.value;
         const url = new URL(window.location.href);
-        if (categoryId) url.searchParams.set('category_id', categoryId);
-        else url.searchParams.delete('category_id');
+
+        // set / remove category
+        if (categoryId) {
+            url.searchParams.set('category_id', categoryId);
+        } else {
+            url.searchParams.delete('category_id');
+        }
+
+        // 🔥 RESET PAGE
+        url.searchParams.set('page', 1);
+
         window.location.href = url.toString();
     });
 
@@ -179,8 +190,10 @@
     document.getElementById('csvFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
+
         const formData = new FormData();
         formData.append('csv_file', file);
+
         fetch("{{ route('products.import') }}", {
                 method: 'POST',
                 headers: {
@@ -188,12 +201,23 @@
                 },
                 body: formData
             })
-            .then(res => res.json())
+            .then(async res => {
+                const text = await res.text(); // read raw response
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    console.error('Server returned HTML:', text);
+                    throw new Error('Server error (not JSON)');
+                }
+            })
             .then(data => {
                 alert(data.message);
-                location.reload();
+                if (data.success) location.reload();
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                alert('Import failed. Check console.');
+                console.error(err);
+            });
     });
 
     // PDF Export
@@ -204,12 +228,12 @@
         const doc = new jsPDF("p", "mm", "a4");
         doc.text("Stock Management Report", 14, 20);
         const head = [
-            ['#', 'Name', 'Category', 'Packing', 'Value']
+            ['#', 'Name', 'Category', 'Packing', 'Qty', 'Value']
         ];
         const body = [];
         document.querySelectorAll("#productTable tbody tr").forEach(r => {
             const cols = r.querySelectorAll("td");
-            body.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText]);
+            body.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText, cols[5].innerText]);
         });
         doc.autoTable({
             head,

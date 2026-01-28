@@ -48,7 +48,7 @@
 
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Update</button>
-                <a href="{{ route('suppliers.index') }}" class="btn btn-dark">Back</a>
+                <a href="{{ route('suppliers.details') }}" class="btn btn-dark">Back</a>
             </div>
         </form>
     </div>

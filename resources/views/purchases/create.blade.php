@@ -25,7 +25,7 @@
         <div class="row mb-4">
             <div class="col-md-6">
                 <label for="supplier_id" class="form-label">Supplier</label>
-                <select name="supplier_id" id="supplier_id" class="form-select" required>
+                <select name="supplier_id" id="supplier_id" class="form-select select2" required>
                     <option value="">Select Supplier</option>
                     @foreach($suppliers as $supplier)
                     <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
@@ -56,7 +56,7 @@
                 <tbody id="product-list">
                     <tr class="product-row">
                         <td>
-                            <select name="category_id[]" class="form-select category-select" required>
+                            <select name="category_id[]" class="form-select category-select select2" required>
                                 <option value="">Select Category</option>
                                 @foreach($categories as $cat)
                                 <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -64,7 +64,7 @@
                             </select>
                         </td>
                         <td>
-                            <select name="product_id[]" class="form-select product-select" required>
+                            <select name="product_id[]" class="form-select product-select select2" required>
                                 <option value="">Select Product</option>
                             </select>
                         </td>

@@ -6,6 +6,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Suppliers Details</h2>
         <div>
+            <a href="{{ route('suppliers.index') }}" class="btn btn-primary">
+                <i class="material-icons">&#xE8F4;</i> View Supplier Ledger
+            </a>
             <a href="{{ route('suppliers.create') }}" class="btn btn-secondary">
                 <i class="material-icons me-1">&#xE147;</i> Add Supplier
             </a>

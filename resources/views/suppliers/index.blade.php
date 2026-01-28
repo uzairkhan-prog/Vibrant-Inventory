@@ -4,12 +4,12 @@
 
 <div class="p-4 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary mb-0">Suppliers Management</h2>
-        <div>
+        <h2 class="fw-bold text-primary mb-0">Suppliers Ledger</h2>
+        <!-- <div>
             <a href="{{ route('suppliers.create') }}" class="btn btn-secondary">
                 <i class="material-icons me-1">&#xE147;</i> Add Supplier
             </a>
-        </div>
+        </div> -->
     </div>
 
     @php
@@ -55,7 +55,7 @@
                         <th>Address</th>
                         <th>Total Amount</th>
                         <th>Balance Details</th>
-                        <th>Actions</th>
+                        <!-- <th>Actions</th> -->
                     </tr>
                 </thead>
                 <tbody>
@@ -67,10 +67,10 @@
                         <td>Rs {{ number_format($supplier->balance ?? 0, 2) }}</td>
                         <td>
                             <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white">
-                                View Details <i class="material-icons">&#xE8F4;</i>
+                                Balance <i class="material-icons">&#xE8F4;</i>
                             </a>
                         </td>
-                        <td class="d-flex justify-content-center">
+                        <!-- <td class="d-flex justify-content-center">
                             <a href="{{ route('suppliers.edit', $supplier) }}" class="btn btn-sm btn-success me-1 text-white">
                                 Edit <i class="material-icons">&#xE254;</i>
                             </a>
@@ -81,7 +81,7 @@
                                     Delete <i class="material-icons">&#xE872;</i>
                                 </button>
                             </form>
-                        </td>
+                        </td> -->
                     </tr>
                     @endforeach
                 </tbody>
