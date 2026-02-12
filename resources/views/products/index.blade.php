@@ -25,13 +25,10 @@
     </div>
 
     <!-- Total Stock Value -->
-    @php
-    $subtotal = $products->sum('price_per_unit');
-    @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold">
         <div class="d-flex justify-content-between">
             <span>Total Stock Value:</span>
-            <span id="totalValue">Rs {{ number_format($subtotal, 2) }}</span>
+            <span id="totalValue">Rs {{ number_format($totalValue, 2) }}</span>
         </div>
     </div>
 
@@ -82,6 +79,7 @@
                         <th>Packing</th>
                         <th>Qty</th>
                         <th>Value</th>
+                        <th>Total Value</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -94,6 +92,7 @@
                         <td>{{ $product->packing }}</td>
                         <td>{{ number_format($product->quantity) }}</td>
                         <td>{{ number_format($product->price_per_unit, 2) }}</td>
+                        <td>{{ number_format($product->quantity * $product->price_per_unit, 2) }}</td>
                         <td class="d-flex justify-content-center gap-1">
                             <a href="{{ route('products.show', $product) }}" class="btn btn-sm btn-info text-white">Show</a>
                             <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-success text-white">Edit</a>

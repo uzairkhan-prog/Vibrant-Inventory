@@ -22,8 +22,14 @@ class ProductController extends Controller
         $products = $productsQuery->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         // Calculate overall totals
-        $totalQuantity = Product::sum('quantity');
-        $totalValue = Product::selectRaw('SUM(quantity * price_per_unit) as total')->value('total') ?? 0;
+        $totalQuery = Product::query();
+        if ($categoryId) {
+            $totalQuery->where('category_id', $categoryId);
+        }
+        $totalQuantity = (clone $totalQuery)->sum('quantity');
+        $totalValue = (clone $totalQuery)
+            ->selectRaw('SUM(quantity * price_per_unit) as total')
+            ->value('total') ?? 0;
 
         // Aggregate data for chart: quantity and value by category
         $categoryAggregates = Product::leftJoin('categories', 'products.category_id', '=', 'categories.id')
