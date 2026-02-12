@@ -121,13 +121,50 @@
 
 <!-- JS -->
 <script>
-    // Search filter
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const val = this.value.toLowerCase();
-        document.querySelectorAll('#productTable tbody tr').forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(val) ? '' : 'none';
-        });
+    /* =========================================================
+    GLOBAL SERVER SIDE SEARCH (search all pagination pages)
+    ========================================================= */
+    let typingTimer;
+    const delay = 500;
+
+    const searchInput = document.getElementById('searchInput');
+
+    searchInput.addEventListener('keyup', function() {
+
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(() => {
+
+            const searchValue = this.value;
+            const url = new URL(window.location.href);
+
+            // set search param
+            if (searchValue.trim() !== '') {
+                url.searchParams.set('search', searchValue);
+            } else {
+                url.searchParams.delete('search');
+            }
+
+            // IMPORTANT: reset pagination
+            url.searchParams.set('page', 1);
+
+            // keep filters
+            const perPage = document.getElementById('rowsPerPage').value;
+            const category = document.getElementById('categoryFilter').value;
+
+            if (perPage) url.searchParams.set('per_page', perPage);
+            if (category) url.searchParams.set('category_id', category);
+
+            window.location.href = url.toString();
+
+        }, delay);
     });
+    
+    // keep search text after reload
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('search')) {
+        document.getElementById('searchInput').value = params.get('search');
+    }
 
     // Rows per page
     document.getElementById('rowsPerPage').addEventListener('change', function() {

@@ -16,9 +16,27 @@ class ProductController extends Controller
 
         // Load products with categories, optionally filter by category
         $productsQuery = Product::with('category');
+
+        /* ================== SEARCH ================== */
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $productsQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('packing', 'like', "%{$search}%")
+                    ->orWhere('quantity', 'like', "%{$search}%")
+                    ->orWhere('price_per_unit', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($c) use ($search) {
+                        $c->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+        /* ============================================ */
+
         if ($categoryId) {
             $productsQuery->where('category_id', $categoryId);
         }
+
         $products = $productsQuery->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         // Calculate overall totals
