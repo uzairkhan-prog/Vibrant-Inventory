@@ -29,7 +29,7 @@
                     <option value="" disabled {{ old('customer_id') ? '' : 'selected' }}>-- Select Customer --</option>
                     @foreach($customers as $customer)
                     <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                        {{ $customer->name }}
+                        {{ $customer->company_name }} ( {{ $customer->name }} )
                     </option>
                     @endforeach
                 </select>
@@ -58,7 +58,7 @@
                     @if(old('product_id'))
                     @foreach(old('product_id') as $index => $oldProductId)
                     <tr class="product-row">
-                        <td>
+                        <td width="30%">
                             <select name="product_id[]" class="form-select select2" required>
                                 <option value="" disabled>Select a Product</option>
                                 @foreach($products as $product)
@@ -89,7 +89,7 @@
                     @endforeach
                     @else
                     <tr class="product-row">
-                        <td>
+                        <td width="30%">
                             <select name="product_id[]" class="form-select select2" required>
                                 <option value="" disabled selected>Select a Product</option>
                                 @foreach($products as $product)
@@ -165,6 +165,10 @@
     .form-control,
     .form-select {
         font-size: 0.85rem;
+    }
+
+    li {
+        color: #11142d;
     }
 </style>
 

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
 <div class="invoice-wrapper p-4 my-5 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary">Edit Sale Invoice</h2>
@@ -28,7 +29,7 @@
                 <select name="customer_id" id="customer_id" class="form-select select2" required>
                     @foreach($customers as $customer)
                     <option value="{{ $customer->id }}" {{ old('customer_id', $sale->customer_id) == $customer->id ? 'selected' : '' }}>
-                        {{ $customer->name }}
+                        {{ $customer->company_name }} ( {{ $customer->name }} )
                     </option>
                     @endforeach
                 </select>
@@ -77,7 +78,7 @@
                         $subtotal = $taxable + $taxAmt;
                         @endphp
                         <tr class="product-row">
-                            <td>
+                            <td width="30%">
                                 <select name="product_id[]" class="form-select select2" required>
                                     <option value="">Select a Product</option>
                                     @foreach($products as $product)
@@ -176,6 +177,10 @@
     .form-control,
     .form-select {
         font-size: 0.85rem;
+    }
+
+    li {
+        color: #11142d;
     }
 </style>
 

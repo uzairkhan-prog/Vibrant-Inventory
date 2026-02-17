@@ -26,8 +26,8 @@ class SaleController extends Controller
         $query = Sale::with('customer')->orderBy('date', 'desc');
 
         /* ======================================================
-        1️⃣ DATE RANGE FILTER (TOP PRIORITY)
-    ====================================================== */
+            1️⃣ DATE RANGE FILTER (TOP PRIORITY)
+        ====================================================== */
 
         if ($fromDate || $toDate) {
 
@@ -44,16 +44,16 @@ class SaleController extends Controller
         }
 
         /* ======================================================
-        2️⃣ ALL RECORDS (IMPORTANT FIX)
-    ====================================================== */ elseif ($monthYear === 'all') {
+            2️⃣ ALL RECORDS (IMPORTANT FIX)
+        ====================================================== */ elseif ($monthYear === 'all') {
 
             // NO DATE FILTER AT ALL
             $monthTotal = Sale::sum('total_amount');
         }
 
         /* ======================================================
-        3️⃣ SPECIFIC MONTH
-    ====================================================== */ elseif ($monthYear) {
+            3️⃣ SPECIFIC MONTH
+        ====================================================== */ elseif ($monthYear) {
 
             [$year, $month] = explode('-', $monthYear);
 
@@ -64,8 +64,8 @@ class SaleController extends Controller
         }
 
         /* ======================================================
-        4️⃣ DEFAULT CURRENT MONTH (FIRST PAGE LOAD)
-    ====================================================== */ else {
+            4️⃣ DEFAULT CURRENT MONTH (FIRST PAGE LOAD)
+        ====================================================== */ else {
 
             $monthYear = Carbon::now()->format('Y-m');
 
@@ -78,8 +78,8 @@ class SaleController extends Controller
         }
 
         /* ======================================================
-        SEARCH
-    ====================================================== */
+            SEARCH
+        ====================================================== */
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -92,20 +92,20 @@ class SaleController extends Controller
         }
 
         /* ======================================================
-        PAGINATION
-    ====================================================== */
+            PAGINATION
+        ====================================================== */
 
         $sales = $query->paginate($perPage)->appends($request->all());
 
         /* ======================================================
-        TOTALS
-    ====================================================== */
+            TOTALS
+        ====================================================== */
 
         $allTimeTotal = Sale::sum('total_amount');
 
         /* ======================================================
-        MONTH LIST
-    ====================================================== */
+            MONTH LIST
+        ====================================================== */
 
         $months = Sale::selectRaw("DATE_FORMAT(date, '%Y-%m') as month")
             ->distinct()
