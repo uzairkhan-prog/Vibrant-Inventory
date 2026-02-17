@@ -56,57 +56,57 @@
                 </thead>
                 <tbody id="product-list">
                     @if(old('product_id'))
-                    @foreach(old('product_id') as $index => $oldProductId)
+                    @foreach(old('product_id') as $index => $oldProduct)
                     <tr class="product-row">
-                        <td width="30%">
-                            <select name="product_id[]" class="form-select select2" required>
-                                <option value="" disabled>Select a Product</option>
+                        <td width="50%">
+                            <select name="product_id[]" class="form-select select2 product-select" required>
+                                <option value="" disabled {{ $oldProduct ? '' : 'selected' }}>Select a Product</option>
                                 @foreach($products as $product)
-                                <option value="{{ $product->id }}" {{ $oldProductId == $product->id ? 'selected' : '' }}>
-                                    {{ $product->name }} (Stock: {{ $product->quantity }})
+                                <option value="{{ $product->id }}" {{ $oldProduct == $product->id ? 'selected' : '' }}>
+                                    {{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})
                                 </option>
                                 @endforeach
                             </select>
                         </td>
                         <td>
-                            <input type="number" name="quantity[]" class="form-control qty" min="1" required value="{{ old('quantity.'.$index) }}">
+                            <input type="number" name="quantity[]" class="form-control qty" min="1" value="{{ old('quantity')[$index] ?? 1 }}" required>
                         </td>
                         <td>
-                            <input type="number" name="price[]" class="form-control price" step="0.01" required value="{{ old('price.'.$index) }}">
+                            <input type="number" name="price[]" class="form-control price" step="0.01" value="{{ old('price')[$index] ?? 0 }}" required>
                         </td>
                         <td>
-                            <input type="number" name="discount[]" class="form-control discount" min="0" step="0.01" value="{{ old('discount.'.$index, 0) }}">
+                            <input type="number" name="discount[]" class="form-control discount" min="0" step="0.01" value="{{ old('discount')[$index] ?? 0 }}">
                         </td>
                         <td>
                             <select name="tax[]" class="form-select tax">
-                                <option value="0" {{ old('tax.'.$index) == 0 ? 'selected' : '' }}>0%</option>
-                                <option value="18" {{ old('tax.'.$index) == 18 ? 'selected' : '' }}>18%</option>
+                                <option value="0" {{ (old('tax')[$index] ?? 0) == 0 ? 'selected' : '' }}>0%</option>
+                                <option value="18" {{ (old('tax')[$index] ?? 0) == 18 ? 'selected' : '' }}>18%</option>
                             </select>
                         </td>
-                        <td><input type="text" class="form-control subtotal" readonly></td>
+                        <td><input type="text" class="form-control subtotal" readonly value="Rs 0.00"></td>
                         <td><button type="button" class="btn btn-danger remove-product">×</button></td>
                     </tr>
                     @endforeach
                     @else
                     <tr class="product-row">
-                        <td width="30%">
-                            <select name="product_id[]" class="form-select select2" required>
+                        <td width="50%">
+                            <select name="product_id[]" class="form-select select2 product-select" required>
                                 <option value="" disabled selected>Select a Product</option>
                                 @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }})</option>
+                                <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})</option>
                                 @endforeach
                             </select>
                         </td>
-                        <td><input type="number" name="quantity[]" class="form-control qty" min="1" required></td>
-                        <td><input type="number" name="price[]" class="form-control price" step="0.01" required></td>
-                        <td><input type="number" name="discount[]" class="form-control discount" value="0" min="0" step="0.01"></td>
+                        <td><input type="number" name="quantity[]" class="form-control qty" min="1" value="1" required></td>
+                        <td><input type="number" name="price[]" class="form-control price" step="0.01" value="0" required></td>
+                        <td><input type="number" name="discount[]" class="form-control discount" min="0" step="0.01" value="0"></td>
                         <td>
                             <select name="tax[]" class="form-select tax">
                                 <option value="0">0%</option>
                                 <option value="18">18%</option>
                             </select>
                         </td>
-                        <td><input type="text" class="form-control subtotal" readonly></td>
+                        <td><input type="text" class="form-control subtotal" readonly value="Rs 0.00"></td>
                         <td><button type="button" class="btn btn-danger remove-product">×</button></td>
                     </tr>
                     @endif
@@ -135,11 +135,13 @@
     </form>
 </div>
 
+<!-- KEEP ALL YOUR EXISTING STYLES AND JS -->
 <style>
+    /* --- KEEP EXISTING STYLING --- */
     .invoice-wrapper {
         max-width: 1200px;
         margin: auto;
-        background: #ffffff;
+        background: #fff;
     }
 
     .invoice-table th,
@@ -173,14 +175,35 @@
 </style>
 
 <script>
+    let productRowTemplate = null;
+
     $(document).ready(function() {
+
+        /* STORE CLEAN TEMPLATE BEFORE SELECT2 TOUCHES IT */
+        productRowTemplate = $('#product-list .product-row:first').prop('outerHTML');
+
+        initSelect2();
         calculateTotals();
     });
 
+    function initSelect2(context = document) {
+        $(context).find('.select2').each(function() {
+
+            if ($(this).hasClass("select2-hidden-accessible")) return;
+
+            $(this).select2({
+                width: '100%',
+                dropdownParent: $('.invoice-wrapper'),
+            });
+        });
+    }
+
     function calculateTotals() {
+
         let grandTotal = 0;
 
         $('#product-list .product-row').each(function() {
+
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
             const discount = parseFloat($(this).find('.discount').val()) || 0;
@@ -193,28 +216,80 @@
             let finalAmount = taxable + taxAmount;
 
             $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
+
             grandTotal += finalAmount;
         });
 
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
     }
 
-    $('#add-product').click(function() {
-        const newRow = $('#product-list .product-row:first').clone();
+    $('#add-product').on('click', function() {
+        let newRow = $(productRowTemplate);
+
+        // RESET VALUES
         newRow.find('input').val('');
+        newRow.find('.qty').val(1);
+        newRow.find('.price').val(0);
+        newRow.find('.discount').val(0);
+        newRow.find('.subtotal').val('Rs 0.00');
+        newRow.find('.tax').val(0);
         newRow.find('select').val('');
-        newRow.find('.subtotal').val('');
+
         $('#product-list').append(newRow);
+
+        initSelect2(newRow);
+
+        calculateTotals();
     });
 
     $(document).on('click', '.remove-product', function() {
         if ($('#product-list .product-row').length > 1) {
-            $(this).closest('.product-row').remove();
+            let row = $(this).closest('.product-row');
+            row.find('.select2').each(function() {
+                if ($(this).hasClass("select2-hidden-accessible")) {
+                    $(this).select2('destroy');
+                }
+            });
+            row.remove();
             calculateTotals();
         }
     });
 
-    $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
+    $(document).on('input change', '.qty, .price, .discount, .tax', function() {
+        calculateTotals();
+    });
+
+    $('form').on('submit', function(e) {
+
+        let isValid = true;
+
+        $('#product-list .product-row').each(function() {
+
+            let product = $(this).find('.product-select').val();
+
+            if (!product) {
+                isValid = false;
+
+                $(this).find('.select2-selection').css({
+                    'border': '2px solid red'
+                });
+            } else {
+                $(this).find('.select2-selection').css({
+                    'border': '1px solid #ced4da'
+                });
+            }
+
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please select product in all rows');
+            return false;
+        }
+
+        $('.product-select').removeAttr('required');
+
+    });
 </script>
 
 @endsection

@@ -78,12 +78,12 @@
                         $subtotal = $taxable + $taxAmt;
                         @endphp
                         <tr class="product-row">
-                            <td width="30%">
+                            <td width="50%">
                                 <select name="product_id[]" class="form-select select2" required>
                                     <option value="">Select a Product</option>
                                     @foreach($products as $product)
                                     <option value="{{ $product->id }}" {{ $productId == $product->id ? 'selected' : '' }}>
-                                        {{ $product->name }} (Stock: {{ $product->quantity }})
+                                        {{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})
                                     </option>
                                     @endforeach
                                 </select>
@@ -185,6 +185,21 @@
 </style>
 
 <script>
+    // ---------- SELECT2 INIT ----------
+    function initSelect2(context = document) {
+        $(context).find('.select2').each(function() {
+            if ($(this).hasClass("select2-hidden-accessible")) {
+                $(this).select2('destroy');
+            }
+
+            $(this).select2({
+                width: '100%',
+                dropdownParent: $('.invoice-wrapper')
+            });
+        });
+    }
+
+    // ---------- CALCULATE TOTAL ----------
     function calculateTotals() {
         let grandTotal = 0;
 
@@ -207,33 +222,74 @@
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
     }
 
+    // ---------- DOCUMENT READY ----------
     $(document).ready(function() {
+
+        // first initialize select2 for edit items
+        initSelect2();
+
+        // initial totals
         calculateTotals();
 
+        // live calculation
         $(document).on('input change', '.qty, .price, .discount, .tax', function() {
             calculateTotals();
         });
 
+        // ---------- ADD PRODUCT ----------
         $('#add-product').click(function() {
-            const firstRow = $('#product-list .product-row:first');
-            const newRow = firstRow.clone();
 
-            newRow.find('input').val('');
-            newRow.find('.subtotal').val('Rs 0.00');
+            let firstRow = $('#product-list .product-row:first');
+
+            // STEP 1: clone row
+            let newRow = firstRow.clone(false, false);
+
+            // STEP 2: remove select2 generated DOM
+            newRow.find('.select2-container').remove();
+
+            // STEP 3: reset select fields completely
             newRow.find('select').each(function() {
-                $(this).val($(this).find('option:first').val());
+                $(this)
+                    .removeAttr('data-select2-id')
+                    .removeClass('select2-hidden-accessible')
+                    .off('select2:select');
+
+                this.selectedIndex = 0;
             });
 
+            // STEP 4: clear inputs
+            newRow.find('input').val('');
+            newRow.find('.subtotal').val('Rs 0.00');
+
+            // STEP 5: append
             $('#product-list').append(newRow);
+
+            // STEP 6: reinitialize select2 ONLY on new row
+            initSelect2(newRow);
+
             calculateTotals();
         });
 
+        // ---------- REMOVE PRODUCT ----------
         $(document).on('click', '.remove-product', function() {
+
             if ($('#product-list .product-row').length > 1) {
-                $(this).closest('.product-row').remove();
+
+                let row = $(this).closest('.product-row');
+
+                // destroy select2 before remove (IMPORTANT)
+                row.find('.select2').each(function() {
+                    if ($(this).hasClass("select2-hidden-accessible")) {
+                        $(this).select2('destroy');
+                    }
+                });
+
+                row.remove();
                 calculateTotals();
             }
         });
+
     });
 </script>
+
 @endsection

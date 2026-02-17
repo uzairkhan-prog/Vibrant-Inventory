@@ -141,47 +141,52 @@ class SaleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id'   => 'required|exists:customers,id',
-            'date'          => 'required|date',
-            'product_id.*'  => 'required|exists:products,id',
-            'quantity.*'    => 'required|integer|min:1',
-            'price.*'       => 'required|numeric|min:0',
+            'customer_id'  => 'required|exists:customers,id',
+            'date'         => 'required|date',
+            'product_id.*' => 'required|exists:products,id',
+            'quantity.*'   => 'required|integer|min:1',
+            'price.*'      => 'required|numeric|min:0',
         ]);
 
         try {
             DB::transaction(function () use ($request) {
 
+                $grandTotal = 0;
+
+                // First, check for any price less than product's price_per_unit
+                foreach ($request->product_id as $index => $productId) {
+                    $product = Product::findOrFail($productId);
+                    $inputPrice = $request->price[$index];
+
+                    if ($inputPrice < $product->price_per_unit) {
+                        throw new \Exception("Input price for '{$product->name}' cannot be less than product unit price (Rs {$product->price_per_unit}).");
+                    }
+                }
+
+                // Create Sale
                 $sale = Sale::create([
                     'customer_id'  => $request->customer_id,
                     'date'         => $request->date,
                     'total_amount' => 0
                 ]);
 
-                $grandTotal = 0;
-
                 foreach ($request->product_id as $index => $productId) {
-
                     $product  = Product::lockForUpdate()->findOrFail($productId);
                     $qty      = (int)$request->quantity[$index];
                     $price    = $request->price[$index];
                     $discount = $request->discount[$index] ?? 0;
                     $tax      = $request->tax[$index] ?? 0;
 
-                    /* ---------- STOCK VALIDATION ---------- */
                     if ($product->quantity < $qty) {
                         throw new \Exception("Stock not available for {$product->name}. Available: {$product->quantity}");
                     }
 
-                    /* ---------- MINUS PRODUCT STOCK ---------- */
+                    // Reduce stock
                     $product->quantity -= $qty;
                     $product->save();
 
-                    /* ---------- TOTAL CALC ---------- */
-                    $base = $qty * $price;
-                    $discountAmt = ($discount / 100) * $base;
-                    $afterDiscount = $base - $discountAmt;
-                    $taxAmt = ($tax / 100) * $afterDiscount;
-                    $lineTotal = $afterDiscount + $taxAmt;
+                    // Line total
+                    $lineTotal = ($qty * $price) * (1 - $discount / 100) * (1 + $tax / 100);
 
                     SaleItem::create([
                         'sale_id'    => $sale->id,
@@ -198,7 +203,8 @@ class SaleController extends Controller
                 $sale->update(['total_amount' => $grandTotal]);
             });
         } catch (\Exception $e) {
-            return Redirect::back()->withInput()->withErrors(['stock_error' => $e->getMessage()]);
+            // Redirect back with old input and error message
+            return redirect()->back()->withInput()->withErrors(['stock_error' => $e->getMessage()]);
         }
 
         return redirect()->route('sales.index')->with('success', 'Sale created successfully');
@@ -258,6 +264,16 @@ class SaleController extends Controller
                     'date' => $request->date,
                     'total_amount' => 0
                 ]);
+
+                /* ---------- VALIDATE INPUT PRICES AGAINST PRODUCT UNIT PRICE ---------- */
+                foreach ($request->product_id as $index => $productId) {
+                    $product = Product::findOrFail($productId);
+                    $inputPrice = $request->price[$index];
+
+                    if ($inputPrice < $product->price_per_unit) {
+                        throw new \Exception("Input price for '{$product->name}' cannot be less than product unit price (Rs {$product->price_per_unit}).");
+                    }
+                }
 
                 $grandTotal = 0;
 
