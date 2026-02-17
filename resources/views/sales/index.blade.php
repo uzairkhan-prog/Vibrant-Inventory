@@ -12,12 +12,128 @@
         </div>
     </div>
 
-    @php $subtotal = $sales->sum('total_amount'); @endphp
+    <!-- @php $subtotal = $sales->sum('total_amount'); @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
             <span>Total Sales Value:</span>
             <span>Rs {{ number_format($subtotal, 2) }}</span>
         </div>
+    </div> -->
+
+    <div class="row mb-4 align-items-center">
+
+        <!-- GRAND TOTAL (LEFT CARD) -->
+        <div class="col-md-6">
+            <div class="card border-0 rounded-4"
+                style="box-shadow:0 4px 18px rgba(0,0,0,0.08); border: 1px solid #e6edf5 !important;">
+
+                <div class="card-body py-3">
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <!-- All Time Total -->
+                        <div>
+                            <div style="color:#7b8a9a;font-size:13px;font-weight:600;">
+                                Total Sale (All Time)
+                            </div>
+
+                            <div style="font-size:24px;font-weight:700;color:#20b26b;">
+                                Rs {{ number_format($allTimeTotal, 2) }}
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div style="height:45px;width:1px;background:#e2e8f0;"></div>
+
+                        <!-- Selected Period -->
+                        <div class="text-end">
+                            <div style="color:#7b8a9a;font-size:13px;font-weight:600;">
+                                @if($monthYear == 'all')
+                                All Records
+                                @elseif($monthYear == 'custom')
+                                {{ $fromDate }} to {{ $toDate }}
+                                @else
+                                {{ \Carbon\Carbon::createFromFormat('Y-m', $monthYear)->format('F Y') }}
+                                @endif
+                            </div>
+
+                            <div style="font-size:20px;font-weight:700;color:#1f6feb;">
+                                Rs {{ number_format($monthTotal, 2) }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTH FILTER (RIGHT SIDE PILL) -->
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+
+            <form method="GET" action="{{ route('sales.index') }}"
+                class="d-inline-flex align-items-center"
+                style="
+                background:#eef3fb;
+                padding:10px 14px;
+                border-radius:14px;
+                box-shadow:0 4px 14px rgba(0,0,0,0.06);
+                border:1px solid #dbe5f1;
+                gap:10px;
+            ">
+
+                <label style="font-weight:600;color:#2c6ed5;margin-bottom:0;">
+                    Month:
+                </label>
+
+                <select name="month_year"
+                    onchange="this.form.submit()"
+                    style="
+                    border:2px solid #2c6ed5;
+                    border-radius:10px;
+                    padding:6px 12px;
+                    outline:none;
+                    font-weight:600;
+                    color:#1e293b;
+                    background:white;
+                ">
+
+                    {{-- All Records Option --}}
+                    <option value="all" {{ $monthYear == 'all' ? 'selected' : '' }}>
+                        All Records
+                    </option>
+
+                    {{-- Dynamic Months --}}
+                    @foreach($months as $m)
+                    <option value="{{ $m }}" {{ $monthYear == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::createFromFormat('Y-m', $m)->format('F Y') }}
+                    </option>
+                    @endforeach
+
+                </select>
+
+                <button type="submit"
+                    style="
+                    background:#2c6ed5;
+                    color:white;
+                    border:none;
+                    padding:7px 18px;
+                    border-radius:10px;
+                    font-weight:600;
+                    box-shadow:0 3px 10px rgba(44,110,213,0.35);
+                    transition:0.2s;
+                "
+                    onmouseover="this.style.background='#1f5cc1'"
+                    onmouseout="this.style.background='#2c6ed5'">
+                    Filter
+                </button>
+
+                <a href="{{ route('sales.index') }}" class="btn btn-secondary">Reset</a>
+
+            </form>
+
+        </div>
+
     </div>
 
     <!-- Filters Row -->
@@ -25,7 +141,15 @@
         <!-- Existing Search -->
         <div class="col-xl-12 col-md-4 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
-            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by customer, date or amount">
+            <form method="GET" action="{{ route('sales.index') }}" class="d-flex w-100">
+                <input type="hidden" name="month_year" value="{{ $monthYear }}">
+                <input type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    class="form-control"
+                    placeholder="Search invoice, customer or amount">
+                <button class="btn btn-primary ms-2">Search</button>
+            </form>
         </div>
 
         <!-- Date Filters -->
@@ -39,7 +163,7 @@
                 <button type="submit" class="btn btn-primary me-2">Search</button>
                 <a href="{{ route('sales.index') }}" class="btn btn-secondary">Reset</a>
                 <label class="ms-3 me-2 fw-semibold">Show</label>
-                <select id="rowsPerPage" name="per_page" class="form-select w-auto"> 
+                <select id="rowsPerPage" name="per_page" class="form-select w-auto">
                     @foreach ([20, 50, 100] as $value)
                     <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
                     @endforeach
@@ -108,14 +232,14 @@
 
 <script>
     // Search input (existing)
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const searchVal = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#salesTable tbody tr');
-        rows.forEach(row => {
-            const rowText = row.innerText.toLowerCase();
-            row.style.display = rowText.includes(searchVal) ? '' : 'none';
-        });
-    });
+    // document.getElementById('searchInput').addEventListener('keyup', function() {
+    //     const searchVal = this.value.toLowerCase();
+    //     const rows = document.querySelectorAll('#salesTable tbody tr');
+    //     rows.forEach(row => {
+    //         const rowText = row.innerText.toLowerCase();
+    //         row.style.display = rowText.includes(searchVal) ? '' : 'none';
+    //     });
+    // });
 
     // Rows per page select
     document.getElementById('rowsPerPage').addEventListener('change', function() {

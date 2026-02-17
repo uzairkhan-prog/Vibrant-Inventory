@@ -11,29 +11,26 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Response;
+use Carbon\Carbon;
 
 class SaleController extends Controller
 {
-
-    /* =====================================================
-        INDEX
-    ===================================================== */
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 20);
+        $perPage   = $request->get('per_page', 20);
+        $search    = $request->get('search');
+        $monthYear = $request->get('month_year');
+        $fromDate  = $request->get('from_date');
+        $toDate    = $request->get('to_date');
 
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
-        $search = $request->input('search'); // optional search input
+        $query = Sale::with('customer')->orderBy('date', 'desc');
 
-        // Initialize empty collection for first load
-        $sales = collect();
+        /* ======================================================
+        1️⃣ DATE RANGE FILTER (TOP PRIORITY)
+    ====================================================== */
 
-        // Only fetch records if any filter is applied
-        if ($fromDate || $toDate || $search) {
-            $query = Sale::with('customer')->orderBy('date', 'desc');
+        if ($fromDate || $toDate) {
 
-            // Date range filter
             if ($fromDate && $toDate) {
                 $query->whereBetween('date', [$fromDate, $toDate]);
             } elseif ($fromDate) {
@@ -42,17 +39,89 @@ class SaleController extends Controller
                 $query->whereDate('date', '<=', $toDate);
             }
 
-            // Optional search filter by customer name
-            if ($search) {
-                $query->whereHas('customer', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
-            }
-
-            $sales = $query->paginate($perPage)->appends($request->all());
+            $monthTotal = (clone $query)->sum('total_amount');
+            $monthYear  = 'custom';
         }
 
-        return view('sales.index', compact('sales', 'fromDate', 'toDate', 'search'));
+        /* ======================================================
+        2️⃣ ALL RECORDS (IMPORTANT FIX)
+    ====================================================== */ elseif ($monthYear === 'all') {
+
+            // NO DATE FILTER AT ALL
+            $monthTotal = Sale::sum('total_amount');
+        }
+
+        /* ======================================================
+        3️⃣ SPECIFIC MONTH
+    ====================================================== */ elseif ($monthYear) {
+
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('date', $year)
+                ->whereMonth('date', $month);
+
+            $monthTotal = (clone $query)->sum('total_amount');
+        }
+
+        /* ======================================================
+        4️⃣ DEFAULT CURRENT MONTH (FIRST PAGE LOAD)
+    ====================================================== */ else {
+
+            $monthYear = Carbon::now()->format('Y-m');
+
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('date', $year)
+                ->whereMonth('date', $month);
+
+            $monthTotal = (clone $query)->sum('total_amount');
+        }
+
+        /* ======================================================
+        SEARCH
+    ====================================================== */
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                    ->orWhere('total_amount', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($c) use ($search) {
+                        $c->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        /* ======================================================
+        PAGINATION
+    ====================================================== */
+
+        $sales = $query->paginate($perPage)->appends($request->all());
+
+        /* ======================================================
+        TOTALS
+    ====================================================== */
+
+        $allTimeTotal = Sale::sum('total_amount');
+
+        /* ======================================================
+        MONTH LIST
+    ====================================================== */
+
+        $months = Sale::selectRaw("DATE_FORMAT(date, '%Y-%m') as month")
+            ->distinct()
+            ->orderBy('month', 'desc')
+            ->pluck('month');
+
+        return view('sales.index', compact(
+            'sales',
+            'monthYear',
+            'months',
+            'allTimeTotal',
+            'monthTotal',
+            'search',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     /* =====================================================
