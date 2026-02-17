@@ -26,9 +26,14 @@
             <div class="col-md-6">
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select select2" required>
-                    <option value="" disabled {{ old('customer_id') ? '' : 'selected' }}>-- Select Customer --</option>
+                    <option value="" disabled {{ old('customer_id') ? '' : '' }}>-- Select Customer --</option>
                     @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
+                    <option value="{{ $customer->id }}"
+                        {{ 
+                    old('customer_id') 
+                        ? (old('customer_id') == $customer->id ? 'selected' : '') 
+                        : ($customer->name == 'Counter Sale' ? 'selected' : '') 
+                }}>
                         {{ $customer->company_name }} ( {{ $customer->name }} )
                     </option>
                     @endforeach
@@ -60,7 +65,7 @@
                     <tr class="product-row">
                         <td width="50%">
                             <select name="product_id[]" class="form-select select2 product-select" required>
-                                <option value="" disabled {{ $oldProduct ? '' : 'selected' }}>Select a Product</option>
+                                <option value="" disabled {{ $oldProduct ? '' : 'selected' }}>Select an option</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}" {{ $oldProduct == $product->id ? 'selected' : '' }}>
                                     {{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})
@@ -91,7 +96,7 @@
                     <tr class="product-row">
                         <td width="50%">
                             <select name="product_id[]" class="form-select select2 product-select" required>
-                                <option value="" disabled selected>Select a Product</option>
+                                <option value="" disabled selected>Select an option</option>
                                 @foreach($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})</option>
                                 @endforeach

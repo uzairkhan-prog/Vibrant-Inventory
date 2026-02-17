@@ -80,7 +80,7 @@
                         <tr class="product-row">
                             <td width="50%">
                                 <select name="product_id[]" class="form-select select2" required>
-                                    <option value="">Select a Product</option>
+                                    <option value="">Select an option</option>
                                     @foreach($products as $product)
                                     <option value="{{ $product->id }}" {{ $productId == $product->id ? 'selected' : '' }}>
                                         {{ $product->name }} (Stock: {{ $product->quantity }}) (PP: {{ $product->price_per_unit }})
