@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\ExpenseName;
 use App\Models\PaymentType;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ExpenseController extends Controller
 {
@@ -13,24 +14,116 @@ class ExpenseController extends Controller
     {
         $perPage = $request->get('per_page', 20);
 
-        $query = Expense::with('paymentType', 'expenseName')->orderBy('created_at', 'desc');
+        $fromDate  = $request->input('from_date');
+        $toDate    = $request->input('to_date');
+        $monthYear = $request->input('month_year');
 
-        // Date range filter
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
+        $query = Expense::with('paymentType', 'expenseName')
+            ->orderBy('created_at', 'desc');
 
-        if ($fromDate && $toDate) {
-            $query->whereBetween('created_at', [$fromDate, $toDate]);
-        } elseif ($fromDate) {
-            $query->whereDate('created_at', '>=', $fromDate);
-        } elseif ($toDate) {
-            $query->whereDate('created_at', '<=', $toDate);
+        /*
+        |--------------------------------------------------------------------------
+        | FILTER PRIORITY SYSTEM
+        |--------------------------------------------------------------------------
+        | Priority:
+        | 1) From-To Date
+        | 2) Month
+        | 3) Default Current Month
+        */
+
+        // -------------------------
+        // 1️⃣ DATE RANGE FILTER (HIGHEST PRIORITY)
+        // -------------------------
+        if (!empty($fromDate) || !empty($toDate)) {
+            if (!empty($fromDate) && !empty($toDate)) {
+                $query->whereBetween('created_at', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif (!empty($fromDate)) {
+                $query->where('created_at', '>=', Carbon::parse($fromDate)->startOfDay());
+            } elseif (!empty($toDate)) {
+                $query->where('created_at', '<=', Carbon::parse($toDate)->endOfDay());
+            }
+        }
+        // -------------------------
+        // 2️⃣ MONTH FILTER
+        // -------------------------
+        elseif ($request->has('month_year')) {
+            // If user selected "All Records" → no filter
+            if ($monthYear && $monthYear !== 'all') {
+                $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
+                $endDate   = Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth();
+
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        }
+        // -------------------------
+        // 3️⃣ DEFAULT CURRENT MONTH
+        // -------------------------
+        else {
+            $startDate = now()->startOfMonth();
+            $endDate   = now()->endOfMonth();
+
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+            $monthYear = now()->format('Y-m'); // auto select current month in dropdown
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PAGINATION
+        |--------------------------------------------------------------------------
+        */
         $expenses = $query->paginate($perPage)->appends($request->all());
-        $subtotal = $expenses->sum('amount'); // Sum only current page
 
-        return view('expenses.index', compact('expenses', 'subtotal', 'fromDate', 'toDate'));
+        /*
+        |--------------------------------------------------------------------------
+        | GRAND TOTAL (NOT PAGINATION)
+        |--------------------------------------------------------------------------
+        */
+        $totalQuery = Expense::query();
+
+        // Apply same filter to total
+
+        if (!empty($fromDate) || !empty($toDate)) {
+            if (!empty($fromDate) && !empty($toDate)) {
+                $totalQuery->whereBetween('created_at', [
+                    Carbon::parse($fromDate)->startOfDay(),
+                    Carbon::parse($toDate)->endOfDay()
+                ]);
+            } elseif (!empty($fromDate)) {
+                $totalQuery->where('created_at', '>=', Carbon::parse($fromDate)->startOfDay());
+            } elseif (!empty($toDate)) {
+                $totalQuery->where('created_at', '<=', Carbon::parse($toDate)->endOfDay());
+            }
+        } elseif ($request->has('month_year') && $monthYear !== 'all' && !empty($monthYear)) {
+            $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
+            $endDate   = Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth();
+
+            $totalQuery->whereBetween('created_at', [$startDate, $endDate]);
+        }
+        // else "all records" → no where condition
+
+        $grandTotal = $totalQuery->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | MONTH DROPDOWN DATA
+        |--------------------------------------------------------------------------
+        */
+        $months = Expense::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month")
+            ->distinct()
+            ->orderBy('month', 'desc')
+            ->pluck('month');
+
+        return view('expenses.index', compact(
+            'expenses',
+            'grandTotal',
+            'months',
+            'monthYear',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     public function create()

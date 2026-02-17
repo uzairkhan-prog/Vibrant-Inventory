@@ -82,7 +82,7 @@
                                     <option value="">Select a Product</option>
                                     @foreach($products as $product)
                                     <option value="{{ $product->id }}" {{ $productId == $product->id ? 'selected' : '' }}>
-                                        {{ $product->name }} (Stock: {{ $product->fifo_stock }})
+                                        {{ $product->name }} (Stock: {{ $product->quantity }})
                                     </option>
                                     @endforeach
                                 </select>

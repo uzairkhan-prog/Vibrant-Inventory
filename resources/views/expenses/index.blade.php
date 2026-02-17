@@ -5,6 +5,29 @@
 <div class="p-3 bg-white shadow rounded">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-primary mb-0">Expense Management</h2>
+        <form method="GET" action="{{ route('expenses.index') }}" class="d-flex align-items-center gap-2 p-3 bg-light rounded shadow-sm justify-content-center">
+            <label class="fw-semibold text-secondary mb-0">Select Month:</label>
+
+            <select name="month_year" class="form-select w-auto border-primary shadow-sm">
+                <option value="all" {{ $monthYear == 'all' ? 'selected' : '' }}>
+                    All Records
+                </option>
+
+                @foreach($months as $month)
+                <option value="{{ $month }}" {{ $monthYear == $month ? 'selected' : '' }}>
+                    {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y') }}
+                </option>
+                @endforeach
+            </select>
+
+            <button type="submit" class="btn btn-primary shadow-sm">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
+            </button>
+
+            <a href="{{ route('expenses.index') }}" class="btn btn-secondary">Reset</a>
+
+        </form>
+
         <div>
             <a href="{{ route('expenses.create') }}" class="btn btn-secondary">
                 <i class="material-icons me-1">&#xE147;</i> Add Expense
@@ -12,11 +35,10 @@
         </div>
     </div>
 
-    @php $subtotal = $expenses->sum('amount'); @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
             <span>Total Expense:</span>
-            <span>Rs {{ number_format($subtotal, 2) }}</span>
+            <span>Rs {{ number_format($grandTotal, 2) }}</span>
         </div>
     </div>
 
@@ -60,6 +82,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
+                        <th>Date</th>
                         <th>Expense</th>
                         <th>Description</th>
                         <th>Payment Type</th>
@@ -71,6 +94,13 @@
                     @foreach ($expenses as $expense)
                     <tr>
                         <td>{{ ($expenses->currentPage() - 1) * $expenses->perPage() + $loop->iteration }}</td>
+                        <td>
+                            {{ \Carbon\Carbon::parse($expense->created_at)->format('d M Y') }}
+                            <!-- <br>
+                            <small class="text-muted">
+                                {{ \Carbon\Carbon::parse($expense->created_at)->format('h:i A') }}
+                            </small> -->
+                        </td>
                         <td>{{ $expense->expenseName->name }}</td>
                         <td>{{ $expense->description }}</td>
                         <td>{{ $expense->paymentType->name ?? '-' }}</td>
