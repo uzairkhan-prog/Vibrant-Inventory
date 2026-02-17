@@ -27,15 +27,28 @@
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select select2" required>
                     <option value="" disabled {{ old('customer_id') ? '' : '' }}>-- Select Customer --</option>
+
+                    {{-- First, show Counter Sale on top --}}
+                    @php
+                    $counterCustomer = $customers->firstWhere('name', 'Counter Sale');
+                    @endphp
+                    @if($counterCustomer)
+                    <option value="{{ $counterCustomer->id }}"
+                        {{ old('customer_id') 
+                    ? (old('customer_id') == $counterCustomer->id ? 'selected' : '') 
+                    : 'selected' }}>
+                        {{ $counterCustomer->company_name }} ( {{ $counterCustomer->name }} )
+                    </option>
+                    @endif
+
+                    {{-- Then, show the rest of the customers --}}
                     @foreach($customers as $customer)
+                    @if($customer->name !== 'Counter Sale')
                     <option value="{{ $customer->id }}"
-                        {{ 
-                    old('customer_id') 
-                        ? (old('customer_id') == $customer->id ? 'selected' : '') 
-                        : ($customer->name == 'Counter Sale' ? 'selected' : '') 
-                }}>
+                        {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
                         {{ $customer->company_name }} ( {{ $customer->name }} )
                     </option>
+                    @endif
                     @endforeach
                 </select>
             </div>
