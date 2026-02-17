@@ -21,7 +21,6 @@
                     <input type="date" class="form-control" name="to_date" value="{{ request('to_date') }}">
                 </div>
 
-                <!-- Button wrapper for mobile -->
                 <div class="col-md-4 filter-btn-wrapper text-md-end">
                     <button class="btn btn-primary">Search</button>
                     <a href="{{ route('dashboard') }}" class="btn btn-warning">Clear</a>
@@ -49,9 +48,9 @@
                 {{ number_format($totalSaleReturn, 2) }}<br>
 
                 <strong>COGS:</strong> <span class="label-line"></span>
-                {{ number_format($totalPurchases, 2) }}
+                {{ number_format($adjustedCOGS, 2) }}
                 <span class="percent-value">(
-                    {{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%
+                    {{ $adjustedSales > 0 ? number_format(($adjustedCOGS/$adjustedSales)*100, 2) : '0' }}%
                     )</span><br>
 
                 <strong>Gross Profit:</strong> <span class="label-line"></span>
@@ -104,10 +103,13 @@
                 <strong>Purchases:</strong> <span class="label-line"></span>
                 {{ number_format($totalPurchases, 2) }}
                 <span class="percent-value">(
-                    {{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%
+                    {{ $adjustedSales > 0 ? number_format(($totalPurchases/$adjustedSales)*100, 2) : '0' }}%
                     )</span><br>
 
                 <strong>Purchased Qty:</strong> <span class="label-line"></span>
+                0<br>
+
+                <strong>Sale Qty:</strong> <span class="label-line"></span>
                 {{ $purchaseQty }}<br>
 
                 <strong>Purchase %:</strong> <span class="label-line"></span>
@@ -121,7 +123,7 @@
 <!-- PDF CONTENT ----------------------------------->
 <div id="pdfContent" style="display: none; width:210mm; padding:40px; background:#fff; font-family:Arial;">
 
-    <!-- ================= PDF HEADER ADDED HERE ================= -->
+    <!-- PDF HEADER -->
     <div style="margin-bottom:20px;">
         <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/images/logos/logo-export.png'))) }}"
             alt="Vibrant Engineering Logo"
@@ -131,7 +133,6 @@
         <p class="mb-1">Phone: +92 335 2385773</p>
         <p class="mb-0">Email: info@vibrantengineering.pk</p>
     </div>
-    <!-- ========================================================= -->
 
     <h2 style="font-size:30px; margin-bottom:15px; color:#4d71e1;">
         Profit & Loss Report
@@ -142,19 +143,15 @@
     </p>
 
     <div style="font-size:18px; line-height:30px;">
-        <strong>Total Sales:</strong> <span class="label-line"></span>
-        {{ number_format($totalSales, 2) }} (100%)<br>
+        <strong>Total Sales:</strong> {{ number_format($totalSales, 2) }} (100%)<br>
 
-        <strong>COGS:</strong> <span class="label-line"></span>
-        {{ number_format($totalPurchases, 2) }} ({{ $totalSales > 0 ? number_format(($totalPurchases/$totalSales)*100, 2) : '0' }}%)<br>
+        <strong>COGS:</strong> {{ number_format($adjustedCOGS, 2) }} ({{ $adjustedSales > 0 ? number_format(($adjustedCOGS/$adjustedSales)*100, 2) : '0' }}%)<br>
 
-        <strong>Expenses:</strong> <span class="label-line"></span>
-        {{ number_format($totalExpenses, 2) }} ({{ $totalSales > 0 ? number_format(($totalExpenses/$totalSales)*100, 2) : '0' }}%)
+        <strong>Expenses:</strong> {{ number_format($totalExpenses, 2) }} ({{ $adjustedSales > 0 ? number_format(($totalExpenses/$adjustedSales)*100, 2) : '0' }}%)
 
         <hr>
 
-        <strong>Net Profit:</strong> <span class="label-line"></span>
-        {{ number_format($netProfit, 2) }} ({{ $totalSales > 0 ? number_format(($netProfit/$totalSales)*100, 2) : '0' }}%)<br>
+        <strong>Net Profit:</strong> {{ number_format($netProfit, 2) }} ({{ $adjustedSales > 0 ? number_format(($netProfit/$adjustedSales)*100, 2) : '0' }}%)<br>
     </div>
 
     <hr>
@@ -162,16 +159,13 @@
     <h3 style="font-size:24px; color:#4d71e1;">Summary:</h3>
 
     <div style="font-size:18px; line-height:30px;">
-        <strong>Gross Profit %:</strong> <span class="label-line"></span>
-        {{ number_format($gpPercent, 2) }}%<br>
+        <strong>Gross Profit %:</strong> {{ number_format($gpPercent, 2) }}%<br>
 
-        <strong>Expenses %:</strong> <span class="label-line"></span>
-        {{ number_format($expensePercent, 2) }}%
+        <strong>Expenses %:</strong> {{ number_format($expensePercent, 2) }}%
 
         <hr>
 
-        <strong>Net Profit %:</strong> <span class="label-line"></span>
-        {{ number_format($npPercent, 2) }}%
+        <strong>Net Profit %:</strong> {{ number_format($npPercent, 2) }}%
     </div>
 
     <div style="margin-top:60px; font-size:22px; font-weight:bold;">

@@ -21,14 +21,25 @@ class ProductController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
 
-            $productsQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('packing', 'like', "%{$search}%")
-                    ->orWhere('quantity', 'like', "%{$search}%")
-                    ->orWhere('price_per_unit', 'like', "%{$search}%")
-                    ->orWhereHas('category', function ($c) use ($search) {
-                        $c->where('name', 'like', "%{$search}%");
+            // 1. Normalize search: remove extra special chars except spaces
+            $normalizedSearch = preg_replace('/[^A-Za-z0-9\s]/', ' ', $search);
+
+            // 2. Split into words (keywords)
+            $keywords = array_filter(explode(' ', $normalizedSearch));
+
+            $productsQuery->where(function ($q) use ($keywords) {
+                foreach ($keywords as $word) {
+                    $word = strtolower($word);
+                    $q->where(function ($qq) use ($word) {
+                        $qq->whereRaw("LOWER(REGEXP_REPLACE(name, '[^A-Za-z0-9]', '')) LIKE ?", ["%{$word}%"])
+                            ->orWhereRaw("LOWER(REGEXP_REPLACE(packing, '[^A-Za-z0-9]', '')) LIKE ?", ["%{$word}%"])
+                            ->orWhereRaw("LOWER(CAST(quantity AS CHAR)) LIKE ?", ["%{$word}%"])
+                            ->orWhereRaw("LOWER(CAST(price_per_unit AS CHAR)) LIKE ?", ["%{$word}%"])
+                            ->orWhereHas('category', function ($c) use ($word) {
+                                $c->whereRaw("LOWER(REGEXP_REPLACE(name, '[^A-Za-z0-9]', '')) LIKE ?", ["%{$word}%"]);
+                            });
                     });
+                }
             });
         }
         /* ============================================ */
@@ -70,7 +81,7 @@ class ProductController extends Controller
         $productsPerCategory = array_map(fn($label) => $prodCountMap[$label] ?? 0, $categoryLabels);
 
         // Get all categories for dropdown
-        $categories = \App\Models\Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
 
         return view('products.index', compact(
             'products',

@@ -37,6 +37,8 @@
         <div class="col-md-6 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
             <input type="text" id="searchInput" class="form-control w-100" placeholder="Search product...">
+            <button id="searchBtn" class="btn btn-primary ms-2">Search</button>
+            <a href="{{ route('products.index') }}" class="btn btn-outline-secondary ms-2">Clear</a>
         </div>
         <div class="col-md-4">
             <select id="categoryFilter" class="form-select">
@@ -124,47 +126,62 @@
     /* =========================================================
     GLOBAL SERVER SIDE SEARCH (search all pagination pages)
     ========================================================= */
-    let typingTimer;
-    const delay = 500;
-
+    // Remove auto-search logic
     const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
 
-    searchInput.addEventListener('keyup', function() {
+    searchBtn.addEventListener('click', function() {
+        const searchValue = searchInput.value.trim();
+        const url = new URL(window.location.href);
 
-        clearTimeout(typingTimer);
+        // set search param or remove
+        if (searchValue !== '') {
+            url.searchParams.set('search', searchValue);
+        } else {
+            url.searchParams.delete('search');
+        }
 
-        typingTimer = setTimeout(() => {
+        // keep filters
+        const perPage = document.getElementById('rowsPerPage').value;
+        const category = document.getElementById('categoryFilter').value;
 
-            const searchValue = this.value;
-            const url = new URL(window.location.href);
+        if (perPage) url.searchParams.set('per_page', perPage);
+        if (category) url.searchParams.set('category_id', category);
 
-            // set search param
-            if (searchValue.trim() !== '') {
-                url.searchParams.set('search', searchValue);
-            } else {
-                url.searchParams.delete('search');
-            }
+        // Reset page
+        url.searchParams.set('page', 1);
 
-            // IMPORTANT: reset pagination
-            url.searchParams.set('page', 1);
-
-            // keep filters
-            const perPage = document.getElementById('rowsPerPage').value;
-            const category = document.getElementById('categoryFilter').value;
-
-            if (perPage) url.searchParams.set('per_page', perPage);
-            if (category) url.searchParams.set('category_id', category);
-
-            window.location.href = url.toString();
-
-        }, delay);
+        window.location.href = url.toString();
     });
-    
-    // keep search text after reload
+
+    // Keep search value after reload
     const params = new URLSearchParams(window.location.search);
     if (params.get('search')) {
-        document.getElementById('searchInput').value = params.get('search');
+        searchInput.value = params.get('search');
     }
+
+    // Rows per page
+    document.getElementById('rowsPerPage').addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', this.value);
+        url.searchParams.set('page', 1);
+        window.location.href = url.toString();
+    });
+
+    // Category filter
+    document.getElementById('categoryFilter').addEventListener('change', function() {
+        const categoryId = this.value;
+        const url = new URL(window.location.href);
+
+        if (categoryId) {
+            url.searchParams.set('category_id', categoryId);
+        } else {
+            url.searchParams.delete('category_id');
+        }
+
+        url.searchParams.set('page', 1);
+        window.location.href = url.toString();
+    });
 
     // Rows per page
     document.getElementById('rowsPerPage').addEventListener('change', function() {
