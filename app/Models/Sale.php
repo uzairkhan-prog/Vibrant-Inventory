@@ -25,4 +25,10 @@ class Sale extends Model
     {
         return $this->hasMany(SaleItem::class);
     }
+
+    // Add this relationship for payments linked to this sale
+    public function payments()
+    {
+        return $this->hasMany(CustomerPayment::class, 'sale_id');
+    }
 }

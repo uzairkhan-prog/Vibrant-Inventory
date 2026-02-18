@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\CustomerPayment;
+use App\Models\Sale;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -74,9 +75,20 @@ class CustomerController extends Controller
     public function show(Customer $customer)
     {
         $customer->load('payments');
+
+        // Fetch this customer's sales
+        $sales = Sale::where('customer_id', $customer->id)
+            ->withSum('payments', 'amount')
+            ->get();
+
+        // Calculate remaining amount
+        foreach ($sales as $sale) {
+            $sale->remaining_amount = $sale->total_amount - ($sale->payments_sum_amount ?? 0);
+        }
+
         $currentBalance = $customer->current_balance;
 
-        return view('customers.show', compact('customer', 'currentBalance'));
+        return view('customers.show', compact('customer', 'currentBalance', 'sales'));
     }
 
     public function storePayment(Request $request, Customer $customer)
@@ -85,6 +97,7 @@ class CustomerController extends Controller
             'description'  => 'nullable|string',
             'payment_type' => 'required|string',
             'amount'       => 'required|numeric|min:0.01',
+            'sale_id'      => 'nullable|exists:sales,id',
         ]);
 
         $currentBalance = $customer->current_balance;
@@ -103,6 +116,7 @@ class CustomerController extends Controller
 
         CustomerPayment::create([
             'customer_id'  => $customer->id,
+            'sale_id'      => $request->sale_id,
             'description'  => $request->description,
             'payment_type' => $request->payment_type,
             'amount'       => $request->amount,

@@ -16,6 +16,9 @@ use Carbon\Carbon;
 
 class SaleController extends Controller
 {
+    /* =====================================================
+        INDEX
+    ===================================================== */
     public function index(Request $request)
     {
         $perPage   = $request->get('per_page', 20);
@@ -26,12 +29,7 @@ class SaleController extends Controller
 
         $query = Sale::with('customer')->orderBy('date', 'desc');
 
-        /* ======================================================
-            1️⃣ DATE RANGE FILTER (TOP PRIORITY)
-        ====================================================== */
-
         if ($fromDate || $toDate) {
-
             if ($fromDate && $toDate) {
                 $query->whereBetween('date', [$fromDate, $toDate]);
             } elseif ($fromDate) {
@@ -39,48 +37,22 @@ class SaleController extends Controller
             } elseif ($toDate) {
                 $query->whereDate('date', '<=', $toDate);
             }
-
             $monthTotal = (clone $query)->sum('total_amount');
             $monthYear  = 'custom';
-        }
-
-        /* ======================================================
-            2️⃣ ALL RECORDS (IMPORTANT FIX)
-        ====================================================== */ elseif ($monthYear === 'all') {
-
-            // NO DATE FILTER AT ALL
+        } elseif ($monthYear === 'all') {
             $monthTotal = Sale::sum('total_amount');
-        }
-
-        /* ======================================================
-            3️⃣ SPECIFIC MONTH
-        ====================================================== */ elseif ($monthYear) {
-
+        } elseif ($monthYear) {
             [$year, $month] = explode('-', $monthYear);
-
             $query->whereYear('date', $year)
                 ->whereMonth('date', $month);
-
             $monthTotal = (clone $query)->sum('total_amount');
-        }
-
-        /* ======================================================
-            4️⃣ DEFAULT CURRENT MONTH (FIRST PAGE LOAD)
-        ====================================================== */ else {
-
+        } else {
             $monthYear = Carbon::now()->format('Y-m');
-
             [$year, $month] = explode('-', $monthYear);
-
             $query->whereYear('date', $year)
                 ->whereMonth('date', $month);
-
             $monthTotal = (clone $query)->sum('total_amount');
         }
-
-        /* ======================================================
-            SEARCH
-        ====================================================== */
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -92,21 +64,8 @@ class SaleController extends Controller
             });
         }
 
-        /* ======================================================
-            PAGINATION
-        ====================================================== */
-
         $sales = $query->paginate($perPage)->appends($request->all());
-
-        /* ======================================================
-            TOTALS
-        ====================================================== */
-
         $allTimeTotal = Sale::sum('total_amount');
-
-        /* ======================================================
-            MONTH LIST
-        ====================================================== */
 
         $months = Sale::selectRaw("DATE_FORMAT(date, '%Y-%m') as month")
             ->distinct()
@@ -132,12 +91,11 @@ class SaleController extends Controller
     {
         $customers = Customer::all();
         $products  = Product::all();
-
         return view('sales.create', compact('customers', 'products'));
     }
 
     /* =====================================================
-        STORE (MAIN STOCK MINUS HERE)
+        STORE
     ===================================================== */
     public function store(Request $request)
     {
@@ -151,29 +109,26 @@ class SaleController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
-
                 $grandTotal = 0;
 
-                /* ---------------- PRICE VALIDATION ---------------- */
+                // Price validation
                 foreach ($request->product_id as $index => $productId) {
                     $product = Product::findOrFail($productId);
                     $inputPrice = $request->price[$index];
-
                     if ($inputPrice < $product->price_per_unit) {
                         throw new \Exception("Input price for '{$product->name}' cannot be less than product unit price (Rs {$product->price_per_unit}).");
                     }
                 }
 
-                /* ---------------- CREATE SALE ---------------- */
+                // Create sale
                 $sale = Sale::create([
                     'customer_id'  => $request->customer_id,
                     'date'         => $request->date,
                     'total_amount' => 0
                 ]);
 
-                /* ---------------- SALE ITEMS + STOCK MINUS ---------------- */
+                // Sale items & stock
                 foreach ($request->product_id as $index => $productId) {
-
                     $product  = Product::lockForUpdate()->findOrFail($productId);
                     $qty      = (int)$request->quantity[$index];
                     $price    = $request->price[$index];
@@ -184,11 +139,9 @@ class SaleController extends Controller
                         throw new \Exception("Stock not available for {$product->name}. Available: {$product->quantity}");
                     }
 
-                    // reduce stock
                     $product->quantity -= $qty;
                     $product->save();
 
-                    // calculation
                     $base = $qty * $price;
                     $discountAmt = ($discount / 100) * $base;
                     $afterDiscount = $base - $discountAmt;
@@ -207,33 +160,25 @@ class SaleController extends Controller
                     $grandTotal += $lineTotal;
                 }
 
-                /* ---------------- SAVE FINAL INVOICE TOTAL ---------------- */
+                // Update sale total
                 $sale->update(['total_amount' => $grandTotal]);
 
-                /* ==========================================================
-                        ADVANCE + CUSTOMER LEDGER
-                ========================================================== */
-
+                // Customer advance & balance
                 $advance = (float)($request->advance ?? 0);
                 $balance = $grandTotal - $advance;
+                if ($balance < 0) $balance = 0;
 
-                // dd($grandTotal, $advance, $balance);
-
-                if ($balance < 0) {
-                    $balance = 0;
-                }
-
-                /* ---------- UPDATE CUSTOMER RUNNING BALANCE ---------- */
                 $customer = Customer::lockForUpdate()->findOrFail($request->customer_id);
                 $customer->balance += $grandTotal;
                 $customer->save();
 
-                /* ---------- STORE ADVANCE PAYMENT (CASH DEFAULT) ---------- */
+                // Store advance payment with sale_id
                 if ($advance > 0) {
                     CustomerPayment::create([
                         'customer_id'  => $customer->id,
+                        'sale_id'      => $sale->id,
                         'description'  => 'Advance received against Sale Invoice #' . $sale->id,
-                        'payment_type' => 'Cash', // Cash
+                        'payment_type' => 'Cash',
                         'amount'       => $advance,
                     ]);
                 }
@@ -252,7 +197,10 @@ class SaleController extends Controller
     ===================================================== */
     public function show(Sale $sale)
     {
-        $sale->load('items.product', 'customer');
+        // Load items and customer payments only for this sale
+        $sale->load(['items.product', 'customer', 'customer.payments' => function ($q) use ($sale) {
+            $q->where('sale_id', $sale->id);
+        }]);
         return view('sales.show', compact('sale'));
     }
 
@@ -266,8 +214,8 @@ class SaleController extends Controller
 
         $sale->load('items.product');
 
-        // Fetch already stored advance for this sale
-        $advancePayment = CustomerPayment::where('description', 'like', '%Sale Invoice #' . $sale->id . '%')
+        // Advance payments for this sale only
+        $advancePayment = CustomerPayment::where('sale_id', $sale->id)
             ->sum('amount');
 
         $balance = $sale->total_amount - $advancePayment;
@@ -290,70 +238,44 @@ class SaleController extends Controller
         ]);
 
         try {
-
             DB::transaction(function () use ($request, $sale) {
 
-                /* =========================================================
-                        STEP 1 — REVERSE OLD CUSTOMER BALANCE
-                ========================================================= */
-
+                // Reverse old customer balance
                 $oldCustomer = Customer::lockForUpdate()->findOrFail($sale->customer_id);
-
-                // subtract old invoice amount from customer balance
                 $oldCustomer->balance -= $sale->total_amount;
                 if ($oldCustomer->balance < 0) $oldCustomer->balance = 0;
                 $oldCustomer->save();
 
-                /* ---------- DELETE OLD ADVANCE PAYMENT ---------- */
-                CustomerPayment::where('description', 'like', '%Sale Invoice #' . $sale->id . '%')->delete();
+                // Delete old advance payments
+                CustomerPayment::where('sale_id', $sale->id)->delete();
 
-
-                /* =========================================================
-                        STEP 2 — RESTORE OLD STOCK
-                ========================================================= */
-
+                // Restore stock
                 foreach ($sale->items as $oldItem) {
                     $product = Product::lockForUpdate()->find($oldItem->product_id);
                     $product->quantity += $oldItem->quantity;
                     $product->save();
                 }
-
                 $sale->items()->delete();
 
-
-                /* =========================================================
-                        STEP 3 — UPDATE SALE BASIC INFO
-                ========================================================= */
-
+                // Update sale info
                 $sale->update([
                     'customer_id' => $request->customer_id,
                     'date' => $request->date,
                     'total_amount' => 0
                 ]);
 
-
-                /* =========================================================
-                    STEP 4 — PRICE VALIDATION
-            ========================================================= */
-
+                // Price validation
                 foreach ($request->product_id as $index => $productId) {
                     $product = Product::findOrFail($productId);
                     $inputPrice = $request->price[$index];
-
                     if ($inputPrice < $product->price_per_unit) {
                         throw new \Exception("Input price for '{$product->name}' cannot be less than product unit price (Rs {$product->price_per_unit}).");
                     }
                 }
 
-
-                /* =========================================================
-                        STEP 5 — APPLY NEW ITEMS
-                ========================================================= */
-
+                // Apply new items
                 $grandTotal = 0;
-
                 foreach ($request->product_id as $index => $productId) {
-
                     $product  = Product::lockForUpdate()->findOrFail($productId);
                     $qty      = (int)$request->quantity[$index];
                     $price    = $request->price[$index];
@@ -387,11 +309,7 @@ class SaleController extends Controller
 
                 $sale->update(['total_amount' => $grandTotal]);
 
-
-                /* =========================================================
-                        STEP 6 — APPLY NEW ADVANCE + BALANCE
-                ========================================================= */
-
+                // Apply new advance & balance
                 $advance = (float)($request->advance ?? 0);
                 $balance = $grandTotal - $advance;
                 if ($balance < 0) $balance = 0;
@@ -403,8 +321,9 @@ class SaleController extends Controller
                 if ($advance > 0) {
                     CustomerPayment::create([
                         'customer_id'  => $customer->id,
+                        'sale_id'      => $sale->id,
                         'description'  => 'Advance received against Sale Invoice #' . $sale->id,
-                        'payment_type' => 'Cash', // Cash
+                        'payment_type' => 'Cash',
                         'amount'       => $advance,
                     ]);
                 }
@@ -422,25 +341,25 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         DB::transaction(function () use ($sale) {
-
-            /* RESTORE STOCK */
             foreach ($sale->items as $item) {
                 $product = Product::lockForUpdate()->find($item->product_id);
                 $product->quantity += $item->quantity;
                 $product->save();
             }
-
             $sale->items()->delete();
+            CustomerPayment::where('sale_id', $sale->id)->delete();
             $sale->delete();
         });
 
         return redirect()->route('sales.index')->with('success', 'Sale deleted successfully');
     }
 
+    /* =====================================================
+        EXPORT INVOICE CSV
+    ===================================================== */
     public function exportInoviceCSV($id)
     {
         $sale = Sale::with(['items.product', 'customer'])->findOrFail($id);
-
         $filename = 'sale_invoice_' . $sale->id . '.csv';
         $headers = [
             "Content-type" => "text/csv",
@@ -481,6 +400,9 @@ class SaleController extends Controller
         return Response::stream($callback, 200, $headers);
     }
 
+    /* =====================================================
+        EXPORT SALE REPORT CSV
+    ===================================================== */
     public function exportCsv()
     {
         $filename = 'sale_report_' . date('Ymd_His') . '.csv';
@@ -488,7 +410,6 @@ class SaleController extends Controller
         $response = new StreamedResponse(function () {
             $handle = fopen('php://output', 'w');
 
-            // CSV Headers
             fputcsv($handle, [
                 'Invoice #',
                 'Invoice Date',

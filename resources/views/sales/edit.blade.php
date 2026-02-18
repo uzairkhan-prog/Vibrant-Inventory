@@ -141,22 +141,21 @@
                     <div class="d-flex justify-content-between mb-2 align-items-center">
                         <strong>Advance:</strong>
                         <input type="number" step="0.01" min="0" name="advance" id="advance"
-                            class="form-control form-control-sm text-end" style="width:140px"
-                            value="{{ old('advance', $advancePayment ?? 0) }}">
+                            class="form-control form-control-sm text-end" style="width:140px" value="{{ old('advance', $advancePayment ?? 0) }}">
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <strong>Balance:</strong>
-                        <span id="balance" class="text-danger">Rs {{ number_format($balance ?? 0,2) }}</span>
+                        <span id="balance" class="text-danger">Rs 0.00</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between">
                         <strong class="fs-5">Total Amount:</strong>
-                        <span id="grand-total" class="fs-4 text-success">Rs {{ number_format($sale->total_amount,2) }}</span>
+                        <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
                     </div>
                 </div>
             </div>
         </div>
-
+        
         <div class="mt-4 text-center">
             <button type="submit" class="btn btn-primary px-5">Update</button>
             <a href="{{ route('sales.index') }}" class="btn btn-dark ms-2">Back</a>
@@ -218,26 +217,45 @@
 
     // ---------- CALCULATE TOTAL ----------
     function calculateTotals() {
-        let grandTotal = 0;
+        let subtotal = 0;
 
         $('#product-list .product-row').each(function() {
+
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
             const discount = parseFloat($(this).find('.discount').val()) || 0;
             const tax = parseFloat($(this).find('.tax').val()) || 0;
 
-            const base = qty * price;
-            const discountAmount = (discount / 100) * base;
-            const taxable = base - discountAmount;
-            const taxAmount = (tax / 100) * taxable;
-            const subtotal = taxable + taxAmount;
+            let base = qty * price;
+            let discountAmount = (discount / 100) * base;
+            let taxable = base - discountAmount;
+            let taxAmount = (tax / 100) * taxable;
+            let finalAmount = taxable + taxAmount;
 
-            $(this).find('.subtotal').val('Rs ' + subtotal.toFixed(2));
-            grandTotal += subtotal;
+            $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
+
+            subtotal += finalAmount;
         });
 
-        $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
+        let advance = parseFloat($('#advance').val()) || 0;
+        let balance = subtotal - advance;
+
+        if (balance < 0) balance = 0;
+
+        $('#sub-total').text('Rs ' + subtotal.toFixed(2));
+        $('#grand-total').text('Rs ' + subtotal.toFixed(2));
+        $('#balance').text('Rs ' + balance.toFixed(2));
     }
+
+    $(document).ready(function() {
+        // Initial calculation
+        calculateTotals();
+
+        // Live update
+        $(document).on('input change', '.qty, .price, .discount, .tax, #advance', function() {
+            calculateTotals();
+        });
+    });
 
     // ---------- DOCUMENT READY ----------
     $(document).ready(function() {

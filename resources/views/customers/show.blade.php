@@ -44,6 +44,22 @@
                         <label class="form-label">Customer Name</label>
                         <input type="text" class="form-control bg-light" value="{{ $customer->name }}" readonly>
                     </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="sale_id" class="form-label">Invoice</label>
+                        <select name="sale_id" id="sale_id" class="form-select">
+                            <option value="">-- Select Sale --</option>
+                            @foreach($sales as $sale)
+                            @if($sale->remaining_amount > 0)
+                            <option value="{{ $sale->id }}">
+                                Invoice no ( {{ $sale->id }} ) -  Remaining amount ( {{ number_format($sale->remaining_amount,2) }} )
+                            </option>
+                            @endif
+                            @endforeach
+                        </select>
+                        @error('sale_id')
+                        <div class="text-danger small">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="col-md-6">
                         <label for="payment_type" class="form-label">Payment Type</label>
                         <select name="payment_type" id="payment_type" class="form-select" required>
@@ -54,13 +70,13 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="2" placeholder="Payment details...">{{ old('description') }}</textarea>
-                    </div>
                     <div class="col-md-6">
                         <label class="form-label">Amount (Rs)</label>
                         <input type="number" step="0.01" name="amount" class="form-control" required min="0.01" value="{{ old('amount') }}">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Payment details...">{{ old('description') }}</textarea>
                     </div>
                 </div>
 
@@ -91,6 +107,7 @@
                 <thead class="table-dark text-center">
                     <tr>
                         <th scope="col">Mode</th>
+                        <th scope="col">Invoice no</th>
                         <th scope="col">Description</th>
                         <th scope="col">Amount (Rs)</th>
                         <th scope="col">Date</th>
@@ -101,6 +118,7 @@
                     @foreach($customer->payments as $payment)
                     <tr>
                         <td><span class="badge bg-secondary">{{ $payment->payment_type }}</span></td>
+                        <td>{{ $payment->sale_id ?? '-' }}</td>
                         <td>{{ $payment->description }}</td>
                         <td class="fw-bold text-success">Rs {{ number_format($payment->amount, 2) }}</td>
                         <td>{{ \Carbon\Carbon::parse($payment->date)->format('Y-m-d') }}</td>

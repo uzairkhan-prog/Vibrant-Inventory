@@ -140,36 +140,26 @@
         <div class="row justify-content-end">
             <div class="col-md-4">
                 <div class="p-3 border rounded bg-light">
-
                     <div class="d-flex justify-content-between mb-2">
                         <strong>Sub Total:</strong>
                         <span id="sub-total">Rs 0.00</span>
                     </div>
-
                     <div class="d-flex justify-content-between mb-2 align-items-center">
                         <strong>Advance:</strong>
-                        <input type="number" step="0.01" min="0" name="advance"
-                            id="advance"
-                            class="form-control form-control-sm text-end"
-                            style="width:140px"
-                            value="{{ old('advance',0) }}">
+                        <input type="number" step="0.01" min="0" name="advance" id="advance"
+                            class="form-control form-control-sm text-end" style="width:140px" value="{{ old('advance',0) }}">
                     </div>
-
                     <div class="d-flex justify-content-between mb-2">
                         <strong>Balance:</strong>
                         <span id="balance" class="text-danger">Rs 0.00</span>
                     </div>
-
                     <hr>
-
                     <div class="d-flex justify-content-between">
                         <strong class="fs-5">Total Amount:</strong>
                         <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
                     </div>
-
                 </div>
             </div>
-
         </div>
 
         <div class="mt-4 text-center">

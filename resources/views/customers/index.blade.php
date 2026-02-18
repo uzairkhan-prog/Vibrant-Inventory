@@ -68,22 +68,12 @@
                         <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">1</td>
                         <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">{{ $counterCustomer->name }}</td>
                         <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">{{ $counterCustomer->address }}</td>
-                        <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">Rs 0.00</td> {{-- Set 0 amount --}}
+                        <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">Rs 0.00</td>
                         <td style="background-color: #d4edda; color: #155724; font-weight: bold; font-size: 16px;">
-                            {{-- Hide Balance button --}}
-                        </td>
-                        <!-- <td class="d-flex justify-content-center">
-                            <a href="{{ route('customers.edit', $counterCustomer) }}" class="btn btn-sm btn-success me-1 text-white" title="Edit">
-                                Edit <i class="material-icons">&#xE254;</i>
+                            <a href="{{ route('customers.show', $counterCustomer) }}" class="btn btn-sm btn-info text-white" title="View">
+                                Balance <i class="material-icons">&#xE8F4;</i>
                             </a>
-                            <form action="{{ route('customers.destroy', $counterCustomer) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this customer?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Delete <i class="material-icons">&#xE872;</i>
-                                </button>
-                            </form>
-                        </td> -->
+                        </td>
                     </tr>
                     @endif
 
@@ -92,7 +82,7 @@
                     @if($customer->name !== 'Counter Sale')
                     <tr>
                         <td>{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration + ($counterCustomer ? 1 : 0) }}</td>
-                        <td>{{ $customer->name }}</td>
+                        <td>{{ $customer->company_name }} ( {{ $customer->name }} )</td>
                         <td>{{ $customer->address }}</td>
                         <td>Rs {{ number_format($customer->balance ?? 0, 2) }}</td>
                         <td>
