@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Customer;
+use App\Models\CustomerPayment;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -153,7 +154,7 @@ class SaleController extends Controller
 
                 $grandTotal = 0;
 
-                // First, check for any price less than product's price_per_unit
+                /* ---------------- PRICE VALIDATION ---------------- */
                 foreach ($request->product_id as $index => $productId) {
                     $product = Product::findOrFail($productId);
                     $inputPrice = $request->price[$index];
@@ -163,14 +164,16 @@ class SaleController extends Controller
                     }
                 }
 
-                // Create Sale
+                /* ---------------- CREATE SALE ---------------- */
                 $sale = Sale::create([
                     'customer_id'  => $request->customer_id,
                     'date'         => $request->date,
                     'total_amount' => 0
                 ]);
 
+                /* ---------------- SALE ITEMS + STOCK MINUS ---------------- */
                 foreach ($request->product_id as $index => $productId) {
+
                     $product  = Product::lockForUpdate()->findOrFail($productId);
                     $qty      = (int)$request->quantity[$index];
                     $price    = $request->price[$index];
@@ -181,12 +184,16 @@ class SaleController extends Controller
                         throw new \Exception("Stock not available for {$product->name}. Available: {$product->quantity}");
                     }
 
-                    // Reduce stock
+                    // reduce stock
                     $product->quantity -= $qty;
                     $product->save();
 
-                    // Line total
-                    $lineTotal = ($qty * $price) * (1 - $discount / 100) * (1 + $tax / 100);
+                    // calculation
+                    $base = $qty * $price;
+                    $discountAmt = ($discount / 100) * $base;
+                    $afterDiscount = $base - $discountAmt;
+                    $taxAmt = ($tax / 100) * $afterDiscount;
+                    $lineTotal = $afterDiscount + $taxAmt;
 
                     SaleItem::create([
                         'sale_id'    => $sale->id,
@@ -200,11 +207,41 @@ class SaleController extends Controller
                     $grandTotal += $lineTotal;
                 }
 
+                /* ---------------- SAVE FINAL INVOICE TOTAL ---------------- */
                 $sale->update(['total_amount' => $grandTotal]);
+
+                /* ==========================================================
+                        ADVANCE + CUSTOMER LEDGER
+                ========================================================== */
+
+                $advance = (float)($request->advance ?? 0);
+                $balance = $grandTotal - $advance;
+
+                // dd($grandTotal, $advance, $balance);
+
+                if ($balance < 0) {
+                    $balance = 0;
+                }
+
+                /* ---------- UPDATE CUSTOMER RUNNING BALANCE ---------- */
+                $customer = Customer::lockForUpdate()->findOrFail($request->customer_id);
+                $customer->balance += $grandTotal;
+                $customer->save();
+
+                /* ---------- STORE ADVANCE PAYMENT (CASH DEFAULT) ---------- */
+                if ($advance > 0) {
+                    CustomerPayment::create([
+                        'customer_id'  => $customer->id,
+                        'description'  => 'Advance received against Sale Invoice #' . $sale->id,
+                        'payment_type' => 'Cash', // Cash
+                        'amount'       => $advance,
+                    ]);
+                }
             });
         } catch (\Exception $e) {
-            // Redirect back with old input and error message
-            return redirect()->back()->withInput()->withErrors(['stock_error' => $e->getMessage()]);
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['stock_error' => $e->getMessage()]);
         }
 
         return redirect()->route('sales.index')->with('success', 'Sale created successfully');
@@ -229,7 +266,14 @@ class SaleController extends Controller
 
         $sale->load('items.product');
 
-        return view('sales.edit', compact('sale', 'customers', 'products'));
+        // Fetch already stored advance for this sale
+        $advancePayment = CustomerPayment::where('description', 'like', '%Sale Invoice #' . $sale->id . '%')
+            ->sum('amount');
+
+        $balance = $sale->total_amount - $advancePayment;
+        if ($balance < 0) $balance = 0;
+
+        return view('sales.edit', compact('sale', 'customers', 'products', 'advancePayment', 'balance'));
     }
 
     /* =====================================================
@@ -249,15 +293,37 @@ class SaleController extends Controller
 
             DB::transaction(function () use ($request, $sale) {
 
-                /* ---------- RESTORE OLD STOCK ---------- */
+                /* =========================================================
+                        STEP 1 — REVERSE OLD CUSTOMER BALANCE
+                ========================================================= */
+
+                $oldCustomer = Customer::lockForUpdate()->findOrFail($sale->customer_id);
+
+                // subtract old invoice amount from customer balance
+                $oldCustomer->balance -= $sale->total_amount;
+                if ($oldCustomer->balance < 0) $oldCustomer->balance = 0;
+                $oldCustomer->save();
+
+                /* ---------- DELETE OLD ADVANCE PAYMENT ---------- */
+                CustomerPayment::where('description', 'like', '%Sale Invoice #' . $sale->id . '%')->delete();
+
+
+                /* =========================================================
+                        STEP 2 — RESTORE OLD STOCK
+                ========================================================= */
+
                 foreach ($sale->items as $oldItem) {
                     $product = Product::lockForUpdate()->find($oldItem->product_id);
                     $product->quantity += $oldItem->quantity;
                     $product->save();
                 }
 
-                /* DELETE OLD ITEMS */
                 $sale->items()->delete();
+
+
+                /* =========================================================
+                        STEP 3 — UPDATE SALE BASIC INFO
+                ========================================================= */
 
                 $sale->update([
                     'customer_id' => $request->customer_id,
@@ -265,7 +331,11 @@ class SaleController extends Controller
                     'total_amount' => 0
                 ]);
 
-                /* ---------- VALIDATE INPUT PRICES AGAINST PRODUCT UNIT PRICE ---------- */
+
+                /* =========================================================
+                    STEP 4 — PRICE VALIDATION
+            ========================================================= */
+
                 foreach ($request->product_id as $index => $productId) {
                     $product = Product::findOrFail($productId);
                     $inputPrice = $request->price[$index];
@@ -275,9 +345,13 @@ class SaleController extends Controller
                     }
                 }
 
+
+                /* =========================================================
+                        STEP 5 — APPLY NEW ITEMS
+                ========================================================= */
+
                 $grandTotal = 0;
 
-                /* ---------- APPLY NEW ITEMS ---------- */
                 foreach ($request->product_id as $index => $productId) {
 
                     $product  = Product::lockForUpdate()->findOrFail($productId);
@@ -290,7 +364,6 @@ class SaleController extends Controller
                         throw new \Exception("Stock not available for {$product->name}. Available: {$product->quantity}");
                     }
 
-                    /* MINUS AGAIN */
                     $product->quantity -= $qty;
                     $product->save();
 
@@ -313,6 +386,28 @@ class SaleController extends Controller
                 }
 
                 $sale->update(['total_amount' => $grandTotal]);
+
+
+                /* =========================================================
+                        STEP 6 — APPLY NEW ADVANCE + BALANCE
+                ========================================================= */
+
+                $advance = (float)($request->advance ?? 0);
+                $balance = $grandTotal - $advance;
+                if ($balance < 0) $balance = 0;
+
+                $customer = Customer::lockForUpdate()->findOrFail($request->customer_id);
+                $customer->balance += $grandTotal;
+                $customer->save();
+
+                if ($advance > 0) {
+                    CustomerPayment::create([
+                        'customer_id'  => $customer->id,
+                        'description'  => 'Advance received against Sale Invoice #' . $sale->id,
+                        'payment_type' => 'Cash', // Cash
+                        'amount'       => $advance,
+                    ]);
+                }
             });
         } catch (\Exception $e) {
             return Redirect::back()->withInput()->withErrors(['stock_error' => $e->getMessage()]);
