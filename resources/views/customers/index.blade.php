@@ -13,7 +13,9 @@
     </div>
 
     @php
-    $subtotal = $customers->sum('balance');
+    $subtotal = $customers
+    ->where('name', '!=', 'Counter Sale')
+    ->sum('balance');
     @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
