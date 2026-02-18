@@ -124,4 +124,46 @@ class CustomerController extends Controller
 
         return redirect()->route('customers.show', $customer)->with('success', 'Payment recorded successfully.');
     }
+
+    public function outstanding(Request $request)
+    {
+        $perPage = $request->get('per_page', 20);
+
+        // Customers who actually owe money (sales > payments)
+        $customers = Customer::withSum(['sales as total_sales' => function ($q) {
+            $q->select(\DB::raw("COALESCE(SUM(total_amount),0)"));
+        }], 'total_amount')
+            ->withSum(['payments as total_paid' => function ($q) {
+                $q->select(\DB::raw("COALESCE(SUM(amount),0)"));
+            }], 'amount')
+            ->get()
+            ->map(function ($customer) {
+
+                $sales = $customer->total_sales ?? 0;
+                $paid  = $customer->total_paid ?? 0;
+
+                $customer->outstanding = $sales - $paid;
+
+                return $customer;
+            })
+            ->filter(function ($customer) {
+                // only customers with remaining balance and not counter sale
+                return $customer->outstanding > 0 && $customer->name !== 'Counter Sale';
+            });
+
+        // Total Outstanding Amount
+        $totalOutstanding = $customers->sum('outstanding');
+
+        // paginate collection manually
+        $page = request()->get('page', 1);
+        $customers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $customers->forPage($page, $perPage),
+            $customers->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return view('customers.outstanding', compact('customers', 'totalOutstanding'));
+    }
 }

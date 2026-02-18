@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::get('suppliers/details', [SupplierController::class, 'details'])->name('suppliers.details');
     Route::resource('suppliers', SupplierController::class);
     Route::get('customers/details', [CustomerController::class, 'details'])->name('customers.details');
+    Route::get('customers/outstanding', [CustomerController::class, 'outstanding'])->name('customers.outstanding');
     Route::resource('customers', CustomerController::class);
 
     Route::resource('purchases', PurchaseController::class);

@@ -53,6 +53,20 @@
                 </li>
 
                 <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('sales.index') }}">
+                        <i class="ti ti-currency-dollar"></i>
+                        <span class="hide-menu">Invoice</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('customers.outstanding') }}">
+                        <i class="ti ti-alert-circle"></i>
+                        <span class="hide-menu">Outstanding</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('suppliers.details') }}">
                         <i class="ti ti-truck"></i>
                         <span class="hide-menu">Suppliers</span>
@@ -70,13 +84,6 @@
                     <a class="sidebar-link" href="{{ route('purchases.index') }}">
                         <i class="ti ti-shopping-cart"></i>
                         <span class="hide-menu">Purchases</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('sales.index') }}">
-                        <i class="ti ti-currency-dollar"></i>
-                        <span class="hide-menu">Invoice</span>
                     </a>
                 </li>
 
