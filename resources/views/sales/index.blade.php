@@ -193,16 +193,16 @@
                 <tbody>
                     @foreach ($sales as $sale)
                     <tr>
-                        <td>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
-                        <td>{{ $sale->id }}</td>
-                        <td>{{ $sale->customer->name }}</td>
-                        <td>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
-                        <td>
+                        <td @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>{{ \Carbon\Carbon::parse($sale->date)->format('Y-m-d') }}</td>
+                        <td @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>{{ $sale->id }}</td>
+                        <td @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>{{ $sale->customer->company_name }} ( {{ $sale->customer->name }} )</td>
+                        <td @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>Rs {{ number_format($sale->total_amount ?? 0, 2) }}</td>
+                        <td @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>
                             <a href="{{ route('sales.show', $sale) }}" class="btn btn-sm btn-info me-1">
                                 Invoice <i class="material-icons">&#xE8F4;</i>
                             </a>
                         </td>
-                        <td class="d-flex justify-content-center">
+                        <td class="d-flex justify-content-center" @if($sale->customer->name === 'Counter Sale') style="background-color: #d4edda; color: #155724; font-weight: bold;" @endif>
                             <a href="{{ route('sales.edit', $sale) }}" class="btn btn-sm btn-warning me-1">
                                 Edit <i class="material-icons">&#xE3C9;</i>
                             </a>

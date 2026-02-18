@@ -44,7 +44,7 @@
                         <option value="">All Customers</option>
                         @foreach($customersList as $c)
                         <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>
-                            {{ $c->name }}
+                            {{ $c->company_name }} ( {{ $c->name }} )
                         </option>
                         @endforeach
                     </select>
