@@ -131,11 +131,14 @@
                         @php
                         $totalDebit += $row['debit'];
                         $totalCredit += $row['credit'];
-                        $rowDate = \Carbon\Carbon::parse($row['date']); 
+                        $rowDate = \Carbon\Carbon::parse($row['date']);
                         @endphp
 
                         <tr>
-                            <td>{{ $rowDate->format('Y-m-d H:i:s') }}</td>
+                            <td>
+                                <span class="d-block fw-bold">{{ $rowDate->format('Y-m-d') }}</span>
+                                <small class="text-danger">{{ $rowDate->format('H:i:s') }}</small>
+                            </td>
 
                             <td>
                                 @if($row['type'] == 'sale')
