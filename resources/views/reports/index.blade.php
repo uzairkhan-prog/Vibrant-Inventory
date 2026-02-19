@@ -492,8 +492,8 @@
                             <th class="text-start p-2">Product</th>
                             <th class="text-start p-2">Qty</th>
                             <th class="text-start p-2">Price</th>
-                            <th class="text-start p-2">Tax</th>
-                            <th class="text-start p-2">Discount</th>
+                            <th class="text-start p-2">Tax (%)</th>
+                            <th class="text-start p-2">Discount (%)</th>
                             <th class="text-end p-2">Debit (+)</th>
                             <th class="text-end p-2">Credit (-)</th>
                             <th class="text-end p-2">Balance</th>
@@ -501,57 +501,74 @@
                     </thead>
                     <tbody>
                         @php
-                        $runningBalance = 0;
-                        $hasRows = false;
-                        $totalDebit = 0;
-                        $totalCredit = 0;
+                            $runningBalance = 0;
+                            $hasRows = false;
+                            $totalDebit = 0;
+                            $totalCredit = 0;
                         @endphp
 
                         {{-- Sales --}}
                         @foreach($customer->sales as $sale)
-                        @foreach($sale->items as $item)
-                        @php
-                        $hasRows = true;
-                        $lineTotal = ($item->quantity * $item->price) + $sale->tax - $sale->discount;
-                        $runningBalance += $lineTotal;
-                        $totalDebit += $lineTotal;
-                        @endphp
-                        <tr>
-                            <td class="text-start p-2">{{ $sale->created_at->format('Y-m-d') }}</td>
-                            <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
-                            <td class="text-start p-2">Invoice #{{ $sale->id }}</td>
-                            <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
-                            <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
-                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
-                            <td class="text-start p-2">{{ number_format($sale->tax,2) }}</td>
-                            <td class="text-start p-2">{{ number_format($sale->discount,2) }}</td>
-                            <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
-                            <td class="text-end p-2">-</td>
-                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                        </tr>
-                        @endforeach
+                            @php
+                                // Calculate invoice subtotal to distribute tax/discount proportionally if needed
+                                $invoiceSubtotal = $sale->items->sum(function($i){
+                                    return $i->quantity * $i->price;
+                                });
+                                if ($invoiceSubtotal <= 0) $invoiceSubtotal = 1;
+                            @endphp
+
+                            @foreach($sale->items as $item)
+                                @php
+                                    $hasRows = true;
+                                    $qty = $item->quantity;
+                                    $price = $item->price;
+                                    $discount = $item->discount ?? 0;
+                                    $tax = $item->tax ?? 0;
+
+                                    // Calculate line subtotal per item
+                                    $lineSubtotal = ($qty * $price);
+                                    $lineSubtotal -= $lineSubtotal * ($discount / 100);
+                                    $lineSubtotal += $lineSubtotal * ($tax / 100);
+
+                                    $runningBalance += $lineSubtotal;
+                                    $totalDebit += $lineSubtotal;
+                                @endphp
+                                <tr>
+                                    <td class="text-start p-2">{{ $sale->created_at->format('Y-m-d') }}</td>
+                                    <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
+                                    <td class="text-start p-2">Invoice #{{ $sale->id }}</td>
+                                    <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
+                                    <td class="text-start p-2">{{ $qty }}</td>
+                                    <td class="text-start p-2">{{ number_format($price,2) }}</td>
+                                    <td class="text-start p-2">{{ number_format($tax,2) }}</td>
+                                    <td class="text-start p-2">{{ number_format($discount,2) }}</td>
+                                    <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineSubtotal,2) }}</td>
+                                    <td class="text-end p-2">-</td>
+                                    <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
+                                </tr>
+                            @endforeach
                         @endforeach
 
                         {{-- Payments --}}
                         @foreach($customer->payments as $payment)
-                        @php
-                        $hasRows = true;
-                        $runningBalance -= $payment->amount;
-                        $totalCredit += $payment->amount;
-                        @endphp
-                        <tr>
-                            <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
-                            <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
-                            <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-end p-2">-</td>
-                            <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
-                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                        </tr>
+                            @php
+                                $hasRows = true;
+                                $runningBalance -= $payment->amount;
+                                $totalCredit += $payment->amount;
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
+                                <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-start p-2">-</td>
+                                <td class="text-end p-2">-</td>
+                                <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
+                                <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
+                            </tr>
                         @endforeach
 
                         {{-- If no records --}}
@@ -578,7 +595,6 @@
             @empty
             <div class="alert alert-warning">No customers found.</div>
             @endforelse
-
             {{-- Pagination --}}
             @if ($customersLedger->hasPages())
             <div class="d-flex justify-content-center">

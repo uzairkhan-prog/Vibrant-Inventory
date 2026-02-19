@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="py-4">
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <h2 class="fw-bold text-primary-emphasis">
             Customer Profile: <strong>{{ $customer->name }}</strong>
@@ -34,7 +34,7 @@
     @endif
 
     <!-- Payment Form -->
-    <div class="card shadow-lg border-0 rounded-4 mb-5">
+    <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body">
             <h4 class="mb-4 text-dark fw-semibold">💳 Record a Payment</h4>
             <form method="POST" action="{{ route('customers.payments.store', $customer) }}">
@@ -51,7 +51,7 @@
                             @foreach($sales as $sale)
                             @if($sale->remaining_amount > 0)
                             <option value="{{ $sale->id }}">
-                                Invoice no ( {{ $sale->id }} ) -  Remaining amount ( {{ number_format($sale->remaining_amount,2) }} )
+                                Invoice no ( {{ $sale->id }} ) - Remaining amount ( {{ number_format($sale->remaining_amount,2) }} )
                             </option>
                             @endif
                             @endforeach
@@ -94,62 +94,171 @@
         </div>
         </form>
     </div>
-</div>
+    <hr>
+    <!-- Customer Ledger Report -->
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+            <h4 class="mb-4 text-dark fw-semibold">{{ $customer->company_name ? strtoupper($customer->company_name) : 'N/A' }} ( {{ $customer->name ?? 'N/A' }} )</h4>
 
-<!-- Previous Payments Table -->
-<div class="card shadow-sm border-0 rounded-4">
-    <div class="card-body">
-        <h4 class="mb-4 text-dark fw-semibold">📄 Previous Payments</h4>
+            @if($ledger->count())
 
-        @if($customer->payments->count())
-        <div class="table-responsive">
-            <table id="customerPaymentsTable" class="table table-striped align-middle table-hover">
-                <thead class="table-dark text-center">
-                    <tr>
-                        <th scope="col">Mode</th>
-                        <th scope="col">Invoice no</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Amount (Rs)</th>
-                        <th scope="col">Date</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="text-center">
-                    @foreach($customer->payments as $payment)
-                    <tr>
-                        <td><span class="badge bg-secondary">{{ $payment->payment_type }}</span></td>
-                        <td>{{ $payment->sale_id ?? '-' }}</td>
-                        <td>{{ $payment->description }}</td>
-                        <td class="fw-bold text-success">Rs {{ number_format($payment->amount, 2) }}</td>
-                        <td>{{ \Carbon\Carbon::parse($payment->date)->format('Y-m-d') }}</td>
-                        <td>
-                            <a href="{{ route('customer-payments.edit', $payment) }}" class="btn btn-sm btn-success text-white" title="Edit">
-                                Edit <i class="material-icons">edit</i>
-                            </a>
-                            <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this payment?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                    Delete <i class="material-icons">delete</i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Reference</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Discount</th>
+                            <th>Tax</th>
+                            <th class="text-success">Debit (+)</th>
+                            <th class="text-danger">Credit (-)</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="text-center">
+                        @php
+                        $totalDebit = 0;
+                        $totalCredit = 0;
+                        @endphp
+
+                        @foreach($ledger as $row)
+
+                        @php
+                        $totalDebit += $row['debit'];
+                        $totalCredit += $row['credit'];
+                        $rowDate = \Carbon\Carbon::parse($row['date']); 
+                        @endphp
+
+                        <tr>
+                            <td>{{ $rowDate->format('Y-m-d H:i:s') }}</td>
+
+                            <td>
+                                @if($row['type'] == 'sale')
+                                <span class="badge bg-success">Sale</span>
+                                @else
+                                <span class="badge bg-primary">Payment</span>
+                                @endif
+                            </td>
+
+                            <td>{{ $row['reference'] }}</td>
+                            <td>{{ $row['product'] }}</td>
+                            <td>{{ $row['qty'] }}</td>
+                            <td>
+                                {{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}
+                            </td>
+
+                            <td>{{ $row['discount'] ? number_format($row['discount'],2) : '-' }}</td>
+                            <td>{{ $row['tax'] ? number_format($row['tax'],2) : '-' }}</td>
+
+                            <td class="text-success fw-bold">
+                                {{ $row['debit'] ? number_format($row['debit'],2) : '-' }}
+                            </td>
+
+                            <td class="text-danger fw-bold">
+                                {{ $row['credit'] ? number_format($row['credit'],2) : '-' }}
+                            </td>
+
+                            <td class="fw-bold">
+                                {{ number_format($row['balance'],2) }}
+                            </td>
+                        </tr>
+
+                        @endforeach
+                    </tbody>
+
+                    <!-- Totals Footer -->
+                    <tfoot class="table-light fw-bold text-end">
+                        <tr>
+                            <td colspan="8">Totals:</td>
+                            <td class="text-success">
+                                {{ number_format($totalDebit,2) }}
+                            </td>
+                            <td class="text-danger">
+                                {{ number_format($totalCredit,2) }}
+                            </td>
+                            <td>
+                                {{ number_format($currentBalance,2) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            @else
+            <div class="alert alert-warning text-center">
+                No transactions found for this customer.
+            </div>
+            @endif
+
         </div>
-        @else
-        <div class="text-muted fst-italic">No payments recorded yet.</div>
-        @endif
     </div>
-</div>
+    <hr>
+    <!-- Previous Payments Table -->
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+            <h4 class="mb-4 text-dark fw-semibold">📄 Previous Payments</h4>
+
+            @if($customer->payments->count())
+            <div class="table-responsive">
+                <table id="customerPaymentsTable" class="table table-striped align-middle table-hover">
+                    <thead class="table-dark text-center">
+                        <tr>
+                            <th scope="col">Receipt no</th>
+                            <th scope="col">Mode</th>
+                            <th scope="col">Invoice no</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Amount (Rs)</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-center">
+                        @foreach($customer->payments as $payment)
+                        <tr>
+                            <td>{{ $payment->id ?? '-' }}</td>
+                            <td><span class="badge bg-secondary">{{ $payment->payment_type }}</span></td>
+                            <td>{{ $payment->sale_id ?? '-' }}</td>
+                            <td>{{ $payment->description }}</td>
+                            <td class="fw-bold text-success">Rs {{ number_format($payment->amount, 2) }}</td>
+                            <td>{{ \Carbon\Carbon::parse($payment->date)->format('Y-m-d') }}</td>
+                            <td>
+                                <a href="{{ route('customer-payments.edit', $payment) }}" class="btn btn-sm btn-success text-white" title="Edit">
+                                    Edit <i class="material-icons">edit</i>
+                                </a>
+                                <form action="{{ route('customer-payments.destroy', $payment) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this payment?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        Delete <i class="material-icons">delete</i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @else
+            <div class="text-muted fst-italic">No payments recorded yet.</div>
+            @endif
+        </div>
+    </div>
 </div>
 
 <!-- JS for Export PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
+<style>
+    tfoot.table-light.fw-bold.text-end tr td {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+    }
+</style>
 <script>
     async function exportCustomerPaymentsPDF() {
         const {

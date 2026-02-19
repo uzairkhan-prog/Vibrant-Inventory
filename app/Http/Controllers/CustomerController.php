@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
 use App\Models\Sale;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -74,21 +75,127 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        $customer->load('payments');
+        // Ledger
+        $ledger = $this->buildCustomerLedger($customer);
 
-        // Fetch this customer's sales
+        // Sales for payment dropdown
         $sales = Sale::where('customer_id', $customer->id)
             ->withSum('payments', 'amount')
             ->get();
 
-        // Calculate remaining amount
         foreach ($sales as $sale) {
             $sale->remaining_amount = $sale->total_amount - ($sale->payments_sum_amount ?? 0);
         }
 
-        $currentBalance = $customer->current_balance;
+        // Current Balance = Last ledger balance
+        $currentBalance = $ledger->last()['balance'] ?? 0;
 
-        return view('customers.show', compact('customer', 'currentBalance', 'sales'));
+        return view('customers.show', compact(
+            'customer',
+            'ledger',
+            'sales',
+            'currentBalance'
+        ));
+    }
+
+    private function buildCustomerLedger(Customer $customer)
+    {
+        // Load relations
+        $customer->load([
+            'sales.items.product',
+            'payments'
+        ]);
+
+        $ledger = collect();
+
+        /*
+        |------------------------------------------
+        | 1) ADD SALES (DEBIT)  — ITEM WISE
+        |------------------------------------------
+        */
+        foreach ($customer->sales as $sale) {
+
+            foreach ($sale->items as $item) {
+
+                $qty = $item->quantity;
+                $unitPrice = $item->price;
+                $discountPercent = $item->discount ?? 0;
+                $taxPercent = $item->tax ?? 0;
+
+                // Subtotal calculation per item
+                $subtotal = ($qty * $unitPrice);
+                $subtotal -= $subtotal * ($discountPercent / 100); // apply discount %
+                $subtotal += $subtotal * ($taxPercent / 100); // apply tax %
+
+                // Combine sale date + created_at time
+                if ($sale->date) {
+                    // Use sale date with created_at time
+                    $saleTime = Carbon::parse($sale->created_at)->format('H:i:s');
+                    $saleDate = Carbon::parse($sale->date . ' ' . $saleTime);
+                } else {
+                    $saleDate = Carbon::parse($sale->created_at);
+                }
+
+                $ledger->push([
+                    'date'        => $saleDate->format('Y-m-d H:i:s'),
+                    'type'        => 'sale',
+                    'reference'   => 'Invoice #' . $sale->id,
+                    'product'     => $item->product->name ?? '-',
+                    'qty'         => $qty,
+                    'price'       => $unitPrice,
+                    'discount'    => $discountPercent,
+                    'tax'         => $taxPercent,
+                    'debit'       => round($subtotal, 2),
+                    'credit'      => 0,
+                ]);
+            }
+        }
+
+        /*
+        |------------------------------------------
+        | 2) ADD PAYMENTS (CREDIT)
+        |------------------------------------------
+        */
+        foreach ($customer->payments as $payment) {
+
+            $paymentDate = $payment->date ? Carbon::parse($payment->date) : $payment->created_at;
+
+            $ledger->push([
+                'date'        => $paymentDate->format('Y-m-d H:i:s'),
+                'type'        => 'payment',
+                'reference'   => 'Receipt #' . $payment->id,
+                'product'     => '-',
+                'qty'         => '-',
+                'price'       => '-',
+                'discount'    => 0,
+                'tax'         => 0,
+                'debit'       => 0,
+                'credit'      => (float) $payment->amount,
+            ]);
+        }
+
+        /*
+        |------------------------------------------
+        | 3) SORT BY DATE
+        |------------------------------------------
+        */
+        $ledger = $ledger->sortBy('date')->values();
+
+        /*
+        |------------------------------------------
+        | 4) RUNNING BALANCE
+        |------------------------------------------
+        */
+        $running = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$running) {
+            $running += $row['debit'];
+            $running -= $row['credit'];
+            $row['balance'] = round($running, 2);
+            return $row;
+        });
+
+        return $ledger;
     }
 
     public function storePayment(Request $request, Customer $customer)
