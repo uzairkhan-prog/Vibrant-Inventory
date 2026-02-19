@@ -285,39 +285,55 @@ class ReportsController extends Controller
         $D_adjustedCOGS     = 0;
 
         if ($reportType === 'dashboard') {
-            $D_sales       = Sale::query();
-            $D_purchases   = Purchase::query();
-            $D_expenses    = Expense::query();
-            $D_saleReturns = SaleReturn::query();
+            $D_sales       = Sale::with('items.product')->get();
+            $D_saleReturns = SaleReturn::with('product')->get();
+            $D_expenses    = Expense::query()->get();
 
+            // Totals
             $D_totalSales      = $D_sales->sum('total_amount');
-            $D_totalPurchases  = $D_purchases->sum('total_amount');
             $D_totalExpenses   = $D_expenses->sum('amount');
             $D_totalSaleReturn = $D_saleReturns->sum('amount_deducted');
             $D_returnQty       = $D_saleReturns->sum('qty_return');
 
-            foreach ($D_saleReturns->get() as $ret) {
+            // COGS based on sold products × price_per_unit
+            $D_totalCOGS = 0;
+            foreach ($D_sales as $sale) {
+                foreach ($sale->items as $item) {
+                    if ($item->product) {
+                        $D_totalCOGS += $item->quantity * $item->product->price_per_unit;
+                    }
+                }
+            }
+
+            // Deduct COGS for returned items
+            $D_returnCOGS = 0;
+            foreach ($D_saleReturns as $ret) {
                 if ($ret->product) {
-                    $D_returnCOGS += $ret->qty_return * $ret->product->purchase_price;
+                    $D_returnCOGS += $ret->qty_return * $ret->product->price_per_unit;
                     $ret->product->increment('quantity', $ret->qty_return);
                 }
             }
 
-            $D_purchaseItems   = PurchaseItem::with('product')->get();
-            $D_purchaseQty     = $D_purchaseItems->sum('quantity');
-            $D_purchasePercent = $D_totalSales > 0 ? ($D_totalPurchases / $D_totalSales) * 100 : 0;
+            // Adjusted Sales & COGS
+            $D_adjustedSales = $D_totalSales - $D_totalSaleReturn;
+            $D_adjustedCOGS  = $D_totalCOGS - $D_returnCOGS;
 
-            // ===== Adjusted Sales & COGS =====
-            $D_adjustedSales  = $D_totalSales - $D_totalSaleReturn;
-            $D_adjustedCOGS   = $D_totalPurchases - $D_returnCOGS;
-
-            $D_grossProfit    = $D_adjustedSales - $D_adjustedCOGS;
-            $D_netProfit      = $D_grossProfit - $D_totalExpenses;
+            // Profit Calculations
+            $D_grossProfit = $D_adjustedSales - $D_adjustedCOGS;
+            $D_netProfit   = $D_grossProfit - $D_totalExpenses;
 
             $D_gpPercent      = $D_adjustedSales > 0 ? ($D_grossProfit / $D_adjustedSales) * 100 : 0;
             $D_expensePercent = $D_adjustedSales > 0 ? ($D_totalExpenses / $D_adjustedSales) * 100 : 0;
             $D_npPercent      = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
-            $D_overallPercent = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
+
+            // Purchased Qty is sum of quantities sold (matches Analytics)
+            $D_purchaseQty     = $D_sales->flatMap(fn($s) => $s->items)->sum('quantity');
+
+            // Purchase % (COGS / Adjusted Sales)
+            $D_purchasePercent = $D_adjustedSales > 0 ? ($D_adjustedCOGS / $D_adjustedSales) * 100 : 0;
+
+            // Items collection (optional, e.g., for listing in dashboard)
+            $D_purchaseItems = $D_sales->flatMap(fn($s) => $s->items);
         }
 
         return view('reports.index', compact(

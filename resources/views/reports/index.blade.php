@@ -776,10 +776,7 @@
 
     <!-- Dashboard Report -->
     @if($reportType == 'dashboard')
-    
-    <!-- Page JS -->
     @include('analytics.css')
-    <!-- SUMMARY SECTION -->
     <div class="p-4 bg-white shadow rounded-4">
         <h3 class="section-title">Profit & Loss Summary</h3>
 
@@ -787,76 +784,67 @@
             <!-- LEFT SUMMARY -->
             <div class="col-md-6 border-end">
                 <strong>Total Sales:</strong> <span class="label-line"></span>
-                {{ number_format($D_totalSales, 2) }} -
-                <span class="percent-value">(100%)</span> <br>
+                {{ number_format($D_totalSales, 2) }} <span class="percent-value">(100%)</span><br>
 
-                <!-- ✅ ADDED: Total Sale Return -->
                 <strong>Total Sale Return:</strong> <span class="label-line"></span>
-                {{ number_format($D_totalSaleReturn, 2) }} <br>
+                {{ number_format($D_totalSaleReturn, 2) }}<br>
 
                 <strong>COGS:</strong> <span class="label-line"></span>
-                {{ number_format($D_totalPurchases, 2) }} -
+                {{ number_format($D_adjustedCOGS, 2) }}
                 <span class="percent-value">(
-                    {{ $D_totalSales > 0 ? number_format(($D_totalPurchases/$D_totalSales)*100, 2) : '0' }}%
-                )</span> <br>
+                    {{ $D_adjustedSales > 0 ? number_format(($D_adjustedCOGS / $D_adjustedSales) * 100, 2) : '0' }}%
+                )</span><br>
 
                 <strong>Gross Profit:</strong> <span class="label-line"></span>
-                {{ number_format($D_grossProfit, 2) }} -
+                {{ number_format($D_grossProfit, 2) }}
                 <span class="percent-value">({{ number_format($D_gpPercent, 2) }}%)</span><br>
 
                 <strong>Expenses:</strong> <span class="label-line"></span>
-                {{ number_format($D_totalExpenses, 2) }} -
+                {{ number_format($D_totalExpenses, 2) }}
                 <span class="percent-value">({{ number_format($D_expensePercent, 2) }}%)</span><br>
 
                 <hr>
 
                 <strong>Net Profit:</strong> <span class="label-line"></span>
-                {{ number_format($D_netProfit, 2) }} -
+                {{ number_format($D_netProfit, 2) }}
                 <span class="percent-value">({{ number_format($D_npPercent, 2) }}%)</span><br>
             </div>
 
-            <!-- PERCENT CIRCLE CHART -->
+            <!-- RIGHT CHART -->
             <div class="col-md-6 d-flex justify-content-center align-items-center">
                 <div class="chart-card">
                     <h5 class="fw-bold text-center">Profit % Breakdown</h5>
                     <canvas id="donutChart" height="260"></canvas>
                 </div>
             </div>
-            <hr>
         </div>
-
+        <hr>
         <h3 class="section-title">Percent Summary</h3>
-
         <div class="row">
             <div class="col-md-6 summary-box border-end">
                 <strong>Gross Profit %:</strong> <span class="label-line"></span>
                 <span class="percent-value">{{ number_format($D_gpPercent, 2) }}%</span><br>
-
                 <strong>Expenses %:</strong> <span class="label-line"></span>
                 <span class="percent-value">{{ number_format($D_expensePercent, 2) }}%</span><br>
-
                 <hr>
-
                 <strong>Net Profit %:</strong> <span class="label-line"></span>
                 <span class="percent-value">{{ number_format($D_npPercent, 2) }}%</span><br>
             </div>
-
             <!-- Purchases SUMMARY -->
             <div class="col-md-6 summary-box">
-                <strong>Total Purchases:</strong> <span class="label-line"></span>
-                {{ number_format($D_totalPurchases, 2) }} -
+                <strong>Purchases:</strong> <span class="label-line"></span>
+                {{ number_format($D_totalPurchases, 2) }}
                 <span class="percent-value">(
-                    {{ $D_totalSales > 0 ? number_format(($D_totalPurchases/$D_totalSales)*100, 2) : '0' }}%
-                    )</span> <br>
-
-                <strong>Purchased Qty:</strong> <span class="label-line"></span> {{ $D_purchaseQty }} <br>
-
+                    {{ $D_adjustedSales > 0 ? number_format(($D_totalPurchases / $D_adjustedSales) * 100, 2) : '0' }}%
+                )</span><br>
+                <strong>Purchased Qty:</strong> <span class="label-line"></span> 0<br>
+                <strong>Sale Qty:</strong> <span class="label-line"></span> {{ $D_purchaseQty }}<br>
                 <strong>Purchase %:</strong> <span class="label-line"></span>
-                <span class="percent-value">{{ number_format($D_purchasePercent, 2) }}%</span><br>
+                <span class="percent-value">{{ number_format($D_purchasePercent, 2) }}%</span>
             </div>
         </div>
-
     </div>
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -869,7 +857,7 @@
                         {{ $D_gpPercent }},
                         {{ $D_expensePercent }},
                         {{ $D_npPercent }},
-                        {{ $D_totalSales > 0 ? number_format(($D_totalSaleReturn / $D_totalSales) * 100, 2) : 0 }}
+                        {{ $D_adjustedSales > 0 ? number_format(($D_totalSaleReturn / $D_adjustedSales) * 100, 2) : 0 }}
                     ],
                     backgroundColor: ['#4caf50', '#f44336', '#2196f3', '#ff9800'],
                     borderColor: '#fff',
@@ -884,6 +872,7 @@
         });
     </script>
     @endif
+
 
 </div>
 
