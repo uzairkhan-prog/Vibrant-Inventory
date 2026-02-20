@@ -70,7 +70,7 @@
                         </td>
 
                         <!-- Product -->
-                        <td>
+                        <td width="30%">
                             <select name="product_id[]" class="form-select product-select select2" required>
                                 <option value="">Select Product</option>
                                 <!-- Will be loaded by AJAX -->
@@ -168,9 +168,46 @@
 
 <!-- Scripts -->
 <script>
+    let productRowTemplate = null;
+
+    /* =========================================
+        INIT
+    ========================================= */
+    $(document).ready(function() {
+
+        // store CLEAN HTML BEFORE select2 touches it
+        productRowTemplate = $('#product-list .product-row:first').prop('outerHTML');
+
+        initSelect2();
+        calculateTotals();
+
+        // load products for existing items
+        loadExistingRows();
+    });
+
+    /* =========================================
+        SELECT2
+    ========================================= */
+    function initSelect2(context = document) {
+        $(context).find('.select2').each(function() {
+
+            if ($(this).hasClass('select2-hidden-accessible')) return;
+
+            $(this).select2({
+                width: '100%',
+                dropdownParent: $('.invoice-wrapper'),
+            });
+        });
+    }
+
+    /* =========================================
+        TOTAL CALCULATION
+    ========================================= */
     function calculateTotals() {
         let grandTotal = 0;
+
         $('#product-list .product-row').each(function() {
+
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
             const discount = parseFloat($(this).find('.discount').val()) || 0;
@@ -185,67 +222,108 @@
             $(this).find('.subtotal').val('Rs ' + subtotal.toFixed(2));
             grandTotal += subtotal;
         });
+
         $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
     }
 
-    // Load products for a category (with preselected product if exists)
+    /* =========================================
+        LOAD PRODUCTS (AJAX)
+    ========================================= */
     function loadProducts(categorySelect, selectedProductId = null) {
-        const categoryId = categorySelect.val();
-        const productSelect = categorySelect.closest('tr').find('.product-select');
+        const row = categorySelect.closest('tr');
+        const productSelect = row.find('.product-select');
+
         productSelect.html('<option>Loading...</option>');
 
-        if (categoryId) {
-            $.getJSON("{{ url('products/by-category') }}/" + categoryId, function(products) {
+        $.ajax({
+            url: "{{ url('products/by-category') }}/" + categorySelect.val(),
+            type: "GET",
+            success: function(products) {
+
                 productSelect.empty().append('<option value="">Select Product</option>');
+
                 $.each(products, function(index, product) {
-                    const isSelected = selectedProductId == product.id ? 'selected' : '';
-                    productSelect.append('<option value="' + product.id + '" ' + isSelected + '>' +
-                        product.name + ' (Stock: ' + product.quantity + ')</option>');
+
+                    let selected = (selectedProductId == product.id) ? 'selected' : '';
+
+                    productSelect.append(
+                        `<option value="${product.id}" ${selected}>
+                        ${product.name} (Stock: ${product.quantity})
+                    </option>`
+                    );
                 });
-            });
-        } else {
-            productSelect.html('<option value="">Select Product</option>');
-        }
-    }
 
-    $(document).ready(function() {
-        calculateTotals();
-
-        // Init existing rows with correct products
-        $('#product-list .product-row').each(function() {
-            const categorySelect = $(this).find('.category-select');
-            const selectedProductId = $(this).find('.current-product-id').val();
-            loadProducts(categorySelect, selectedProductId);
-        });
-
-        // Change events
-        $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
-
-        // Category change
-        $(document).on('change', '.category-select', function() {
-            loadProducts($(this));
-        });
-
-        // Add new row
-        $('#add-product').click(function() {
-            const newRow = $('#product-list .product-row:first').clone();
-            newRow.find('input').val('');
-            newRow.find('.discount').val('0');
-            newRow.find('.subtotal').val('');
-            newRow.find('.category-select').val('');
-            newRow.find('.product-select').html('<option value="">Select Product</option>');
-            newRow.find('.current-product-id').val('');
-            $('#product-list').append(newRow);
-        });
-
-        // Remove row
-        $(document).on('click', '.remove-product', function() {
-            if ($('#product-list .product-row').length > 1) {
-                $(this).closest('.product-row').remove();
-                calculateTotals();
+                // IMPORTANT: refresh select2
+                productSelect.trigger('change.select2');
             }
         });
+    }
+
+    /* =========================================
+        LOAD EXISTING ROWS (EDIT MODE FIX)
+    ========================================= */
+    function loadExistingRows() {
+        $('#product-list .product-row').each(function() {
+
+            let categorySelect = $(this).find('.category-select');
+            let selectedProductId = $(this).find('.current-product-id').val();
+
+            if (categorySelect.val()) {
+                loadProducts(categorySelect, selectedProductId);
+            }
+        });
+    }
+
+    /* =========================================
+        ADD ROW  (FIXED)
+    ========================================= */
+    $('#add-product').on('click', function() {
+
+        let newRow = $(productRowTemplate);
+
+        // reset
+        newRow.find('input').val('');
+        newRow.find('.qty').val(1);
+        newRow.find('.price').val(0);
+        newRow.find('.discount').val(0);
+        newRow.find('.subtotal').val('Rs 0.00');
+
+        newRow.find('.category-select').val('');
+        newRow.find('.product-select').html('<option value="">Select Product</option>');
+        newRow.find('.current-product-id').val('');
+
+        $('#product-list').append(newRow);
+
+        initSelect2(newRow);
+    });
+
+    /* =========================================
+        REMOVE ROW
+    ========================================= */
+    $(document).on('click', '.remove-product', function() {
+
+        if ($('#product-list .product-row').length > 1) {
+
+            let row = $(this).closest('.product-row');
+
+            row.find('.select2').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+
+            row.remove();
+            calculateTotals();
+        }
+    });
+
+    /* =========================================
+        EVENTS
+    ========================================= */
+    $(document).on('input change', '.qty, .price, .discount, .tax', calculateTotals);
+
+    $(document).on('change', '.category-select', function() {
+        loadProducts($(this));
     });
 </script>
-
 @endsection

@@ -118,9 +118,9 @@ class PurchaseController extends Controller
                     'tax'         => $tax,
                 ]);
 
-                $product = Product::find($productId);
-                $product->quantity -= $quantity; // Deduct stock
-                $product->save();
+                // $product = Product::find($productId);
+                // $product->quantity -= $quantity; // Deduct stock
+                // $product->save();
 
                 $totalAmount += $subtotal;
             }
@@ -190,8 +190,8 @@ class PurchaseController extends Controller
                     'tax'         => $tax,
                 ]);
 
-                Product::where('id', $productId)
-                    ->increment('quantity', $quantity);
+                // Product::where('id', $productId)
+                //     ->increment('quantity', $quantity);
 
                 $totalAmount += $subtotal;
             }
