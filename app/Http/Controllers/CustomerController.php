@@ -7,6 +7,7 @@ use App\Models\CustomerPayment;
 use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -237,10 +238,10 @@ class CustomerController extends Controller
         $perPage = $request->get('per_page', 20);
 
         $customers = Customer::withSum(['sales as total_sales' => function ($q) {
-            $q->select(\DB::raw("COALESCE(SUM(total_amount),0)"));
+            $q->select(DB::raw("COALESCE(SUM(total_amount),0)"));
         }], 'total_amount')
             ->withSum(['payments as total_paid' => function ($q) {
-                $q->select(\DB::raw("COALESCE(SUM(amount),0)"));
+                $q->select(DB::raw("COALESCE(SUM(amount),0)"));
             }], 'amount')
             ->get()
             ->map(function ($customer) {
