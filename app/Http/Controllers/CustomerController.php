@@ -236,7 +236,6 @@ class CustomerController extends Controller
     {
         $perPage = $request->get('per_page', 20);
 
-        // Customers who actually owe money (sales > payments)
         $customers = Customer::withSum(['sales as total_sales' => function ($q) {
             $q->select(\DB::raw("COALESCE(SUM(total_amount),0)"));
         }], 'total_amount')
@@ -254,15 +253,33 @@ class CustomerController extends Controller
                 return $customer;
             })
             ->filter(function ($customer) {
-                // only customers with remaining balance and not counter sale
-                return $customer->outstanding > 0 && $customer->name !== 'Counter Sale';
+                return $customer->outstanding > 0;
             });
 
-        // Total Outstanding Amount
+        /*
+        |--------------------------------------------------------------------------
+        | SORTING LOGIC
+        |--------------------------------------------------------------------------
+        | 1) Counter Sale always first
+        | 2) Others by highest outstanding
+        */
+        $customers = $customers->sort(function ($a, $b) {
+
+            // Counter Sale priority
+            if (strtolower($a->name) == 'counter sale') return -1;
+            if (strtolower($b->name) == 'counter sale') return 1;
+
+            // then sort by outstanding (descending)
+            return $b->outstanding <=> $a->outstanding;
+        })->values();
+
+
+        // Total Outstanding
         $totalOutstanding = $customers->sum('outstanding');
 
-        // paginate collection manually
+        // Manual Pagination
         $page = request()->get('page', 1);
+
         $customers = new \Illuminate\Pagination\LengthAwarePaginator(
             $customers->forPage($page, $perPage),
             $customers->count(),

@@ -57,7 +57,10 @@
 
             <tbody>
                 @foreach($customers as $index => $customer)
-                <tr>
+                @php
+                $isCounter = strtolower(trim($customer->name)) === 'counter sale';
+                @endphp
+                <tr class="{{ $isCounter ? 'counter-td' : '' }}">
                     <td>{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration }}</td>
                     <td>
                         <strong>
@@ -104,6 +107,21 @@
     @endif
 
 </div>
+
+<style>
+    /* Counter Sale highlight */
+    tr.counter-td td {
+        background-color: #d4edda !important;
+        /* color: #155724 !important; */
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    /* tr.counter-td td a {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    } */
+</style>
 
 <script>
     // search

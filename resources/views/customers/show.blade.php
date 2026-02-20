@@ -95,109 +95,116 @@
         </form>
     </div>
     <hr>
-    <!-- Customer Ledger Report -->
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body">
-            <h4 class="mb-4 text-dark fw-semibold">{{ $customer->company_name ? strtoupper($customer->company_name) : 'N/A' }} ( {{ $customer->name ?? 'N/A' }} )</h4>
+    <div class="card-body py-0">
+        <button type="button" class="btn btn-info" id="ledgerBtn" onclick="toggleLedger()">
+            📊 View Customer Ledger
+        </button>
+    </div>
+    <div id="ledgerSection" style="display: none;">
+        <!-- Customer Ledger Report -->
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
+                <h4 class="mb-4 text-dark fw-semibold">{{ $customer->company_name ? strtoupper($customer->company_name) : 'N/A' }} ( {{ $customer->name ?? 'N/A' }} )</h4>
 
-            @if($ledger->count())
+                @if($ledger->count())
 
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle">
-                    <thead class="table-dark text-center">
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Reference</th>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Discount</th>
-                            <th>Tax</th>
-                            <th class="text-success">Debit (+)</th>
-                            <th class="text-danger">Credit (-)</th>
-                            <th>Balance</th>
-                        </tr>
-                    </thead>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Reference</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Discount</th>
+                                <th>Tax</th>
+                                <th class="text-success">Debit (+)</th>
+                                <th class="text-danger">Credit (-)</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
 
-                    <tbody class="text-center">
-                        @php
-                        $totalDebit = 0;
-                        $totalCredit = 0;
-                        @endphp
+                        <tbody class="text-center">
+                            @php
+                            $totalDebit = 0;
+                            $totalCredit = 0;
+                            @endphp
 
-                        @foreach($ledger as $row)
+                            @foreach($ledger as $row)
 
-                        @php
-                        $totalDebit += $row['debit'];
-                        $totalCredit += $row['credit'];
-                        $rowDate = \Carbon\Carbon::parse($row['date']);
-                        @endphp
+                            @php
+                            $totalDebit += $row['debit'];
+                            $totalCredit += $row['credit'];
+                            $rowDate = \Carbon\Carbon::parse($row['date']);
+                            @endphp
 
-                        <tr>
-                            <td>
-                                <span class="d-block fw-bold">{{ $rowDate->format('Y-m-d') }}</span>
-                                <small class="text-danger">{{ $rowDate->format('H:i:s') }}</small>
-                            </td>
+                            <tr>
+                                <td>
+                                    <span class="d-block fw-bold">{{ $rowDate->format('Y-m-d') }}</span>
+                                    <small class="text-danger">{{ $rowDate->format('H:i:s') }}</small>
+                                </td>
 
-                            <td>
-                                @if($row['type'] == 'sale')
-                                <span class="badge bg-success">Sale</span>
-                                @else
-                                <span class="badge bg-primary">Payment</span>
-                                @endif
-                            </td>
+                                <td>
+                                    @if($row['type'] == 'sale')
+                                    <span class="badge bg-success">Sale</span>
+                                    @else
+                                    <span class="badge bg-primary">Payment</span>
+                                    @endif
+                                </td>
 
-                            <td>{{ $row['reference'] }}</td>
-                            <td>{{ $row['product'] }}</td>
-                            <td>{{ $row['qty'] }}</td>
-                            <td>
-                                {{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}
-                            </td>
+                                <td>{{ $row['reference'] }}</td>
+                                <td>{{ $row['product'] }}</td>
+                                <td>{{ $row['qty'] }}</td>
+                                <td>
+                                    {{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}
+                                </td>
 
-                            <td>{{ $row['discount'] ? number_format($row['discount'],2) : '-' }}</td>
-                            <td>{{ $row['tax'] ? number_format($row['tax'],2) : '-' }}</td>
+                                <td>{{ $row['discount'] ? number_format($row['discount'],2) : '-' }}</td>
+                                <td>{{ $row['tax'] ? number_format($row['tax'],2) : '-' }}</td>
 
-                            <td class="text-success fw-bold">
-                                {{ $row['debit'] ? number_format($row['debit'],2) : '-' }}
-                            </td>
+                                <td class="text-success fw-bold">
+                                    {{ $row['debit'] ? number_format($row['debit'],2) : '-' }}
+                                </td>
 
-                            <td class="text-danger fw-bold">
-                                {{ $row['credit'] ? number_format($row['credit'],2) : '-' }}
-                            </td>
+                                <td class="text-danger fw-bold">
+                                    {{ $row['credit'] ? number_format($row['credit'],2) : '-' }}
+                                </td>
 
-                            <td class="fw-bold">
-                                {{ number_format($row['balance'],2) }}
-                            </td>
-                        </tr>
+                                <td class="fw-bold">
+                                    {{ number_format($row['balance'],2) }}
+                                </td>
+                            </tr>
 
-                        @endforeach
-                    </tbody>
+                            @endforeach
+                        </tbody>
 
-                    <!-- Totals Footer -->
-                    <tfoot class="table-light fw-bold text-end">
-                        <tr>
-                            <td colspan="8">Totals:</td>
-                            <td class="text-success">
-                                {{ number_format($totalDebit,2) }}
-                            </td>
-                            <td class="text-danger">
-                                {{ number_format($totalCredit,2) }}
-                            </td>
-                            <td>
-                                {{ number_format($currentBalance,2) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        <!-- Totals Footer -->
+                        <tfoot class="table-light fw-bold text-end">
+                            <tr>
+                                <td colspan="8">Totals:</td>
+                                <td class="text-success">
+                                    {{ number_format($totalDebit,2) }}
+                                </td>
+                                <td class="text-danger">
+                                    {{ number_format($totalCredit,2) }}
+                                </td>
+                                <td>
+                                    {{ number_format($currentBalance,2) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                @else
+                <div class="alert alert-warning text-center">
+                    No transactions found for this customer.
+                </div>
+                @endif
+
             </div>
-
-            @else
-            <div class="alert alert-warning text-center">
-                No transactions found for this customer.
-            </div>
-            @endif
-
         </div>
     </div>
     <hr>
@@ -355,6 +362,21 @@
             // Save PDF
             doc.save('customer-payments.pdf');
         };
+    }
+</script>
+<script>
+    function toggleLedger() {
+        const ledger = document.getElementById("ledgerSection");
+        const btn = document.getElementById("ledgerBtn");
+
+        if (ledger.style.display === "none" || ledger.style.display === "") {
+            ledger.style.display = "block";
+            ledger.style.animation = "fadeIn 0.3s ease-in-out";
+            btn.innerHTML = "❌ Hide Customer Ledger";
+        } else {
+            ledger.style.display = "none";
+            btn.innerHTML = "📊 View Customer Ledger";
+        }
     }
 </script>
 @endsection
