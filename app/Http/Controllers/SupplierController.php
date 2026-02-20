@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
+use App\Models\Purchase;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
@@ -40,7 +43,8 @@ class SupplierController extends Controller
 
         Supplier::create($request->all());
 
-        return redirect()->route('suppliers.details')->with('success', 'Supplier created successfully.');
+        return redirect()->route('suppliers.details')
+            ->with('success', 'Supplier created successfully.');
     }
 
     public function edit(Supplier $supplier)
@@ -61,23 +65,159 @@ class SupplierController extends Controller
 
         $supplier->update($request->all());
 
-        return redirect()->route('suppliers.details')->with('success', 'Supplier updated successfully.');
+        return redirect()->route('suppliers.details')
+            ->with('success', 'Supplier updated successfully.');
     }
 
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
 
-        return redirect()->route('suppliers.details')->with('success', 'Supplier deleted successfully.');
+        return redirect()->route('suppliers.details')
+            ->with('success', 'Supplier deleted successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHOW SUPPLIER (Same as Customer Show Scenario)
+    |--------------------------------------------------------------------------
+    */
 
     public function show(Supplier $supplier)
     {
-        $supplier->load('payments');
-        $currentBalance = $supplier->current_balance;
+        $ledger = $this->buildSupplierLedger($supplier);
 
-        return view('suppliers.show', compact('supplier', 'currentBalance'));
+        // Purchases for dropdown (same as sales in customer)
+        $purchases = Purchase::where('supplier_id', $supplier->id)
+            ->withSum('payments', 'amount')
+            ->get();
+
+        foreach ($purchases as $purchase) {
+            $purchase->remaining_amount =
+                $purchase->total_amount - ($purchase->payments_sum_amount ?? 0);
+        }
+
+        $currentBalance = $ledger->last()['balance'] ?? 0;
+
+        return view('suppliers.show', compact(
+            'supplier',
+            'ledger',
+            'purchases',
+            'currentBalance'
+        ));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUPPLIER LEDGER (Accounts Payable Logic)
+    |--------------------------------------------------------------------------
+    */
+
+    private function buildSupplierLedger(Supplier $supplier)
+    {
+        $supplier->load([
+            'purchases.items.product',
+            'payments'
+        ]);
+
+        $ledger = collect();
+
+        /*
+        |------------------------------------------
+        | 1) ADD PURCHASES (DEBIT - You Owe Supplier)
+        |------------------------------------------
+        */
+        foreach ($supplier->purchases as $purchase) {
+
+            foreach ($purchase->items as $item) {
+
+                $qty = $item->quantity;
+                $unitPrice = $item->price;
+                $discountPercent = $item->discount ?? 0;
+                $taxPercent = $item->tax ?? 0;
+
+                $subtotal = ($qty * $unitPrice);
+                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal += $subtotal * ($taxPercent / 100);
+
+                if ($purchase->date) {
+                    $time = Carbon::parse($purchase->created_at)->format('H:i:s');
+                    $date = Carbon::parse($purchase->date . ' ' . $time);
+                } else {
+                    $date = Carbon::parse($purchase->created_at);
+                }
+
+                $ledger->push([
+                    'date'      => $date->format('Y-m-d H:i:s'),
+                    'type'      => 'purchase',
+                    'reference' => 'Purchase #' . $purchase->id,
+                    'product'   => $item->product->name ?? '-',
+                    'qty'       => $qty,
+                    'price'     => $unitPrice,
+                    'discount'  => $discountPercent,
+                    'tax'       => $taxPercent,
+                    'debit'     => round($subtotal, 2), // DEBIT = liability increase
+                    'credit'    => 0,
+                ]);
+            }
+        }
+
+        /*
+        |------------------------------------------
+        | 2) ADD PAYMENTS (CREDIT - You Paid Supplier)
+        |------------------------------------------
+        */
+        foreach ($supplier->payments as $payment) {
+
+            $paymentDate = $payment->date
+                ? Carbon::parse($payment->date)
+                : $payment->created_at;
+
+            $ledger->push([
+                'date'      => $paymentDate->format('Y-m-d H:i:s'),
+                'type'      => 'payment',
+                'reference' => 'Payment #' . $payment->id,
+                'product'   => '-',
+                'qty'       => '-',
+                'price'     => '-',
+                'discount'  => 0,
+                'tax'       => 0,
+                'debit'     => 0,
+                'credit'    => (float) $payment->amount, // CREDIT reduces liability
+            ]);
+        }
+
+        /*
+        |------------------------------------------
+        | 3) SORT BY DATE
+        |------------------------------------------
+        */
+        $ledger = $ledger->sortBy('date')->values();
+
+        /*
+        |------------------------------------------
+        | 4) RUNNING BALANCE
+        |------------------------------------------
+        | Same structure as Customer
+        |------------------------------------------
+        */
+        $running = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$running) {
+            $running += $row['debit'];   // purchases increase what you owe
+            $running -= $row['credit'];  // payments decrease what you owe
+            $row['balance'] = round($running, 2);
+            return $row;
+        });
+
+        return $ledger;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | STORE PAYMENT (Same Validation Logic as Customer)
+    |--------------------------------------------------------------------------
+    */
 
     public function storePayment(Request $request, Supplier $supplier)
     {
@@ -85,9 +225,12 @@ class SupplierController extends Controller
             'description'  => 'nullable|string',
             'payment_type' => 'required|string',
             'amount'       => 'required|numeric|min:0.01',
+            'purchase_id'  => 'nullable|exists:purchases,id',
         ]);
 
-        $currentBalance = $supplier->current_balance;
+        // Recalculate current balance properly (not from DB column)
+        $ledger = $this->buildSupplierLedger($supplier);
+        $currentBalance = $ledger->last()['balance'] ?? 0;
 
         if ($currentBalance <= 0) {
             return redirect()->back()
@@ -98,16 +241,19 @@ class SupplierController extends Controller
         if ($request->amount > $currentBalance) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Payment amount cannot be greater than current balance (Rs ' . number_format($currentBalance, 2) . ').');
+                ->with('error', 'Payment amount cannot be greater than current balance (Rs '
+                    . number_format($currentBalance, 2) . ').');
         }
 
         SupplierPayment::create([
             'supplier_id'  => $supplier->id,
+            'purchase_id'  => $request->purchase_id,
             'description'  => $request->description,
             'payment_type' => $request->payment_type,
             'amount'       => $request->amount,
         ]);
 
-        return redirect()->route('suppliers.show', $supplier)->with('success', 'Payment recorded successfully.');
+        return redirect()->route('suppliers.show', $supplier)
+            ->with('success', 'Payment recorded successfully.');
     }
 }

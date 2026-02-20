@@ -24,4 +24,10 @@ class Purchase extends Model
     {
         return $this->hasMany(PurchaseItem::class);
     }
+
+    // Add this relationship for payments linked to this purchase
+    public function payments()
+    {
+        return $this->hasMany(SupplierPayment::class, 'purchase_id');
+    }
 }

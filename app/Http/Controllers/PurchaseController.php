@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -127,7 +128,7 @@ class PurchaseController extends Controller
             'tax.*'       => 'nullable|numeric|min:0',
         ]);
 
-        // ✅ Custom quantity vs stock validation
+        // Quantity vs stock validation (kept as you wrote)
         foreach ($request->product_id as $index => $productId) {
             $product = Product::find($productId);
             $quantity = (int) $request->quantity[$index];
@@ -139,49 +140,102 @@ class PurchaseController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request) {
-            $purchase = Purchase::create([
-                'supplier_id'  => $request->supplier_id,
-                'total_amount' => 0,
-                'date'         => $request->date,
-            ]);
+        try {
 
-            $totalAmount = 0;
+            DB::transaction(function () use ($request) {
 
-            foreach ($request->product_id as $index => $productId) {
-                $quantity = (float) $request->quantity[$index];
-                $price    = (float) $request->price[$index];
-                $discount = (float) ($request->discount[$index] ?? 0);
-                $tax      = (float) ($request->tax[$index] ?? 0);
-
-                $base = $quantity * $price;
-                $discountAmount = ($discount / 100) * $base;
-                $taxable = $base - $discountAmount;
-                $taxAmount = ($tax / 100) * $taxable;
-                $subtotal = $taxable + $taxAmount;
-
-                PurchaseItem::create([
-                    'purchase_id' => $purchase->id,
-                    'product_id'  => $productId,
-                    'quantity'    => $quantity,
-                    'price'       => $price,
-                    'discount'    => $discount,
-                    'tax'         => $tax,
+                /* ======================================================
+                    CREATE PURCHASE
+                ====================================================== */
+                $purchase = Purchase::create([
+                    'supplier_id'  => $request->supplier_id,
+                    'total_amount' => 0,
+                    'date'         => $request->date,
                 ]);
 
-                // $product = Product::find($productId);
-                // $product->quantity -= $quantity; // Deduct stock
-                // $product->save();
+                $totalAmount = 0;
 
-                $totalAmount += $subtotal;
-            }
+                /* ======================================================
+                    PURCHASE ITEMS
+                ====================================================== */
+                foreach ($request->product_id as $index => $productId) {
 
-            $purchase->update(['total_amount' => $totalAmount]);
-        });
+                    $quantity = (float) $request->quantity[$index];
+                    $price    = (float) $request->price[$index];
+                    $discount = (float) ($request->discount[$index] ?? 0);
+                    $tax      = (float) ($request->tax[$index] ?? 0);
 
-        return redirect()->route('purchases.index')->with('success', 'Purchase created successfully.');
+                    $base = $quantity * $price;
+                    $discountAmount = ($discount / 100) * $base;
+                    $taxable = $base - $discountAmount;
+                    $taxAmount = ($tax / 100) * $taxable;
+                    $subtotal = $taxable + $taxAmount;
+
+                    PurchaseItem::create([
+                        'purchase_id' => $purchase->id,
+                        'product_id'  => $productId,
+                        'quantity'    => $quantity,
+                        'price'       => $price,
+                        'discount'    => $discount,
+                        'tax'         => $tax,
+                    ]);
+
+                    // KEEP THIS COMMENTED (AS YOU REQUESTED)
+                    // $product = Product::find($productId);
+                    // $product->quantity -= $quantity; // Deduct stock
+                    // $product->save();
+
+                    $totalAmount += $subtotal;
+                }
+
+                /* ======================================================
+                    UPDATE PURCHASE TOTAL
+                ====================================================== */
+                $purchase->update(['total_amount' => $totalAmount]);
+
+
+                /* ======================================================
+                    SUPPLIER ACCOUNTING (MOST IMPORTANT PART)
+                ====================================================== */
+
+                $supplier = Supplier::lockForUpdate()->findOrFail($request->supplier_id);
+
+                // YOU NOW OWE SUPPLIER
+                $supplier->balance += $totalAmount;
+                $supplier->save();
+
+
+                /* ======================================================
+                    SUPPLIER ADVANCE PAYMENT (LIKE CUSTOMER ADVANCE)
+                ====================================================== */
+
+                $paid = (float) ($request->paid_amount ?? 0);
+
+                if ($paid > 0) {
+
+                    // decrease payable
+                    $supplier->balance -= $paid;
+                    $supplier->save();
+
+                    SupplierPayment::create([
+                        'supplier_id'  => $supplier->id,
+                        'purchase_id'  => $purchase->id,
+                        'payment_type' => 'Cash',
+                        'description'  => 'Payment made against Purchase #' . $purchase->id,
+                        'amount'       => $paid,
+                        'date'         => now(),
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('purchases.index')
+            ->with('success', 'Purchase created successfully.');
     }
-
     public function edit(Purchase $purchase)
     {
         $suppliers  = Supplier::all();
