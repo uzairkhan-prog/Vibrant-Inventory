@@ -16,20 +16,20 @@ class PurchaseController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 20);
+        $perPage   = $request->get('per_page', 20);
+        $search    = $request->get('search');
+        $monthYear = $request->get('month_year');
+        $fromDate  = $request->get('from_date');
+        $toDate    = $request->get('to_date');
 
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
-        $search = $request->input('search'); // optional search input
+        $query = Purchase::with('supplier')->orderBy('date', 'desc');
 
-        // Initialize empty collection for first load
-        $purchases = collect();
+        /* =========================
+            DATE FILTER LOGIC
+        ========================= */
 
-        // Only fetch records if any filter is applied
-        if ($fromDate || $toDate || $search) {
-            $query = Purchase::with('supplier')->orderBy('date', 'desc');
+        if ($fromDate || $toDate) {
 
-            // Date range filter
             if ($fromDate && $toDate) {
                 $query->whereBetween('date', [$fromDate, $toDate]);
             } elseif ($fromDate) {
@@ -38,17 +38,68 @@ class PurchaseController extends Controller
                 $query->whereDate('date', '<=', $toDate);
             }
 
-            // Optional search filter by supplier name
-            if ($search) {
-                $query->whereHas('supplier', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
-            }
+            $monthTotal = (clone $query)->sum('total_amount');
+            $monthYear = 'custom';
+        } elseif ($monthYear === 'all') {
 
-            $purchases = $query->paginate($perPage)->appends($request->all());
+            $monthTotal = Purchase::sum('total_amount');
+        } elseif ($monthYear) {
+
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('date', $year)
+                ->whereMonth('date', $month);
+
+            $monthTotal = (clone $query)->sum('total_amount');
+        } else {
+            // DEFAULT = CURRENT MONTH (IMPORTANT FIX)
+            $monthYear = now()->format('Y-m');
+
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('date', $year)
+                ->whereMonth('date', $month);
+
+            $monthTotal = (clone $query)->sum('total_amount');
         }
 
-        return view('purchases.index', compact('purchases', 'fromDate', 'toDate', 'search'));
+        /* =========================
+            SEARCH
+        ========================= */
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                    ->orWhere('total_amount', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $purchases = $query->paginate($perPage)->appends($request->all());
+
+        /* =========================
+            TOTALS
+        ========================= */
+
+        $allTimeTotal = Purchase::sum('total_amount');
+
+        $months = Purchase::selectRaw("DATE_FORMAT(date, '%Y-%m') as month")
+            ->distinct()
+            ->orderBy('month', 'desc')
+            ->pluck('month');
+
+        return view('purchases.index', compact(
+            'purchases',
+            'monthYear',
+            'months',
+            'allTimeTotal',
+            'monthTotal',
+            'search',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     public function create()
