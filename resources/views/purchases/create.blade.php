@@ -91,9 +91,35 @@
         <!-- Total Summary -->
         <div class="row justify-content-end">
             <div class="col-md-4">
-                <div class="p-3 border rounded bg-light text-end">
-                    <strong class="d-block mb-2 fs-5">Total Amount:</strong>
-                    <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
+                <div class="p-3 border rounded bg-light">
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Sub Total:</strong>
+                        <span id="sub-total">Rs 0.00</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <strong>Advance (Paid):</strong>
+                        <input type="number" step="0.01" min="0"
+                            name="paid_amount"
+                            id="paid_amount"
+                            class="form-control form-control-sm text-end"
+                            style="width:140px"
+                            value="0">
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Balance (Payable):</strong>
+                        <span id="balance" class="text-danger">Rs 0.00</span>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <strong class="fs-5">Total Amount:</strong>
+                        <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -179,7 +205,7 @@
     ========================= */
     function calculateTotals() {
 
-        let grandTotal = 0;
+        let subtotal = 0;
 
         $('#product-list .product-row').each(function() {
 
@@ -195,10 +221,18 @@
             let finalAmount = taxable + taxAmount;
 
             $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
-            grandTotal += finalAmount;
+
+            subtotal += finalAmount;
         });
 
-        $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
+        let paid = parseFloat($('#paid_amount').val()) || 0;
+        let balance = subtotal - paid;
+
+        if (balance < 0) balance = 0;
+
+        $('#sub-total').text('Rs ' + subtotal.toFixed(2));
+        $('#grand-total').text('Rs ' + subtotal.toFixed(2));
+        $('#balance').text('Rs ' + balance.toFixed(2));
     }
 
     /* =========================
@@ -247,7 +281,7 @@
     /* =========================
         TOTAL CHANGE EVENTS
     ========================= */
-    $(document).on('input change', '.qty, .price, .discount, .tax', function() {
+    $(document).on('input change', '#paid_amount, .qty, .price, .discount, .tax', function() {
         calculateTotals();
     });
 

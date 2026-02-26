@@ -40,7 +40,9 @@
                 </tr>
             </thead>
             <tbody>
-                @php $calculatedTotal = 0; @endphp
+                @php
+                $calculatedTotal = 0;
+                @endphp
                 @foreach($purchase->items as $index => $item)
                 @php
                 $base = $item->quantity * $item->price;
@@ -61,11 +63,41 @@
                 </tr>
                 @endforeach
             </tbody>
-            <tfoot>
+            <tfoot class="pdf-tfoot">
+                @php
+                // Only payments of this purchase (already filtered in controller)
+                $advance = $purchase->supplier->payments->sum('amount');
+
+                // Remaining payable
+                $balance = $calculatedTotal - $advance;
+                @endphp
                 <tr>
-                    <td colspan="6" class="text-end fw-bold fs-5">Grand Total:</td>
-                    <td class="fw-bold text-success fs-5">Rs {{ number_format($calculatedTotal, 2) }}</td>
+                    <td colspan="6" class="text-end fw-bold fs-5 pe-3">
+                        Advance:
+                    </td>
+                    <td class="fw-bold text-success fs-5">
+                        {{ number_format($advance, 2) }}
+                    </td>
                 </tr>
+
+                <tr>
+                    <td colspan="6" class="text-end fw-bold fs-5 pe-3">
+                        Balance:
+                    </td>
+                    <td class="fw-bold text-danger fs-5">
+                        {{ number_format($balance, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="6" class="text-end fw-bold fs-5 pe-3">
+                        Total:
+                    </td>
+                    <td class="fw-bold text-primary fs-5">
+                        {{ number_format($calculatedTotal, 2) }}
+                    </td>
+                </tr>
+
             </tfoot>
         </table>
     </div>
@@ -121,6 +153,12 @@
         padding: 0.75rem;
     }
 
+    .invoice-table th {
+        background: #0B4168 !important;
+        color: #fff !important;
+        letter-spacing: .5px;
+    }
+
     .invoice-table thead th {
         background-color: #f1f1f1;
         border-bottom: 2px solid #ccc;
@@ -154,6 +192,11 @@
     .btn-danger:hover {
         background-color: #c82333;
         color: #fff;
+    }
+
+    .pdf-tfoot td {
+        background: #f1f5f9 !important;
+        border-top: 2px solid #ccc !important;
     }
 
     @media (max-width: 575px) {

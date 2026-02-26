@@ -114,12 +114,29 @@
             <button type="button" class="btn btn-secondary" id="add-product">+ Add Product</button>
         </div>
 
-        <!-- Total -->
+        <!-- Total Summary -->
         <div class="row justify-content-end">
             <div class="col-md-4">
-                <div class="p-3 border rounded bg-light text-end">
-                    <strong class="d-block mb-2 fs-5">Total Amount:</strong>
-                    <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Sub Total:</strong>
+                        <span id="sub-total">Rs 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <strong>Advance:</strong>
+                        <input type="number" step="0.01" min="0" name="advance" id="advance"
+                            class="form-control form-control-sm text-end" style="width:140px"
+                            value="{{ old('advance', $advancePayment ?? 0) }}">
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Balance:</strong>
+                        <span id="balance" class="text-danger">Rs 0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong class="fs-5">Total Amount:</strong>
+                        <span id="grand-total" class="fs-4 text-success">Rs 0.00</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,31 +217,45 @@
         });
     }
 
-    /* =========================================
-        TOTAL CALCULATION
-    ========================================= */
+    // ---------- CALCULATE TOTALS ----------
     function calculateTotals() {
-        let grandTotal = 0;
+        let subtotal = 0;
 
         $('#product-list .product-row').each(function() {
-
             const qty = parseFloat($(this).find('.qty').val()) || 0;
             const price = parseFloat($(this).find('.price').val()) || 0;
             const discount = parseFloat($(this).find('.discount').val()) || 0;
             const tax = parseFloat($(this).find('.tax').val()) || 0;
 
-            const base = qty * price;
-            const discountAmount = (discount / 100) * base;
-            const taxable = base - discountAmount;
-            const taxAmount = (tax / 100) * taxable;
-            const subtotal = taxable + taxAmount;
+            let base = qty * price;
+            let discountAmount = (discount / 100) * base;
+            let taxable = base - discountAmount;
+            let taxAmount = (tax / 100) * taxable;
+            let finalAmount = taxable + taxAmount;
 
-            $(this).find('.subtotal').val('Rs ' + subtotal.toFixed(2));
-            grandTotal += subtotal;
+            $(this).find('.subtotal').val('Rs ' + finalAmount.toFixed(2));
+
+            subtotal += finalAmount;
         });
 
-        $('#grand-total').text('Rs ' + grandTotal.toFixed(2));
+        let advance = parseFloat($('#advance').val()) || 0;
+        let balance = subtotal - advance;
+        if (balance < 0) balance = 0;
+
+        $('#sub-total').text('Rs ' + subtotal.toFixed(2));
+        $('#grand-total').text('Rs ' + subtotal.toFixed(2));
+        $('#balance').text('Rs ' + balance.toFixed(2));
     }
+
+    $(document).ready(function() {
+        // Initial calculation
+        calculateTotals();
+
+        // Live update on any relevant input change
+        $(document).on('input change', '.qty, .price, .discount, .tax, #advance', function() {
+            calculateTotals();
+        });
+    });
 
     /* =========================================
         LOAD PRODUCTS (AJAX)
@@ -264,12 +295,26 @@
     ========================================= */
     function loadExistingRows() {
         $('#product-list .product-row').each(function() {
-
-            let categorySelect = $(this).find('.category-select');
-            let selectedProductId = $(this).find('.current-product-id').val();
+            let row = $(this);
+            let categorySelect = row.find('.category-select');
+            let productSelect = row.find('.product-select');
+            let selectedProductId = row.find('.current-product-id').val();
 
             if (categorySelect.val()) {
-                loadProducts(categorySelect, selectedProductId);
+                // Load products via AJAX
+                $.ajax({
+                    url: "{{ url('products/by-category') }}/" + categorySelect.val(),
+                    type: "GET",
+                    success: function(products) {
+                        productSelect.empty().append('<option value="">Select Product</option>');
+                        $.each(products, function(index, product) {
+                            let selected = (selectedProductId == product.id) ? 'selected' : '';
+                            productSelect.append(`<option value="${product.id}" ${selected}>${product.name} (Stock: ${product.quantity})</option>`);
+                        });
+                        // Refresh select2
+                        productSelect.trigger('change.select2');
+                    }
+                });
             }
         });
     }

@@ -59,29 +59,23 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($suppliers as $index => $supplier)
+                    @foreach ($suppliers as $supplier)
                     <tr>
-                        <td>{{ ($suppliers->currentPage() - 1) * $suppliers->perPage() + $loop->iteration }}</td>
-                        <td>{{ $supplier->name }}</td>
-                        <td>{{ $supplier->address }}</td>
-                        <td>Rs {{ number_format($supplier->balance ?? 0, 2) }}</td>
                         <td>
-                            <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white">
+                            {{ ($suppliers->currentPage() - 1) * $suppliers->perPage() + $loop->iteration }}
+                        </td>
+                        
+                        <td>{{ $supplier->company_name }} ( {{ $supplier->name }} )</td>
+
+                        <td>{{ $supplier->address }}</td>
+
+                        <td>Rs {{ number_format($supplier->balance ?? 0, 2) }}</td>
+
+                        <td>
+                            <a href="{{ route('suppliers.show', $supplier) }}" class="btn btn-sm btn-info text-white" title="View">
                                 Balance <i class="material-icons">&#xE8F4;</i>
                             </a>
                         </td>
-                        <!-- <td class="d-flex justify-content-center">
-                            <a href="{{ route('suppliers.edit', $supplier) }}" class="btn btn-sm btn-success me-1 text-white">
-                                Edit <i class="material-icons">&#xE254;</i>
-                            </a>
-                            <form action="{{ route('suppliers.destroy', $supplier) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this supplier?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Delete <i class="material-icons">&#xE872;</i>
-                                </button>
-                            </form>
-                        </td> -->
                     </tr>
                     @endforeach
                 </tbody>

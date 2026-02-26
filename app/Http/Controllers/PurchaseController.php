@@ -119,13 +119,13 @@ class PurchaseController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'date'        => 'required|date|after_or_equal:today',
+            'supplier_id'  => 'required|exists:suppliers,id',
+            'date'         => 'required|date|after_or_equal:today',
             'product_id.*' => 'required|exists:products,id',
-            'quantity.*'  => 'required|integer|min:1',
-            'price.*'     => 'required|numeric|min:0',
-            'discount.*'  => 'nullable|numeric|min:0',
-            'tax.*'       => 'nullable|numeric|min:0',
+            'quantity.*'   => 'required|integer|min:1',
+            'price.*'      => 'required|numeric|min:0',
+            'discount.*'   => 'nullable|numeric|min:0',
+            'tax.*'        => 'nullable|numeric|min:0',
         ]);
 
         // Quantity vs stock validation (kept as you wrote)
@@ -165,6 +165,7 @@ class PurchaseController extends Controller
                     $discount = (float) ($request->discount[$index] ?? 0);
                     $tax      = (float) ($request->tax[$index] ?? 0);
 
+                    // line calculations
                     $base = $quantity * $price;
                     $discountAmount = ($discount / 100) * $base;
                     $taxable = $base - $discountAmount;
@@ -180,54 +181,49 @@ class PurchaseController extends Controller
                         'tax'         => $tax,
                     ]);
 
-                    // KEEP THIS COMMENTED (AS YOU REQUESTED)
-                    // $product = Product::find($productId);
-                    // $product->quantity -= $quantity; // Deduct stock
-                    // $product->save();
-
+                    // (Stock intentionally untouched as per your system)
                     $totalAmount += $subtotal;
                 }
 
                 /* ======================================================
                     UPDATE PURCHASE TOTAL
                 ====================================================== */
-                $purchase->update(['total_amount' => $totalAmount]);
-
+                $purchase->update([
+                    'total_amount' => $totalAmount
+                ]);
 
                 /* ======================================================
-                    SUPPLIER ACCOUNTING (MOST IMPORTANT PART)
+                    SUPPLIER LEDGER (IMPORTANT FIX)
+                    SAME AS CUSTOMER SALE LOGIC
                 ====================================================== */
 
                 $supplier = Supplier::lockForUpdate()->findOrFail($request->supplier_id);
 
-                // YOU NOW OWE SUPPLIER
+                // Store FULL purchase value in supplier ledger
                 $supplier->balance += $totalAmount;
                 $supplier->save();
 
-
                 /* ======================================================
-                    SUPPLIER ADVANCE PAYMENT (LIKE CUSTOMER ADVANCE)
+                    ADVANCE / CASH PAID (ONLY RECORD PAYMENT)
+                    DO NOT MODIFY SUPPLIER BALANCE
                 ====================================================== */
 
                 $paid = (float) ($request->paid_amount ?? 0);
 
                 if ($paid > 0) {
 
-                    // decrease payable
-                    $supplier->balance -= $paid;
-                    $supplier->save();
-
                     SupplierPayment::create([
                         'supplier_id'  => $supplier->id,
                         'purchase_id'  => $purchase->id,
                         'payment_type' => 'Cash',
-                        'description'  => 'Payment made against Purchase #' . $purchase->id,
+                        'description'  => 'Payment paid against Purchase #' . $purchase->id,
                         'amount'       => $paid,
                         'date'         => now(),
                     ]);
                 }
             });
         } catch (\Exception $e) {
+
             return back()
                 ->withInput()
                 ->withErrors(['error' => $e->getMessage()]);
@@ -236,13 +232,23 @@ class PurchaseController extends Controller
         return redirect()->route('purchases.index')
             ->with('success', 'Purchase created successfully.');
     }
+
     public function edit(Purchase $purchase)
     {
-        $suppliers  = Supplier::all();
-        $categories = Category::all(); // Add categories
+        $suppliers = Supplier::all();
+        $products  = Product::all();
+        $categories = Category::all();
+
         $purchase->load('items.product');
 
-        return view('purchases.edit', compact('purchase', 'suppliers', 'categories'));
+        // Advance payments for this purchase only
+        $advancePayment = SupplierPayment::where('purchase_id', $purchase->id)
+            ->sum('amount');
+
+        $balance = $purchase->total_amount - $advancePayment;
+        if ($balance < 0) $balance = 0;
+
+        return view('purchases.edit', compact('purchase', 'suppliers', 'products', 'categories', 'advancePayment', 'balance'));
     }
 
     public function update(Request $request, Purchase $purchase)
@@ -255,68 +261,143 @@ class PurchaseController extends Controller
             'price.*'      => 'required|numeric|min:0',
             'discount.*'   => 'nullable|numeric|min:0',
             'tax.*'        => 'nullable|numeric|min:0',
+            'advance'      => 'nullable|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request, $purchase) {
+        try {
 
-            // Load items once
-            $purchase->load('items');
+            DB::transaction(function () use ($request, $purchase) {
 
-            /** 🔁 Revert previous stock */
-            foreach ($purchase->items as $item) {
-                Product::where('id', $item->product_id)
-                    ->decrement('quantity', $item->quantity);
-            }
+                /* =========================
+                    STEP 1: GET OLD DATA
+                ==========================*/
 
-            /** ❌ Remove old items */
-            $purchase->items()->delete();
+                $oldSupplier = Supplier::lockForUpdate()->findOrFail($purchase->supplier_id);
 
-            $totalAmount = 0;
+                $oldTotal = $purchase->total_amount;
 
-            /** ➕ Add new items */
-            foreach ($request->product_id as $index => $productId) {
-                $quantity = (float) $request->quantity[$index];
-                $price    = (float) $request->price[$index];
-                $discount = (float) ($request->discount[$index] ?? 0);
-                $tax      = (float) ($request->tax[$index] ?? 0);
+                // get old advance payments
+                $oldAdvance = SupplierPayment::where('purchase_id', $purchase->id)->sum('amount');
 
-                $base             = $quantity * $price;
-                $discountAmount   = ($discount / 100) * $base;
-                $taxable          = $base - $discountAmount;
-                $taxAmount        = ($tax / 100) * $taxable;
-                $subtotal         = $taxable + $taxAmount;
 
-                PurchaseItem::create([
-                    'purchase_id' => $purchase->id,
-                    'product_id'  => $productId,
-                    'quantity'    => $quantity,
-                    'price'       => $price,
-                    'discount'    => $discount,
-                    'tax'         => $tax,
+                /* =========================
+                    STEP 2: REVERSE OLD LEDGER
+                ==========================*/
+
+                // remove purchase effect
+                // $oldSupplier->balance -= $oldTotal;
+
+                // restore old payments effect
+                $oldSupplier->balance += $oldAdvance;
+
+                if ($oldSupplier->balance < 0) $oldSupplier->balance = 0;
+
+                $oldSupplier->save();
+
+
+                /* =========================
+                    STEP 3: DELETE OLD PAYMENTS & ITEMS
+                ==========================*/
+
+                SupplierPayment::where('purchase_id', $purchase->id)->delete();
+                $purchase->items()->delete();
+
+
+                /* =========================
+                    STEP 4: ADD NEW ITEMS
+                ==========================*/
+
+                $grandTotal = 0;
+
+                foreach ($request->product_id as $index => $productId) {
+
+                    $qty      = (float)$request->quantity[$index];
+                    $price    = (float)$request->price[$index];
+                    $discount = (float)($request->discount[$index] ?? 0);
+                    $tax      = (float)($request->tax[$index] ?? 0);
+
+                    $base = $qty * $price;
+                    $discountAmt = ($discount / 100) * $base;
+                    $afterDiscount = $base - $discountAmt;
+                    $taxAmt = ($tax / 100) * $afterDiscount;
+                    $lineTotal = $afterDiscount + $taxAmt;
+
+                    PurchaseItem::create([
+                        'purchase_id' => $purchase->id,
+                        'product_id'  => $productId,
+                        'quantity'    => $qty,
+                        'price'       => $price,
+                        'discount'    => $discount,
+                        'tax'         => $tax,
+                    ]);
+
+                    $grandTotal += $lineTotal;
+                }
+
+
+                /* =========================
+                    STEP 5: UPDATE PURCHASE
+                ==========================*/
+
+                $purchase->update([
+                    'supplier_id'  => $request->supplier_id,
+                    'date'         => $request->date,
+                    'total_amount' => round($grandTotal, 2),
                 ]);
 
-                // Product::where('id', $productId)
-                //     ->increment('quantity', $quantity);
 
-                $totalAmount += $subtotal;
-            }
+                /* =========================
+                    STEP 6: APPLY NEW LEDGER
+                ==========================*/
 
-            /** ✅ Update purchase ONCE with final total */
-            $purchase->update([
-                'supplier_id'  => $request->supplier_id,
-                'date'         => $request->date,
-                'total_amount' => round($totalAmount, 2),
-            ]);
-        });
+                $newSupplier = Supplier::lockForUpdate()->findOrFail($request->supplier_id);
 
-        return redirect()
-            ->route('purchases.index')
-            ->with('success', 'Purchase updated successfully.');
+                // add new purchase (you owe supplier)
+                $newSupplier->balance += $grandTotal;
+
+
+                /* =========================
+                    STEP 7: APPLY NEW ADVANCE
+                ==========================*/
+
+                $newAdvance = (float)($request->advance ?? 0);
+
+                if ($newAdvance > 0) {
+
+                    SupplierPayment::create([
+                        'supplier_id'  => $newSupplier->id,
+                        'purchase_id'  => $purchase->id,
+                        'description'  => 'Advance paid against Purchase Invoice #' . $purchase->id,
+                        'payment_type' => 'Cash',
+                        'amount'       => $newAdvance,
+                    ]);
+
+                    // payment reduces payable
+                    $newSupplier->balance -= $newAdvance;
+                }
+
+                if ($newSupplier->balance < 0) $newSupplier->balance = 0;
+
+                $newSupplier->save();
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('purchases.index')->with('success', 'Purchase updated successfully.');
     }
 
     public function show(Purchase $purchase)
     {
-        $purchase->load('items.product', 'supplier');
+        // Load purchase items + supplier + only payments of THIS purchase
+        $purchase->load([
+            'items.product',
+            'supplier',
+            'supplier.payments' => function ($q) use ($purchase) {
+                $q->where('purchase_id', $purchase->id);
+            }
+        ]);
+
         return view('purchases.show', compact('purchase'));
     }
 

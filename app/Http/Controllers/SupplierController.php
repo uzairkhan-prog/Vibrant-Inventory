@@ -14,10 +14,16 @@ class SupplierController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
-        $suppliers = Supplier::paginate($perPage);
-        return view('suppliers.index', compact('suppliers'));
-    }
 
+        // pagination data
+        $suppliers = Supplier::orderBy('name')->paginate($perPage);
+
+        // FULL ledger total (not page total)
+        $totalSupplierBalance = Supplier::sum('balance');
+
+        return view('suppliers.index', compact('suppliers', 'totalSupplierBalance'));
+    }
+    
     public function details(Request $request)
     {
         $perPage = $request->get('per_page', 20);
