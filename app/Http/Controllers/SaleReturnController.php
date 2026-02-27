@@ -2,131 +2,282 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SaleReturn;
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\SaleReturn;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\CustomerPayment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SaleReturnController extends Controller
 {
-    public function index(Request $request)
+    /* =============================
+       INDEX
+    ============================= */
+    public function index()
     {
-        $perPage = $request->get('per_page', 20);
-
-        $fromDate = $request->input('from_date');
-        $toDate = $request->input('to_date');
-        $search = $request->input('search'); // optional search input
-
-        // Initialize empty collection for first load
-        $returns = collect();
-
-        // Only fetch records if any filter is applied
-        if ($fromDate || $toDate || $search) {
-            $query = SaleReturn::with(['customer', 'product'])->latest();
-
-            // Date range filter
-            if ($fromDate && $toDate) {
-                $query->whereBetween('created_at', [$fromDate, $toDate]);
-            } elseif ($fromDate) {
-                $query->whereDate('created_at', '>=', $fromDate);
-            } elseif ($toDate) {
-                $query->whereDate('created_at', '<=', $toDate);
-            }
-
-            // Optional search filter by customer or product name
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('customer', function ($q2) use ($search) {
-                        $q2->where('name', 'like', "%{$search}%");
-                    })
-                        ->orWhereHas('product', function ($q2) use ($search) {
-                            $q2->where('name', 'like', "%{$search}%");
-                        });
-                });
-            }
-
-            $returns = $query->paginate($perPage)->appends($request->all());
-        }
-
-        return view('sale_returns.index', compact('returns', 'fromDate', 'toDate', 'search'));
+        $returns = SaleReturn::with(['customer', 'product'])->latest()->paginate(20);
+        return view('sale_returns.index', compact('returns'));
     }
 
+    /* =============================
+       CREATE
+    ============================= */
     public function create()
     {
-        $customers = Customer::select('id', 'name', 'balance')->get();
-        $products = Product::select('id', 'name', 'quantity', 'price_per_unit', 'packing')->get();
-
-        return view('sale_returns.create', compact('customers', 'products'));
+        $customers = Customer::whereHas('sales')->select('id', 'name', 'balance')->get();
+        return view('sale_returns.create', compact('customers'));
     }
 
+    /* =============================
+       STORE
+    ============================= */
     public function store(Request $request)
     {
         $request->validate([
-            'customer_id' => 'required',
-            'product_id' => 'required',
-            'qty_return' => 'required|numeric|min:1',
+            'customer_id'     => 'required|exists:customers,id',
+            'product_id'      => 'required|exists:products,id',
+            'sale_id'         => 'required|exists:sales,id',
+            'qty_return'      => 'required|integer|min:1',
             'amount_deducted' => 'required|numeric|min:0',
         ]);
 
-        $customer = Customer::findOrFail($request->customer_id);
-        $newBalance = $customer->balance - $request->amount_deducted;
-        $customer->update(['balance' => $newBalance]);
+        try {
+            DB::transaction(function () use ($request) {
 
-        SaleReturn::create([
-            'customer_id' => $request->customer_id,
-            'product_id' => $request->product_id,
-            'packing' => $request->packing,
-            'qty_return' => $request->qty_return,
-            'amount_deducted' => $request->amount_deducted,
-            'total_after_return' => $newBalance,
-        ]);
+                $customer = Customer::lockForUpdate()->findOrFail($request->customer_id);
+                $product  = Product::lockForUpdate()->findOrFail($request->product_id);
 
-        return redirect()->route('sale-returns.index')->with('success', 'Return added and balance updated.');
+                // Increase Product Stock
+                $product->quantity += $request->qty_return;
+                $product->save();
+
+                // Update Sale Item
+                $saleItem = SaleItem::where('sale_id', $request->sale_id)
+                    ->where('product_id', $request->product_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $saleItem->quantity -= $request->qty_return;
+                // $saleItem->price -= $request->amount_deducted;
+                $saleItem->save();
+
+                // Update Sale Total Amount
+                $sale = Sale::lockForUpdate()->findOrFail($request->sale_id);
+                $sale->total_amount -= $request->amount_deducted;
+                $sale->save();
+
+                // Deduct Customer Balance
+                $customer->balance -= $request->amount_deducted;
+                if ($customer->balance < 0) $customer->balance = 0;
+                $customer->save();
+
+                // Update Customer Payment (reduce any advance linked to sale)
+                $payments = CustomerPayment::where('sale_id', $sale->id)->lockForUpdate()->get();
+                foreach ($payments as $payment) {
+                    $payment->amount -= $request->amount_deducted;
+                    if ($payment->amount < 0) $payment->amount = 0;
+                    $payment->description = "Reduced due to Sale Return #{$request->sale_id}";
+                    $payment->save();
+                }
+
+                // Save Sale Return
+                SaleReturn::create([
+                    'customer_id'        => $request->customer_id,
+                    'product_id'         => $request->product_id,
+                    'sale_id'            => $request->sale_id,
+                    'packing'            => $request->packing,
+                    'qty_return'         => $request->qty_return,
+                    'amount_deducted'    => $request->amount_deducted,
+                    'total_after_return' => $customer->balance,
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('sale-returns.index')->with('success', 'Sale return recorded successfully.');
     }
 
-    public function edit($id)
+    /* =============================
+       EDIT
+    ============================= */
+    public function edit(SaleReturn $sale_return)
     {
-        $saleReturn = SaleReturn::findOrFail($id);
-        $customers = Customer::select('id', 'name', 'balance')->get();
-        $products = Product::select('id', 'name', 'quantity', 'price_per_unit', 'packing')->get();
-
-        return view('sale_returns.edit', compact('saleReturn', 'customers', 'products'));
+        $customers = Customer::whereHas('sales')->select('id', 'name', 'balance')->get();
+        return view('sale_returns.edit', compact('sale_return', 'customers'));
     }
 
+    /* =============================
+       UPDATE
+    ============================= */
     public function update(Request $request, SaleReturn $sale_return)
     {
         $request->validate([
-            'customer_id' => 'required',
-            'product_id' => 'required',
-            'qty_return' => 'required|numeric|min:1',
+            'customer_id'     => 'required|exists:customers,id',
+            'product_id'      => 'required|exists:products,id',
+            'sale_id'         => 'required|exists:sales,id',
+            'qty_return'      => 'required|integer|min:1',
             'amount_deducted' => 'required|numeric|min:0',
         ]);
 
-        $oldAmount = $sale_return->amount_deducted;
-        $customer = Customer::findOrFail($request->customer_id);
-        $adjustedBalance = $customer->balance + $oldAmount - $request->amount_deducted;
+        try {
+            DB::transaction(function () use ($request, $sale_return) {
 
-        $customer->update(['balance' => $adjustedBalance]);
+                // Reverse previous return
+                $oldCustomer = Customer::lockForUpdate()->findOrFail($sale_return->customer_id);
+                $oldProduct  = Product::lockForUpdate()->findOrFail($sale_return->product_id);
 
-        $sale_return->update([
-            'customer_id' => $request->customer_id,
-            'product_id' => $request->product_id,
-            'packing' => $request->packing,
-            'qty_return' => $request->qty_return,
-            'amount_deducted' => $request->amount_deducted,
-            'total_after_return' => $adjustedBalance,
-        ]);
+                $oldProduct->quantity -= $sale_return->qty_return;
+                $oldProduct->save();
+
+                $oldCustomer->balance += $sale_return->amount_deducted;
+                $oldCustomer->save();
+
+                $oldSaleItem = SaleItem::where('sale_id', $sale_return->sale_id)
+                    ->where('product_id', $sale_return->product_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($oldSaleItem) {
+                    $oldSaleItem->quantity += $sale_return->qty_return;
+                    // $oldSaleItem->price += $sale_return->amount_deducted;
+                    $oldSaleItem->save();
+                }
+
+                $oldSale = Sale::lockForUpdate()->findOrFail($sale_return->sale_id);
+                $oldSale->total_amount += $sale_return->amount_deducted;
+                $oldSale->save();
+
+                // Reverse CustomerPayment linked to old return
+                $oldPayments = CustomerPayment::where('sale_id', $sale_return->sale_id)->lockForUpdate()->get();
+                foreach ($oldPayments as $payment) {
+                    $payment->amount += $sale_return->amount_deducted;
+                    $payment->description = "Reverted due to Sale Return update #{$sale_return->id}";
+                    $payment->save();
+                }
+
+                // Apply new return
+                $newCustomer = Customer::lockForUpdate()->findOrFail($request->customer_id);
+                $newProduct  = Product::lockForUpdate()->findOrFail($request->product_id);
+
+                $newProduct->quantity += $request->qty_return;
+                $newProduct->save();
+
+                $newSaleItem = SaleItem::where('sale_id', $request->sale_id)
+                    ->where('product_id', $request->product_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $newSaleItem->quantity -= $request->qty_return;
+                // $newSaleItem->price -= $request->amount_deducted;
+                $newSaleItem->save();
+
+                $newSale = Sale::lockForUpdate()->findOrFail($request->sale_id);
+                $newSale->total_amount -= $request->amount_deducted;
+                $newSale->save();
+
+                $newCustomer->balance -= $request->amount_deducted;
+                if ($newCustomer->balance < 0) $newCustomer->balance = 0;
+                $newCustomer->save();
+
+                // Update CustomerPayment for new return
+                $newPayments = CustomerPayment::where('sale_id', $request->sale_id)->lockForUpdate()->get();
+                foreach ($newPayments as $payment) {
+                    $payment->amount -= $request->amount_deducted;
+                    $payment->description = "Reduced due to Sale Return update #{$sale_return->id}";
+                    if ($payment->amount < 0) $payment->amount = 0;
+                    $payment->save();
+                }
+
+                // Update SaleReturn
+                $sale_return->update([
+                    'customer_id'        => $request->customer_id,
+                    'product_id'         => $request->product_id,
+                    'sale_id'            => $request->sale_id,
+                    'packing'            => $request->packing,
+                    'qty_return'         => $request->qty_return,
+                    'amount_deducted'    => $request->amount_deducted,
+                    'total_after_return' => $newCustomer->balance,
+                ]);
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
 
         return redirect()->route('sale-returns.index')->with('success', 'Sale Return updated successfully.');
     }
 
+    /* =============================
+       DESTROY
+    ============================= */
     public function destroy(SaleReturn $sale_return)
     {
-        $customer = $sale_return->customer;
-        $customer->update(['balance' => $customer->balance + $sale_return->amount_deducted]);
+        try {
+            DB::transaction(function () use ($sale_return) {
 
-        $sale_return->delete();
+                $customer = Customer::lockForUpdate()->findOrFail($sale_return->customer_id);
+                $product  = Product::lockForUpdate()->findOrFail($sale_return->product_id);
 
-        return redirect()->route('sale-returns.index')->with('success', 'Sale Return deleted and balance adjusted.');
+                $product->quantity -= $sale_return->qty_return;
+                $product->save();
+
+                $customer->balance += $sale_return->amount_deducted;
+                $customer->save();
+
+                $saleItem = SaleItem::where('sale_id', $sale_return->sale_id)
+                    ->where('product_id', $sale_return->product_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($saleItem) {
+                    $saleItem->quantity += $sale_return->qty_return;
+                    // $saleItem->price += $sale_return->amount_deducted;
+                    $saleItem->save();
+                }
+
+                $sale = Sale::lockForUpdate()->findOrFail($sale_return->sale_id);
+                $sale->total_amount += $sale_return->amount_deducted;
+                $sale->save();
+
+                // Update CustomerPayment for revert
+                $payments = CustomerPayment::where('sale_id', $sale_return->sale_id)->lockForUpdate()->get();
+                foreach ($payments as $payment) {
+                    $payment->amount += $sale_return->amount_deducted;
+                    $payment->description = "Advance received against Sale Invoice #{$sale_return->sale_id}";
+                    $payment->save();
+                }
+
+                $sale_return->delete();
+            });
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('sale-returns.index')->with('success', 'Sale Return deleted.');
+    }
+
+    /* =============================
+       AJAX: Products of selected customer
+    ============================= */
+    public function getCustomerProducts($customer_id)
+    {
+        $products = DB::table('sale_items as si')
+            ->join('sales as s', 'si.sale_id', '=', 's.id')
+            ->join('products as p', 'si.product_id', '=', 'p.id')
+            ->where('s.customer_id', $customer_id)
+            ->select(
+                'p.id',
+                'p.name',
+                'p.packing',
+                'si.quantity as quantity',
+                'si.price as price_per_unit',
+                's.id as sale_id'
+            )
+            ->get();
+
+        return response()->json($products);
     }
 }

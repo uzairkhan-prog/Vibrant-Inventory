@@ -62,11 +62,12 @@
                         <th>#</th>
                         <th>Date</th>
                         <th>Customer</th>
+                        <th>Invoice</th>
                         <th>Product</th>
                         <th>Packing</th>
                         <th>Qty</th>
                         <th>Deducted</th>
-                        <th>Total After</th>
+                        <!-- <th>Total After</th> -->
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -76,11 +77,12 @@
                         <td>{{ ($returns->currentPage() - 1) * $returns->perPage() + $loop->iteration }}</td>
                         <td>{{ $r->created_at->format('Y-m-d') }}</td>
                         <td>{{ $r->customer->name }}</td>
+                        <td>{{ $r->sale_id }}</td>
                         <td>{{ $r->product->name }}</td>
                         <td>{{ $r->packing }}</td>
                         <td>{{ $r->qty_return }}</td>
                         <td>Rs {{ number_format($r->amount_deducted, 2) }}</td>
-                        <td>Rs {{ number_format($r->total_after_return, 2) }}</td>
+                        <!-- <td>Rs {{ number_format($r->total_after_return, 2) }}</td> -->
                         <td class="d-flex justify-content-center">
                             <a href="{{ route('sale-returns.edit', $r) }}" class="btn btn-sm btn-success me-1 text-white">
                                 Edit <i class="material-icons">&#xE254;</i>

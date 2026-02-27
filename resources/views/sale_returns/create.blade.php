@@ -2,106 +2,130 @@
 
 @section('content')
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <div class="table-responsive">
     <div class="table-title">
         <div class="row">
             <div class="col-sm-6">
                 <h2>Sale Return <b>Entry</b></h2>
             </div>
-            <div class="col-sm-6 text-end">
-                <a href="{{ route('sale-returns.index') }}" class="btn btn-dark">View All Returns</a>
-            </div>
+            <div class="col-sm-6 text-end"><a href="{{ route('sale-returns.index') }}" class="btn btn-dark">View All Returns</a></div>
         </div>
     </div>
 
-    @if(session('success'))
-    <div class="alert alert-success text-center">{{ session('success') }}</div>
-    @endif
+    <form method="POST" action="{{ route('sale-returns.store') }}">
+        @csrf
 
-    <div class="p-3">
-        <form method="POST" action="{{ route('sale-returns.store') }}">
-            @csrf
+        <!-- Hidden input for sale_id -->
+        <input type="hidden" name="sale_id" id="saleIdInput" value="">
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label>Customer</label>
-                    <select name="customer_id" id="customerSelect" class="form-select select2" required>
-                        <option value="">-- Select Customer --</option>
-                        @foreach($customers as $c)
-                        <option value="{{ $c->id }}" data-balance="{{ $c->balance }}">{{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="form-text text-primary fw-bold">Current Balance: Rs <span id="customerBalance">0.00</span></div>
-                </div>
-
-                <div class="col-md-6">
-                    <label>Product</label>
-                    <select name="product_id" id="productSelect" class="form-select select2" required>
-                        <option value="">-- Select Product --</option>
-                        @foreach($products as $p)
-                        <option value="{{ $p->id }}"
-                            data-qty="{{ $p->quantity }}"
-                            data-price="{{ $p->price_per_unit }}"
-                            data-packing="{{ $p->packing }}">
-                            {{ $p->name }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <div class="form-text">
-                        <span class="text-success fw-bold">Qty Available:</span> <span id="productQty">-</span> |
-                        <span class="text-info fw-bold">Price/Unit:</span> Rs <span id="productPrice">-</span> |
-                        <span class="text-muted">Packing:</span> <span id="productPack">-</span>
-                    </div>
+        <div class="row mb-3">
+            <!-- CUSTOMER -->
+            <div class="col-md-6">
+                <label>Customer</label>
+                <select name="customer_id" id="customerSelect" class="form-select select2" style="width:100%;" required>
+                    <option value="">-- Select Customer --</option>
+                    @foreach($customers as $c)
+                    <option value="{{ $c->id }}" data-balance="{{ $c->balance }}">{{ $c->name }}</option>
+                    @endforeach
+                </select>
+                <div class="form-text text-primary fw-bold">
+                    Current Balance: Rs <span id="customerBalance">0.00</span>
                 </div>
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label>Packing</label>
-                    <input type="text" name="packing" id="packingInput" class="form-control">
-                </div>
-                <div class="col-md-4">
-                    <label>Quantity Returned</label>
-                    <input type="number" name="qty_return" id="qtyReturn" class="form-control" required>
-                </div>
-                <div class="col-md-4">
-                    <label>Amount Deducted (Rs)</label>
-                    <input type="number" name="amount_deducted" id="amountDeducted" step="0.01" class="form-control" required>
+            <!-- PRODUCT -->
+            <div class="col-md-6">
+                <label>Product / Sale ID</label>
+                <select name="product_id" id="productSelect" class="form-select select2" style="width:100%;" required>
+                    <option value="">-- Select Product --</option>
+                </select>
+                <div class="form-text">
+                    <span class="text-success fw-bold">Qty Available:</span> <span id="productQty">0</span> |
+                    <span class="text-info fw-bold">Price/Unit:</span> Rs <span id="productPrice">0.00</span> |
+                    <span class="text-muted">Packing:</span> <span id="productPack">-</span>
                 </div>
             </div>
+        </div>
 
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary">Return & Deduct</button>
-                <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Cancel</a>
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label>Packing</label>
+                <input type="text" name="packing" id="packingInput" class="form-control">
             </div>
-        </form>
-    </div>
+            <div class="col-md-4">
+                <label>Quantity Returned</label>
+                <input type="number" name="qty_return" id="qtyReturn" class="form-control" min="1" required>
+            </div>
+            <div class="col-md-4">
+                <label>Amount Deducted (Rs)</label>
+                <input type="number" name="amount_deducted" id="amountDeducted" class="form-control" step="0.01" required>
+            </div>
+        </div>
 
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Return & Deduct</button>
+            <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
 </div>
 
-<!-- Script -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    document.getElementById('customerSelect').addEventListener('change', function() {
-        let balance = this.options[this.selectedIndex].getAttribute('data-balance') || '0.00';
-        document.getElementById('customerBalance').innerText = parseFloat(balance).toFixed(2);
-    });
+    $(document).ready(function() {
 
-    document.getElementById('productSelect').addEventListener('change', function() {
-        let qty = this.options[this.selectedIndex].getAttribute('data-qty');
-        let price = this.options[this.selectedIndex].getAttribute('data-price');
-        let pack = this.options[this.selectedIndex].getAttribute('data-packing');
+        $('.select2').select2({
+            placeholder: "Search here...",
+            allowClear: true
+        });
 
-        document.getElementById('productQty').innerText = qty;
-        document.getElementById('productPrice').innerText = parseFloat(price).toFixed(2);
-        document.getElementById('productPack').innerText = pack;
-        document.getElementById('packingInput').value = pack;
-    });
+        // On customer change
+        $('#customerSelect').on('change', function() {
+            let balance = $(this).find(':selected').data('balance') || 0;
+            $('#customerBalance').text(parseFloat(balance).toFixed(2));
 
-    // Optional: Auto-calculate amount based on quantity and price
-    document.getElementById('qtyReturn').addEventListener('input', function() {
-        let qty = parseFloat(this.value || 0);
-        let price = parseFloat(document.getElementById('productSelect').options[document.getElementById('productSelect').selectedIndex].getAttribute('data-price') || 0);
-        document.getElementById('amountDeducted').value = (qty * price).toFixed(2);
+            let customerId = $(this).val();
+            if (!customerId) return $('#productSelect').html('<option value="">-- Select Product --</option>');
+
+            // Fetch products via AJAX
+            $.get('/sale-returns/customer-products/' + customerId, function(data) {
+                let options = '<option value="">-- Select Product --</option>';
+                data.forEach(function(p) {
+                    options += `<option value="${p.id}" 
+                    data-qty="${p.quantity}" 
+                    data-price="${p.price_per_unit}" 
+                    data-packing="${p.packing}" 
+                    data-sale-id="${p.sale_id}">${p.name} (Sale ID: ${p.sale_id})</option>`;
+                });
+                $('#productSelect').html(options).trigger('change');
+            });
+        });
+
+        // On product change
+        $('#productSelect').on('change', function() {
+            let selected = $(this).find(':selected');
+
+            $('#productQty').text(selected.data('qty') || 0);
+            $('#productPrice').text(parseFloat(selected.data('price') || 0).toFixed(2));
+            $('#productPack').text(selected.data('packing') || '-');
+            $('#packingInput').val(selected.data('packing') || '');
+            $('#qtyReturn').val('');
+            $('#amountDeducted').val('');
+
+            // Set hidden sale_id input
+            $('#saleIdInput').val(selected.data('sale-id') || '');
+        });
+
+        // Auto-calculate amount
+        $('#qtyReturn').on('input', function() {
+            let qty = parseFloat($(this).val()) || 0;
+            let price = parseFloat($('#productSelect').find(':selected').data('price') || 0);
+            $('#amountDeducted').val((qty * price).toFixed(2));
+        });
+
     });
 </script>
 

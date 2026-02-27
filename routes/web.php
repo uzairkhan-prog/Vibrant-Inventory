@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('supplier-ledgers', SupplierLedgerController::class);
     Route::resource('customer-ledgers', CustomerLedgerController::class);
     Route::resource('assets-inventory', AssetController::class);
+    Route::get('sale-returns/customer-products/{customer}', [SaleReturnController::class, 'getCustomerProducts']);
     Route::resource('sale-returns', SaleReturnController::class);
     Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
