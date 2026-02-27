@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Feb 27, 2026 at 09:03 PM
+-- Generation Time: Feb 27, 2026 at 10:24 PM
 -- Server version: 11.8.3-MariaDB-log
 -- PHP Version: 7.2.34
 
@@ -47,24 +47,6 @@ CREATE TABLE `cache` (
   `value` mediumtext NOT NULL,
   `expiration` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `cache`
---
-
-INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('vibrant_engineering_inventory_cache_brandonfarmer75@outlook.com|87.120.103.247', 'i:1;', 1771936252),
-('vibrant_engineering_inventory_cache_brandonfarmer75@outlook.com|87.120.103.247:timer', 'i:1771936252;', 1771936252),
-('vibrant_engineering_inventory_cache_danupton1@aol.com|87.120.103.247', 'i:1;', 1772050093),
-('vibrant_engineering_inventory_cache_danupton1@aol.com|87.120.103.247:timer', 'i:1772050093;', 1772050093),
-('vibrant_engineering_inventory_cache_howard_stark68@clientcaf.info|87.120.103.247', 'i:3;', 1772050086),
-('vibrant_engineering_inventory_cache_howard_stark68@clientcaf.info|87.120.103.247:timer', 'i:1772050086;', 1772050086),
-('vibrant_engineering_inventory_cache_isobel72@hotmail.com|87.120.103.247', 'i:1;', 1772050090),
-('vibrant_engineering_inventory_cache_isobel72@hotmail.com|87.120.103.247:timer', 'i:1772050090;', 1772050090),
-('vibrant_engineering_inventory_cache_jeffrey_hodkiewicz94@bdcimail.com|87.120.103.247', 'i:3;', 1771936244),
-('vibrant_engineering_inventory_cache_jeffrey_hodkiewicz94@bdcimail.com|87.120.103.247:timer', 'i:1771936244;', 1771936244),
-('vibrant_engineering_inventory_cache_predovicalexandria138@gmail.com|87.120.103.247', 'i:1;', 1771936248),
-('vibrant_engineering_inventory_cache_predovicalexandria138@gmail.com|87.120.103.247:timer', 'i:1771936248;', 1771936248);
 
 -- --------------------------------------------------------
 
@@ -395,7 +377,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (52, '2025_10_01_163118_add_sale_id_to_sale_returns_table', 22),
 (53, '2025_11_24_194917_add_company_name_to_customers_table', 23),
 (54, '2025_11_24_203830_add_company_name_to_suppliers_table', 24),
-(55, '2026_02_18_182647_add_sale_id_to_customer_payments_table', 25);
+(55, '2026_02_18_182647_add_sale_id_to_customer_payments_table', 25),
+(56, '2026_02_20_223436_add_purchase_id_to_supplier_payments_table', 26);
 
 -- --------------------------------------------------------
 
@@ -798,7 +781,9 @@ INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, 
 ('8CBlWTeD8yekrL03l1pghelWpJQt2BHq8ew1j2oM', 2, '154.91.161.226', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoienE2MXpkRmJSQkhBb3JpdkRvVmNSUHdkcm9RWUxhbTFCaDBXS1lYaiI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjI6e3M6MzoidXJsIjtzOjgwOiJodHRwczovL3ZpYnJhbnRlbmdpbmVlcmluZ3BvcnRhbC5jb20vcHJvZHVjdHM/cGFnZT0xJnBlcl9wYWdlPTIwJnNlYXJjaD1IYW5kaGVsZCI7czo1OiJyb3V0ZSI7czoxNDoicHJvZHVjdHMuaW5kZXgiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToyO30=', 1772226115),
 ('EgwUurWGrMYhqG0JxGNr8ZHuv73onFu5eVG6yh5k', NULL, '141.138.211.251', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiTXB1a3p0NFhTRWJoMXpZVkNldVkwNUhnZWtNNVV6d0x3WUYzem9DQSI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6NDI6Imh0dHBzOi8vdmlicmFudGVuZ2luZWVyaW5ncG9ydGFsLmNvbS9sb2dpbiI7czo1OiJyb3V0ZSI7czo1OiJsb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1772219177),
 ('jvM8emlpwzUNnh4uE9aXvC4zR62ElSL52FoMG99G', 2, '2407:aa80:15:4fa5:d07c:59bf:de8d:a3ed', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoiTmY5cWRNQ0tpaHBMUUxEYlNYOTVtTlprZHdSYkdibExERFlGNWlVdSI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjI6e3M6MzoidXJsIjtzOjEwMToiaHR0cHM6Ly92aWJyYW50ZW5naW5lZXJpbmdwb3J0YWwuY29tL3NhbGUtcmV0dXJucz9mcm9tX2RhdGU9MjAyNi0wMi0wMSZwZXJfcGFnZT0yMCZ0b19kYXRlPTIwMjYtMDItMjgiO3M6NToicm91dGUiO3M6MTg6InNhbGUtcmV0dXJucy5pbmRleCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjI7fQ==', 1772223539),
-('MTtW2x5Lesa4mwX9YIWlRNvmwXJoLpw9qPKzjtvM', NULL, '141.138.211.251', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiNzFQcW1YVjBNc1BhOFZuUjI5U21QODU0dFMyTHJqbDRjWXg3VWozcSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czozNjoiaHR0cHM6Ly92aWJyYW50ZW5naW5lZXJpbmdwb3J0YWwuY29tIjt9czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MzY6Imh0dHBzOi8vdmlicmFudGVuZ2luZWVyaW5ncG9ydGFsLmNvbSI7czo1OiJyb3V0ZSI7czo5OiJkYXNoYm9hcmQiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1772219176);
+('MTtW2x5Lesa4mwX9YIWlRNvmwXJoLpw9qPKzjtvM', NULL, '141.138.211.251', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiNzFQcW1YVjBNc1BhOFZuUjI5U21QODU0dFMyTHJqbDRjWXg3VWozcSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czozNjoiaHR0cHM6Ly92aWJyYW50ZW5naW5lZXJpbmdwb3J0YWwuY29tIjt9czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MzY6Imh0dHBzOi8vdmlicmFudGVuZ2luZWVyaW5ncG9ydGFsLmNvbSI7czo1OiJyb3V0ZSI7czo5OiJkYXNoYm9hcmQiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX19', 1772219176),
+('nFidKTaWbDO2vrN5tNRc0cuD2RsGo6shYIXmU2U6', NULL, '202.47.33.42', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoiRzFtYTk0YUd1VWd1dEZoaDhQVkxtWUIxdmsxeGVsT0g2VnlvTTNUcSI7czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6NDI6Imh0dHBzOi8vdmlicmFudGVuZ2luZWVyaW5ncG9ydGFsLmNvbS9sb2dpbiI7czo1OiJyb3V0ZSI7czo1OiJsb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=', 1772230518),
+('ZfCJSRNZO61FCohA35ypAiUhOBSG8xQV2F0IxigG', 2, '2407:aa80:15:4fa5:d07c:59bf:de8d:a3ed', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36', 'YTo1OntzOjY6Il90b2tlbiI7czo0MDoiRWFKRWVnbHkxR0ViSG1rZ25Ub2VwUUplTWVUTm9scG1VaTQyaXBFciI7czozOiJ1cmwiO2E6MDp7fXM6OToiX3ByZXZpb3VzIjthOjI6e3M6MzoidXJsIjtzOjEwMToiaHR0cHM6Ly92aWJyYW50ZW5naW5lZXJpbmdwb3J0YWwuY29tL3NhbGUtcmV0dXJucz9mcm9tX2RhdGU9MjAyNi0wMi0wMSZwZXJfcGFnZT0yMCZ0b19kYXRlPTIwMjYtMDItMjgiO3M6NToicm91dGUiO3M6MTg6InNhbGUtcmV0dXJucy5pbmRleCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjI7fQ==', 1772231037);
 
 -- --------------------------------------------------------
 
@@ -834,6 +819,7 @@ INSERT INTO `suppliers` (`id`, `name`, `company_name`, `phone`, `email`, `addres
 CREATE TABLE `supplier_payments` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `supplier_id` bigint(20) UNSIGNED NOT NULL,
+  `purchase_id` bigint(20) UNSIGNED DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL,
   `payment_type` varchar(255) NOT NULL,
   `amount` decimal(15,2) NOT NULL,
@@ -1026,7 +1012,8 @@ ALTER TABLE `suppliers`
 --
 ALTER TABLE `supplier_payments`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `supplier_payments_supplier_id_foreign` (`supplier_id`);
+  ADD KEY `supplier_payments_supplier_id_foreign` (`supplier_id`),
+  ADD KEY `supplier_payments_purchase_id_foreign` (`purchase_id`);
 
 --
 -- Indexes for table `users`
@@ -1097,7 +1084,7 @@ ALTER TABLE `ledgers`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `payment_types`
@@ -1207,6 +1194,7 @@ ALTER TABLE `sale_returns`
 -- Constraints for table `supplier_payments`
 --
 ALTER TABLE `supplier_payments`
+  ADD CONSTRAINT `supplier_payments_purchase_id_foreign` FOREIGN KEY (`purchase_id`) REFERENCES `purchases` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `supplier_payments_supplier_id_foreign` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE;
 COMMIT;
 
