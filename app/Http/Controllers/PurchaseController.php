@@ -129,16 +129,16 @@ class PurchaseController extends Controller
         ]);
 
         // Quantity vs stock validation (kept as you wrote)
-        foreach ($request->product_id as $index => $productId) {
-            $product = Product::find($productId);
-            $quantity = (int) $request->quantity[$index];
+        // foreach ($request->product_id as $index => $productId) {
+        //     $product = Product::find($productId);
+        //     $quantity = (int) $request->quantity[$index];
 
-            if ($quantity > $product->quantity) {
-                return back()
-                    ->withErrors(['quantity.' . $index => "Quantity for {$product->name} cannot exceed stock ({$product->quantity})."])
-                    ->withInput();
-            }
-        }
+        //     if ($quantity > $product->quantity) {
+        //         return back()
+        //             ->withErrors(['quantity.' . $index => "Quantity for {$product->name} cannot exceed stock ({$product->quantity})."])
+        //             ->withInput();
+        //     }
+        // }
 
         try {
 
@@ -405,11 +405,11 @@ class PurchaseController extends Controller
     {
         DB::transaction(function () use ($purchase) {
             foreach ($purchase->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->quantity -= $item->quantity;
-                    $product->save();
-                }
+                // $product = Product::find($item->product_id);
+                // if ($product) {
+                //     $product->quantity -= $item->quantity;
+                //     $product->save();
+                // }
 
                 $item->delete();
             }
