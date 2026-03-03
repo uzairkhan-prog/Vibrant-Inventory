@@ -128,25 +128,13 @@ class PurchaseController extends Controller
             'tax.*'        => 'nullable|numeric|min:0',
         ]);
 
-        // Quantity vs stock validation (kept as you wrote)
-        foreach ($request->product_id as $index => $productId) {
-            $product = Product::find($productId);
-            $quantity = (int) $request->quantity[$index];
-
-            if ($quantity > $product->quantity) {
-                return back()
-                    ->withErrors(['quantity.' . $index => "Quantity for {$product->name} cannot exceed stock ({$product->quantity})."])
-                    ->withInput();
-            }
-        }
-
         try {
 
             DB::transaction(function () use ($request) {
 
                 /* ======================================================
-                    CREATE PURCHASE
-                ====================================================== */
+                CREATE PURCHASE
+            ====================================================== */
                 $purchase = Purchase::create([
                     'supplier_id'  => $request->supplier_id,
                     'total_amount' => 0,
@@ -156,8 +144,8 @@ class PurchaseController extends Controller
                 $totalAmount = 0;
 
                 /* ======================================================
-                    PURCHASE ITEMS
-                ====================================================== */
+                PURCHASE ITEMS + UPDATE PRODUCT STOCK
+            ====================================================== */
                 foreach ($request->product_id as $index => $productId) {
 
                     $quantity = (float) $request->quantity[$index];
@@ -165,13 +153,21 @@ class PurchaseController extends Controller
                     $discount = (float) ($request->discount[$index] ?? 0);
                     $tax      = (float) ($request->tax[$index] ?? 0);
 
-                    // line calculations
+                    // Lock product row for safe stock update
+                    $product = Product::lockForUpdate()->findOrFail($productId);
+
+                    /* ===============================
+                    LINE CALCULATIONS
+                =============================== */
                     $base = $quantity * $price;
                     $discountAmount = ($discount / 100) * $base;
                     $taxable = $base - $discountAmount;
                     $taxAmount = ($tax / 100) * $taxable;
                     $subtotal = $taxable + $taxAmount;
 
+                    /* ===============================
+                    CREATE PURCHASE ITEM
+                =============================== */
                     PurchaseItem::create([
                         'purchase_id' => $purchase->id,
                         'product_id'  => $productId,
@@ -181,33 +177,39 @@ class PurchaseController extends Controller
                         'tax'         => $tax,
                     ]);
 
-                    // (Stock intentionally untouched as per your system)
+                    /* ======================================================
+                    ✅ UPDATE PRODUCT STOCK & PRICE
+                ====================================================== */
+
+                    // Increase stock
+                    $product->quantity += $quantity;
+
+                    // Update last purchase price
+                    $product->price_per_unit = $price;
+
+                    $product->save();
+
                     $totalAmount += $subtotal;
                 }
 
                 /* ======================================================
-                    UPDATE PURCHASE TOTAL
-                ====================================================== */
+                UPDATE PURCHASE TOTAL
+            ====================================================== */
                 $purchase->update([
                     'total_amount' => $totalAmount
                 ]);
 
                 /* ======================================================
-                    SUPPLIER LEDGER (IMPORTANT FIX)
-                    SAME AS CUSTOMER SALE LOGIC
-                ====================================================== */
-
+                SUPPLIER LEDGER UPDATE
+            ====================================================== */
                 $supplier = Supplier::lockForUpdate()->findOrFail($request->supplier_id);
 
-                // Store FULL purchase value in supplier ledger
                 $supplier->balance += $totalAmount;
                 $supplier->save();
 
                 /* ======================================================
-                    ADVANCE / CASH PAID (ONLY RECORD PAYMENT)
-                    DO NOT MODIFY SUPPLIER BALANCE
-                ====================================================== */
-
+                RECORD PAYMENT (DO NOT TOUCH BALANCE)
+            ====================================================== */
                 $paid = (float) ($request->paid_amount ?? 0);
 
                 if ($paid > 0) {
@@ -230,7 +232,7 @@ class PurchaseController extends Controller
         }
 
         return redirect()->route('purchases.index')
-            ->with('success', 'Purchase created successfully.');
+            ->with('success', 'Purchase created successfully & stock updated.');
     }
 
     public function edit(Purchase $purchase)
@@ -268,44 +270,55 @@ class PurchaseController extends Controller
 
             DB::transaction(function () use ($request, $purchase) {
 
-                /* =========================
-                    STEP 1: GET OLD DATA
-                ==========================*/
+                /* ======================================================
+                STEP 1: REVERSE OLD STOCK
+            ====================================================== */
+
+                foreach ($purchase->items as $oldItem) {
+
+                    $product = Product::lockForUpdate()->find($oldItem->product_id);
+
+                    if ($product) {
+                        // subtract old quantity
+                        $product->quantity -= $oldItem->quantity;
+
+                        if ($product->quantity < 0) {
+                            $product->quantity = 0;
+                        }
+
+                        $product->save();
+                    }
+                }
+
+                /* ======================================================
+                STEP 2: REVERSE OLD SUPPLIER LEDGER
+            ====================================================== */
 
                 $oldSupplier = Supplier::lockForUpdate()->findOrFail($purchase->supplier_id);
 
                 $oldTotal = $purchase->total_amount;
 
-                // get old advance payments
-                $oldAdvance = SupplierPayment::where('purchase_id', $purchase->id)->sum('amount');
+                // remove purchase amount
+                $oldSupplier->balance -= $oldTotal;
 
-
-                /* =========================
-                    STEP 2: REVERSE OLD LEDGER
-                ==========================*/
-
-                // remove purchase effect
-                // $oldSupplier->balance -= $oldTotal;
-
-                // restore old payments effect
-                $oldSupplier->balance += $oldAdvance;
-
-                if ($oldSupplier->balance < 0) $oldSupplier->balance = 0;
+                if ($oldSupplier->balance < 0) {
+                    $oldSupplier->balance = 0;
+                }
 
                 $oldSupplier->save();
 
 
-                /* =========================
-                    STEP 3: DELETE OLD PAYMENTS & ITEMS
-                ==========================*/
+                /* ======================================================
+                STEP 3: DELETE OLD PAYMENTS & ITEMS
+            ====================================================== */
 
                 SupplierPayment::where('purchase_id', $purchase->id)->delete();
                 $purchase->items()->delete();
 
 
-                /* =========================
-                    STEP 4: ADD NEW ITEMS
-                ==========================*/
+                /* ======================================================
+                STEP 4: ADD NEW ITEMS + UPDATE STOCK
+            ====================================================== */
 
                 $grandTotal = 0;
 
@@ -316,12 +329,16 @@ class PurchaseController extends Controller
                     $discount = (float)($request->discount[$index] ?? 0);
                     $tax      = (float)($request->tax[$index] ?? 0);
 
+                    $product = Product::lockForUpdate()->findOrFail($productId);
+
+                    /* ---------- CALCULATIONS ---------- */
                     $base = $qty * $price;
                     $discountAmt = ($discount / 100) * $base;
                     $afterDiscount = $base - $discountAmt;
                     $taxAmt = ($tax / 100) * $afterDiscount;
                     $lineTotal = $afterDiscount + $taxAmt;
 
+                    /* ---------- CREATE ITEM ---------- */
                     PurchaseItem::create([
                         'purchase_id' => $purchase->id,
                         'product_id'  => $productId,
@@ -331,13 +348,24 @@ class PurchaseController extends Controller
                         'tax'         => $tax,
                     ]);
 
+                    /* ======================================================
+                    UPDATE PRODUCT STOCK & PRICE
+                ====================================================== */
+
+                    $product->quantity += $qty;
+
+                    // update last purchase price
+                    $product->price_per_unit = $price;
+
+                    $product->save();
+
                     $grandTotal += $lineTotal;
                 }
 
 
-                /* =========================
-                    STEP 5: UPDATE PURCHASE
-                ==========================*/
+                /* ======================================================
+                STEP 5: UPDATE PURCHASE
+            ====================================================== */
 
                 $purchase->update([
                     'supplier_id'  => $request->supplier_id,
@@ -346,19 +374,18 @@ class PurchaseController extends Controller
                 ]);
 
 
-                /* =========================
-                    STEP 6: APPLY NEW LEDGER
-                ==========================*/
+                /* ======================================================
+                STEP 6: APPLY NEW SUPPLIER LEDGER
+            ====================================================== */
 
                 $newSupplier = Supplier::lockForUpdate()->findOrFail($request->supplier_id);
 
-                // add new purchase (you owe supplier)
                 $newSupplier->balance += $grandTotal;
 
 
-                /* =========================
-                    STEP 7: APPLY NEW ADVANCE
-                ==========================*/
+                /* ======================================================
+                STEP 7: APPLY NEW ADVANCE PAYMENT
+            ====================================================== */
 
                 $newAdvance = (float)($request->advance ?? 0);
 
@@ -370,21 +397,27 @@ class PurchaseController extends Controller
                         'description'  => 'Advance paid against Purchase Invoice #' . $purchase->id,
                         'payment_type' => 'Cash',
                         'amount'       => $newAdvance,
+                        'date'         => now(),
                     ]);
 
-                    // payment reduces payable
                     $newSupplier->balance -= $newAdvance;
                 }
 
-                if ($newSupplier->balance < 0) $newSupplier->balance = 0;
+                if ($newSupplier->balance < 0) {
+                    $newSupplier->balance = 0;
+                }
 
                 $newSupplier->save();
             });
         } catch (\Exception $e) {
-            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
         }
 
-        return redirect()->route('purchases.index')->with('success', 'Purchase updated successfully.');
+        return redirect()->route('purchases.index')
+            ->with('success', 'Purchase updated successfully & stock adjusted.');
     }
 
     public function show(Purchase $purchase)
