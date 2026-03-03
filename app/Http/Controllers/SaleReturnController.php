@@ -61,7 +61,6 @@ class SaleReturnController extends Controller
                     ->firstOrFail();
 
                 $saleItem->quantity -= $request->qty_return;
-                // $saleItem->price -= $request->amount_deducted;
                 $saleItem->save();
 
                 // Update Sale Total Amount
@@ -74,13 +73,27 @@ class SaleReturnController extends Controller
                 if ($customer->balance < 0) $customer->balance = 0;
                 $customer->save();
 
-                // Update Customer Payment (reduce any advance linked to sale)
-                $payments = CustomerPayment::where('sale_id', $sale->id)->lockForUpdate()->get();
+                // Update Customer Payment (deduct and set description)
+                $returnAmount = (float) $request->amount_deducted;
+                $payments = CustomerPayment::where('sale_id', $sale->id)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
+
                 foreach ($payments as $payment) {
-                    $payment->amount -= $request->amount_deducted;
-                    if ($payment->amount < 0) $payment->amount = 0;
-                    $payment->description = "Reduced due to Sale Return #{$request->sale_id}";
+                    if ($returnAmount <= 0) break;
+                    $availableAmount = $payment->amount;
+                    if ($availableAmount <= 0) continue;
+
+                    $deductNow = min($availableAmount, $returnAmount);
+                    $payment->amount -= $deductNow;
+
+                    // Updated description
+                    $payment->description =
+                        "Sale Return - Reduced Rs {$deductNow} from Invoice #{$sale->id} for {$request->qty_return} unit(s) of {$product->name}";
+
                     $payment->save();
+                    $returnAmount -= $deductNow;
                 }
 
                 // Save Sale Return
@@ -126,7 +139,7 @@ class SaleReturnController extends Controller
         try {
             DB::transaction(function () use ($request, $sale_return) {
 
-                // Reverse previous return
+                // Reverse previous return (Product, SaleItem, Sale, Customer Balance)
                 $oldCustomer = Customer::lockForUpdate()->findOrFail($sale_return->customer_id);
                 $oldProduct  = Product::lockForUpdate()->findOrFail($sale_return->product_id);
 
@@ -143,7 +156,6 @@ class SaleReturnController extends Controller
 
                 if ($oldSaleItem) {
                     $oldSaleItem->quantity += $sale_return->qty_return;
-                    // $oldSaleItem->price += $sale_return->amount_deducted;
                     $oldSaleItem->save();
                 }
 
@@ -151,15 +163,7 @@ class SaleReturnController extends Controller
                 $oldSale->total_amount += $sale_return->amount_deducted;
                 $oldSale->save();
 
-                // Reverse CustomerPayment linked to old return
-                $oldPayments = CustomerPayment::where('sale_id', $sale_return->sale_id)->lockForUpdate()->get();
-                foreach ($oldPayments as $payment) {
-                    $payment->amount += $sale_return->amount_deducted;
-                    $payment->description = "Reverted due to Sale Return update #{$sale_return->id}";
-                    $payment->save();
-                }
-
-                // Apply new return
+                // New return
                 $newCustomer = Customer::lockForUpdate()->findOrFail($request->customer_id);
                 $newProduct  = Product::lockForUpdate()->findOrFail($request->product_id);
 
@@ -172,7 +176,6 @@ class SaleReturnController extends Controller
                     ->firstOrFail();
 
                 $newSaleItem->quantity -= $request->qty_return;
-                // $newSaleItem->price -= $request->amount_deducted;
                 $newSaleItem->save();
 
                 $newSale = Sale::lockForUpdate()->findOrFail($request->sale_id);
@@ -183,13 +186,27 @@ class SaleReturnController extends Controller
                 if ($newCustomer->balance < 0) $newCustomer->balance = 0;
                 $newCustomer->save();
 
-                // Update CustomerPayment for new return
-                $newPayments = CustomerPayment::where('sale_id', $request->sale_id)->lockForUpdate()->get();
-                foreach ($newPayments as $payment) {
-                    $payment->amount -= $request->amount_deducted;
-                    $payment->description = "Reduced due to Sale Return update #{$sale_return->id}";
-                    if ($payment->amount < 0) $payment->amount = 0;
+                // Deduct from CustomerPayment (like store) with updated description
+                $returnAmount = (float) $request->amount_deducted;
+                $payments = CustomerPayment::where('sale_id', $request->sale_id)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($payments as $payment) {
+                    if ($returnAmount <= 0) break;
+                    $availableAmount = $payment->amount;
+                    if ($availableAmount <= 0) continue;
+
+                    $deductNow = min($availableAmount, $returnAmount);
+                    $payment->amount -= $deductNow;
+
+                    // Updated description
+                    $payment->description =
+                        "Sale Return - Reduced Rs {$deductNow} from Invoice #{$request->sale_id} for {$request->qty_return} unit(s) of {$newProduct->name}";
+
                     $payment->save();
+                    $returnAmount -= $deductNow;
                 }
 
                 // Update SaleReturn

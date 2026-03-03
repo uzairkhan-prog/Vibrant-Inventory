@@ -229,7 +229,13 @@
                     </thead>
                     <tbody class="text-center">
                         @foreach($customer->payments as $payment)
-                        <tr>
+                        @php
+                        // Check if this payment is related to a Sale Return
+                        $isSaleReturn = str_contains(strtolower($payment->description), 'reduced rs');
+                        $rowClass = $isSaleReturn ? 'sale-return-bg-color' : ''; // Bootstrap red background class
+                        @endphp
+
+                        <tr class="{{ $rowClass }}">
                             <td>{{ $payment->id ?? '-' }}</td>
                             <td><span class="badge bg-secondary">{{ $payment->payment_type }}</span></td>
                             <td>{{ $payment->sale_id ?? '-' }}</td>
@@ -267,6 +273,10 @@
     tfoot.table-light.fw-bold.text-end tr td {
         font-size: 18px !important;
         font-weight: 600 !important;
+    }
+
+    .sale-return-bg-color td {
+        background-color: #f4433647 !important;
     }
 </style>
 <script>
