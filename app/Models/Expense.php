@@ -14,6 +14,8 @@ class Expense extends Model
         'payment_type_id',
         'amount',
         'description',
+        'created_at',
+        'updated_at'
     ];
 
     // Define relation to PaymentType

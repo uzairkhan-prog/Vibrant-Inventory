@@ -12,6 +12,15 @@
             @method('PUT')
 
             <div class="mb-3">
+                <label class="form-label">Expense Date</label>
+                <input type="date"
+                    name="expense_date"
+                    class="form-control"
+                    value="{{ \Carbon\Carbon::parse($expense->created_at)->format('Y-m-d') }}"
+                    required>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Expense Name</label>
                 <select name="expense_name_id" class="form-select select2" required>
                     <option value="">-- Select Expense Name --</option>

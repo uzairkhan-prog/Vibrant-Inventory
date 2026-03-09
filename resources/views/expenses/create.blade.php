@@ -11,6 +11,12 @@
             @csrf
 
             <div class="mb-3">
+                <label class="form-label">Expense Date</label>
+                <input type="date" name="expense_date" class="form-control"
+                    value="{{ date('Y-m-d') }}" required>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label">Expense Name</label>
                 <select name="expense_name_id" class="form-select select2" required>
                     <option value="">-- Select Expense Name --</option>
@@ -44,6 +50,7 @@
                 <button type="submit" class="btn btn-primary">Submit</button>
                 <a href="{{ route('expenses.index') }}" class="btn btn-dark">Back</a>
             </div>
+
         </form>
     </div>
 </div>

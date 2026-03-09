@@ -136,20 +136,24 @@ class ExpenseController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'expense_name_id'    => 'required|string|max:255',
-            'payment_type_id' => 'required|exists:payment_types,id',
-            'amount'          => 'required|numeric|min:0',
-            'description'     => 'nullable|string',
+            'expense_name_id'  => 'required|exists:expense_names,id',
+            'payment_type_id'  => 'required|exists:payment_types,id',
+            'expense_date'     => 'required|date',
+            'amount'           => 'required|numeric|min:0',
+            'description'      => 'nullable|string',
         ]);
 
         Expense::create([
-            'expense_name_id'    => $request->expense_name_id,
-            'payment_type_id' => $request->payment_type_id,
-            'amount'          => $request->amount,
-            'description'     => $request->description,
+            'expense_name_id'  => $request->expense_name_id,
+            'payment_type_id'  => $request->payment_type_id,
+            'amount'           => $request->amount,
+            'description'      => $request->description,
+            'created_at'       => Carbon::parse($request->expense_date)->startOfDay(),
+            'updated_at'       => now(),
         ]);
 
-        return redirect()->route('expenses.index')->with('success', 'Expense created successfully.');
+        return redirect()->route('expenses.index')
+            ->with('success', 'Expense created successfully.');
     }
 
     public function edit(Expense $expense)
@@ -162,20 +166,24 @@ class ExpenseController extends Controller
     public function update(Request $request, Expense $expense)
     {
         $request->validate([
-            'expense_name_id'    => 'required|string|max:255',
+            'expense_name_id' => 'required|exists:expense_names,id',
             'payment_type_id' => 'required|exists:payment_types,id',
+            'expense_date'    => 'required|date',
             'amount'          => 'required|numeric|min:0',
             'description'     => 'nullable|string',
         ]);
 
         $expense->update([
-            'expense_name_id'    => $request->expense_name_id,
+            'expense_name_id' => $request->expense_name_id,
             'payment_type_id' => $request->payment_type_id,
             'amount'          => $request->amount,
             'description'     => $request->description,
+            'created_at'      => Carbon::parse($request->expense_date)->startOfDay(),
+            'updated_at'      => now(),
         ]);
 
-        return redirect()->route('expenses.index')->with('success', 'Expense updated successfully.');
+        return redirect()->route('expenses.index')
+            ->with('success', 'Expense updated successfully.');
     }
 
     public function destroy(Expense $expense)
