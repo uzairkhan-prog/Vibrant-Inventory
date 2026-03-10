@@ -26,6 +26,15 @@
                     </a>
                 </li>
 
+                @if(auth()->user()->role == 'admin')
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('users.index') }}">
+                        <i class="ti ti-users"></i>
+                        <span class="hide-menu">Users Management</span>
+                    </a>
+                </li>
+                @endif
+
                 <li class="nav-small-cap">
                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
                     <span class="hide-menu">Inventory</span>
@@ -157,12 +166,14 @@
                 </li>
 
                 <!-- Reports -->
+                @if(auth()->user()->role == 'admin')
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="{{ route('reports.index') }}">
                         <i class="ti ti-report"></i>
                         <span class="hide-menu">Reports</span>
                     </a>
                 </li>
+                @endif
 
                 <!-- Settings -->
                 <li><span class="sidebar-divider lg"></span></li>

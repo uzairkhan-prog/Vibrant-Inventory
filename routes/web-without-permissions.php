@@ -32,10 +32,8 @@ use Illuminate\Support\Facades\Route;
 //     return view('index');
 // })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware(['auth'])->group(function () {
-
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [AnalyticsController::class, 'index'])->name('dashboard');
-
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -60,25 +58,18 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expense-name', ExpenseNameController::class);
     Route::resource('payment-types', PaymentTypeController::class);
-
     // Route::resource('ledgers', LedgerController::class);
-
     Route::resource('supplier-ledgers', SupplierLedgerController::class);
     Route::resource('customer-ledgers', CustomerLedgerController::class);
     Route::resource('assets-inventory', AssetController::class);
-
     Route::get('sale-returns/customer-products/{customer}', [SaleReturnController::class, 'getCustomerProducts']);
     Route::resource('sale-returns', SaleReturnController::class);
-
-    // ADMIN ONLY PAGES
-    Route::middleware(['admin'])->group(function () {
-        Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
-        Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    });
+    Route::get('reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
     // Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
-
     Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])->name('suppliers.payments.store');
+
     Route::post('customers/{customer}/payments', [CustomerController::class, 'storePayment'])->name('customers.payments.store');
 
     Route::get('/supplier-payments/{payment}/edit', [SupplierPaymentController::class, 'edit'])->name('supplier-payments.edit');

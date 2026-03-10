@@ -4,6 +4,8 @@
 
 @include('analytics.css')
 
+@if(auth()->user()->role == 'admin')
+
 <div id="reportContent">
 
     <!-- FILTER SECTION -->
@@ -172,6 +174,39 @@
         Sign of COD: ______________________
     </div>
 </div>
+
+@else
+
+<div class="container mt-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body text-center p-5">
+
+            <h2 class="fw-bold mb-3" style="color:#4d71e1;">
+                Welcome to Vibrant Engineering Portal
+            </h2>
+
+            <p class="fs-5 text-muted mb-4">
+                Hello <strong>{{ auth()->user()->name }}</strong>,
+                you are logged in as an <strong>Editor</strong>.
+            </p>
+
+            <p class="text-muted">
+                The <strong>Analytics & Reports Dashboard</strong> is restricted to administrators only.
+                If you require access to financial reports or profit analysis,
+                please contact the system administrator.
+            </p>
+
+            <div class="mt-4">
+                <a href="{{ route('dashboard') }}" class="btn btn-primary px-4">
+                    Go to Dashboard
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@endif
 
 @include('analytics.js')
 @endsection
