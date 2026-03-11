@@ -15,20 +15,43 @@ class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
+        // Default current month
         $fromDate = $request->input('from_date');
         $toDate = $request->input('to_date');
 
-        // Fetch sales and related items
+        if (!$fromDate && !$toDate) {
+            $fromDate = Carbon::now()->startOfMonth()->toDateString();
+            $toDate = Carbon::now()->endOfMonth()->toDateString();
+        }
+
+        // Fetch data
         $sales = Sale::query()->with('items.product');
         $saleReturns = SaleReturn::query()->with('product');
         $expenses = Expense::query();
-        $purchases = Purchase::query(); // still showing purchases
+        $purchases = Purchase::query();
 
+        // Apply Date Filters
         if ($fromDate && $toDate) {
-            $sales->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
-            $saleReturns->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
-            $expenses->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
-            $purchases->whereBetween('created_at', [$fromDate, Carbon::parse($toDate)->endOfDay()]);
+
+            $sales->whereBetween('date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+
+            $saleReturns->whereBetween('created_at', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+
+            $expenses->whereBetween('created_at', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
+
+            $purchases->whereBetween('date', [
+                Carbon::parse($fromDate)->startOfDay(),
+                Carbon::parse($toDate)->endOfDay()
+            ]);
         }
 
         $sales = $sales->get();
@@ -39,14 +62,14 @@ class AnalyticsController extends Controller
         // Total Sales
         $totalSales = $sales->sum('total_amount');
 
-        // Total Purchases (for dashboard)
+        // Total Purchases
         $totalPurchases = $purchases->sum('total_amount');
 
         // Sale Returns
         $totalSaleReturn = $saleReturns->sum('amount_deducted');
         $returnQty = $saleReturns->sum('qty_return');
 
-        // COGS from sale_items × product.price_per_unit
+        // COGS
         $totalCOGS = 0;
         foreach ($sales as $sale) {
             foreach ($sale->items as $item) {
@@ -56,7 +79,7 @@ class AnalyticsController extends Controller
             }
         }
 
-        // Deduct COGS for returned items
+        // Return COGS
         $returnCOGS = 0;
         foreach ($saleReturns as $ret) {
             if ($ret->product) {
@@ -67,7 +90,7 @@ class AnalyticsController extends Controller
         $adjustedSales = $totalSales - $totalSaleReturn;
         $adjustedCOGS = $totalCOGS - $returnCOGS;
 
-        // Profit Calculations
+        // Profit
         $totalExpenses = $expenses->sum('amount');
         $grossProfit = $adjustedSales - $adjustedCOGS;
         $netProfit = $grossProfit - $totalExpenses;
@@ -76,10 +99,10 @@ class AnalyticsController extends Controller
         $expensePercent = $adjustedSales > 0 ? ($totalExpenses / $adjustedSales) * 100 : 0;
         $npPercent = $adjustedSales > 0 ? ($netProfit / $adjustedSales) * 100 : 0;
 
-        // Total quantity sold
-        $purchaseQty = $sales->flatMap(fn($s) => $s->items)->sum('quantity');
+        // Quantity sold
+        $purchaseQty = $purchases->flatMap(fn($p) => $p->items)->sum('quantity');
+        $saleQty = $sales->flatMap(fn($s) => $s->items)->sum('quantity');
 
-        // Purchase % for dashboard
         $purchasePercent = $adjustedSales > 0 ? ($totalPurchases / $adjustedSales) * 100 : 0;
 
         return view('analytics.index', compact(
@@ -98,6 +121,7 @@ class AnalyticsController extends Controller
             'npPercent',
             'purchasePercent',
             'purchaseQty',
+            'saleQty',
             'fromDate',
             'toDate'
         ));

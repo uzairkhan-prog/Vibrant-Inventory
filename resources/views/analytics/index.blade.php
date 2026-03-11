@@ -15,12 +15,12 @@
 
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">From Date</label>
-                    <input type="date" class="form-control" name="from_date" value="{{ request('from_date') }}">
+                    <input type="date" class="form-control" name="from_date" value="{{ $fromDate }}">
                 </div>
 
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">To Date</label>
-                    <input type="date" class="form-control" name="to_date" value="{{ request('to_date') }}">
+                    <input type="date" class="form-control" name="to_date" value="{{ $toDate }}">
                 </div>
 
                 <div class="col-md-4 filter-btn-wrapper text-md-end">
@@ -109,10 +109,10 @@
                     )</span><br>
 
                 <strong>Purchased Qty:</strong> <span class="label-line"></span>
-                0<br>
+                {{ $purchaseQty }}<br>
 
                 <strong>Sale Qty:</strong> <span class="label-line"></span>
-                {{ $purchaseQty }}<br>
+                {{ $saleQty }}<br>
 
                 <strong>Purchase %:</strong> <span class="label-line"></span>
                 <span class="percent-value">{{ number_format($purchasePercent, 2) }}%</span>

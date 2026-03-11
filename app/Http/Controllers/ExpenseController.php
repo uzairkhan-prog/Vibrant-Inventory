@@ -81,30 +81,32 @@ class ExpenseController extends Controller
         | GRAND TOTAL (NOT PAGINATION)
         |--------------------------------------------------------------------------
         */
-        $totalQuery = Expense::query();
+        // $totalQuery = Expense::query();
 
-        // Apply same filter to total
+        // // Apply same filter to total
 
-        if (!empty($fromDate) || !empty($toDate)) {
-            if (!empty($fromDate) && !empty($toDate)) {
-                $totalQuery->whereBetween('created_at', [
-                    Carbon::parse($fromDate)->startOfDay(),
-                    Carbon::parse($toDate)->endOfDay()
-                ]);
-            } elseif (!empty($fromDate)) {
-                $totalQuery->where('created_at', '>=', Carbon::parse($fromDate)->startOfDay());
-            } elseif (!empty($toDate)) {
-                $totalQuery->where('created_at', '<=', Carbon::parse($toDate)->endOfDay());
-            }
-        } elseif ($request->has('month_year') && $monthYear !== 'all' && !empty($monthYear)) {
-            $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
-            $endDate   = Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth();
+        // if (!empty($fromDate) || !empty($toDate)) {
+        //     if (!empty($fromDate) && !empty($toDate)) {
+        //         $totalQuery->whereBetween('created_at', [
+        //             Carbon::parse($fromDate)->startOfDay(),
+        //             Carbon::parse($toDate)->endOfDay()
+        //         ]);
+        //     } elseif (!empty($fromDate)) {
+        //         $totalQuery->where('created_at', '>=', Carbon::parse($fromDate)->startOfDay());
+        //     } elseif (!empty($toDate)) {
+        //         $totalQuery->where('created_at', '<=', Carbon::parse($toDate)->endOfDay());
+        //     }
+        // } elseif ($request->has('month_year') && $monthYear !== 'all' && !empty($monthYear)) {
+        //     $startDate = Carbon::createFromFormat('Y-m', $monthYear)->startOfMonth();
+        //     $endDate   = Carbon::createFromFormat('Y-m', $monthYear)->endOfMonth();
 
-            $totalQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        // else "all records" → no where condition
+        //     $totalQuery->whereBetween('created_at', [$startDate, $endDate]);
+        // }
+        // // else "all records" → no where condition
 
-        $grandTotal = $totalQuery->sum('amount');
+        // $grandTotal = $totalQuery->sum('amount');
+
+        $grandTotal = (clone $query)->sum('amount');
 
         /*
         |--------------------------------------------------------------------------
