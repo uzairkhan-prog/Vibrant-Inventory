@@ -14,6 +14,7 @@ use App\Models\Expense;
 use App\Models\Asset;
 use App\Models\SaleReturn;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Carbon\Carbon;
 
 class ReportsController extends Controller
 {
@@ -47,20 +48,20 @@ class ReportsController extends Controller
 
         // Apply date filters globally (keeps behaviour you had)
         if ($startDate && $endDate) {
-            $purchasesQuery->whereBetween('created_at', [$startDate, $endDate]);
-            $salesQuery->whereBetween('created_at', [$startDate, $endDate]);
+            $purchasesQuery->whereBetween('date', [$startDate, $endDate]);
+            $salesQuery->whereBetween('date', [$startDate, $endDate]);
             $saleReturnQuery->whereBetween('created_at', [$startDate, $endDate]);
             $expensesQuery->whereBetween('created_at', [$startDate, $endDate]);
             $assetsQuery->whereDate('date', '>=', $startDate)->whereDate('date', '<=', $endDate);
         } elseif ($startDate) {
-            $purchasesQuery->whereDate('created_at', '>=', $startDate);
-            $salesQuery->whereDate('created_at', '>=', $startDate);
+            $purchasesQuery->whereDate('date', '>=', $startDate);
+            $salesQuery->whereDate('date', '>=', $startDate);
             $saleReturnQuery->whereDate('created_at', '>=', $startDate);
             $expensesQuery->whereDate('created_at', '>=', $startDate);
             $assetsQuery->whereDate('date', '>=', $startDate);
         } elseif ($endDate) {
-            $purchasesQuery->whereDate('created_at', '<=', $endDate);
-            $salesQuery->whereDate('created_at', '<=', $endDate);
+            $purchasesQuery->whereDate('date', '<=', $endDate);
+            $salesQuery->whereDate('date', '<=', $endDate);
             $saleReturnQuery->whereDate('created_at', '<=', $endDate);
             $expensesQuery->whereDate('created_at', '<=', $endDate);
             $assetsQuery->whereDate('date', '<=', $endDate);
@@ -276,6 +277,7 @@ class ReportsController extends Controller
         $D_npPercent        = 0;
         $D_overallPercent   = 0;
         $D_purchaseQty      = 0;
+        $D_saleQty          = 0;
         $D_purchasePercent  = 0;
         $D_purchaseItems    = collect([]);
         $D_totalSaleReturn  = 0;
@@ -285,17 +287,55 @@ class ReportsController extends Controller
         $D_adjustedCOGS     = 0;
 
         if ($reportType === 'dashboard') {
-            $D_sales       = Sale::with('items.product')->get();
-            $D_saleReturns = SaleReturn::with('product')->get();
-            $D_expenses    = Expense::query()->get();
+
+            // Default: current month (same as Analytics)
+            if (!$startDate && !$endDate) {
+                $startDate = Carbon::now()->startOfMonth()->toDateString();
+                $endDate   = Carbon::now()->endOfMonth()->toDateString();
+            }
+
+            $salesQuery       = Sale::with('items.product');
+            $saleReturnsQuery = SaleReturn::with('product');
+            $expensesQuery    = Expense::query();
+            $purchasesQuery   = Purchase::with('items');
+
+            // Apply filters
+            if ($startDate && $endDate) {
+
+                $salesQuery->whereBetween('date', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+
+                $saleReturnsQuery->whereBetween('created_at', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+
+                $expensesQuery->whereBetween('created_at', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+
+                $purchasesQuery->whereBetween('date', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+            }
+
+            $D_sales       = $salesQuery->get();
+            $D_saleReturns = $saleReturnsQuery->get();
+            $D_expenses    = $expensesQuery->get();
+            $D_purchases   = $purchasesQuery->get();
 
             // Totals
             $D_totalSales      = $D_sales->sum('total_amount');
+            $D_totalPurchases  = $D_purchases->sum('total_amount');
             $D_totalExpenses   = $D_expenses->sum('amount');
             $D_totalSaleReturn = $D_saleReturns->sum('amount_deducted');
             $D_returnQty       = $D_saleReturns->sum('qty_return');
 
-            // COGS based on sold products × price_per_unit
+            // COGS
             $D_totalCOGS = 0;
             foreach ($D_sales as $sale) {
                 foreach ($sale->items as $item) {
@@ -305,36 +345,39 @@ class ReportsController extends Controller
                 }
             }
 
-            // Deduct COGS for returned items
+            // Return COGS
             $D_returnCOGS = 0;
             foreach ($D_saleReturns as $ret) {
                 if ($ret->product) {
                     $D_returnCOGS += $ret->qty_return * $ret->product->price_per_unit;
-                    $ret->product->increment('quantity', $ret->qty_return);
                 }
             }
 
-            // Adjusted Sales & COGS
+            // Adjusted calculations
             $D_adjustedSales = $D_totalSales - $D_totalSaleReturn;
             $D_adjustedCOGS  = $D_totalCOGS - $D_returnCOGS;
 
-            // Profit Calculations
+            // Profit
             $D_grossProfit = $D_adjustedSales - $D_adjustedCOGS;
             $D_netProfit   = $D_grossProfit - $D_totalExpenses;
 
-            $D_gpPercent      = $D_adjustedSales > 0 ? ($D_grossProfit / $D_adjustedSales) * 100 : 0;
+            // Percentages
+            $D_gpPercent = $D_adjustedSales > 0 ? ($D_grossProfit / $D_adjustedSales) * 100 : 0;
             $D_expensePercent = $D_adjustedSales > 0 ? ($D_totalExpenses / $D_adjustedSales) * 100 : 0;
-            $D_npPercent      = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
+            $D_npPercent = $D_adjustedSales > 0 ? ($D_netProfit / $D_adjustedSales) * 100 : 0;
 
-            // Purchased Qty is sum of quantities sold (matches Analytics)
-            $D_purchaseQty     = $D_sales->flatMap(fn($s) => $s->items)->sum('quantity');
+            // Quantities
+            $D_purchaseQty = $D_purchases->flatMap(fn($p) => $p->items)->sum('quantity');
+            $D_saleQty     = $D_sales->flatMap(fn($s) => $s->items)->sum('quantity');
 
-            // Purchase % (COGS / Adjusted Sales)
-            $D_purchasePercent = $D_adjustedSales > 0 ? ($D_adjustedCOGS / $D_adjustedSales) * 100 : 0;
+            // Purchase %
+            $D_purchasePercent = $D_adjustedSales > 0
+                ? ($D_totalPurchases / $D_adjustedSales) * 100
+                : 0;
 
-            // Items collection (optional, e.g., for listing in dashboard)
             $D_purchaseItems = $D_sales->flatMap(fn($s) => $s->items);
         }
+
 
         return view('reports.index', compact(
             'reportType',
@@ -375,6 +418,7 @@ class ReportsController extends Controller
             'D_npPercent',
             'D_overallPercent',
             'D_purchaseQty',
+            'D_saleQty',
             'D_purchasePercent',
             'D_purchaseItems',
             'D_totalSaleReturn',

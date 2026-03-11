@@ -837,8 +837,8 @@
                 <span class="percent-value">(
                     {{ $D_adjustedSales > 0 ? number_format(($D_totalPurchases / $D_adjustedSales) * 100, 2) : '0' }}%
                 )</span><br>
-                <strong>Purchased Qty:</strong> <span class="label-line"></span> 0<br>
-                <strong>Sale Qty:</strong> <span class="label-line"></span> {{ $D_purchaseQty }}<br>
+                <strong>Purchased Qty:</strong> <span class="label-line"></span> {{ $D_purchaseQty }}<br>
+                <strong>Sale Qty:</strong> <span class="label-line"></span> {{ $D_saleQty }}<br>
                 <strong>Purchase %:</strong> <span class="label-line"></span>
                 <span class="percent-value">{{ number_format($D_purchasePercent, 2) }}%</span>
             </div>
