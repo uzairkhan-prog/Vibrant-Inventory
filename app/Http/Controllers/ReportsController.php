@@ -212,20 +212,10 @@ class ReportsController extends Controller
 
         // Customers ledger (if report_type customers OR all)
         if ($reportType === 'customers' || $reportType === 'all') {
-            $customersQuery = Customer::with([
-                'sales' => function ($q) use ($startDate, $endDate, $customerId) {
-                    if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
-                    elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
-                    elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
 
-                    if ($customerId) $q->where('customer_id', $customerId); // optional, safe
-                },
-                'sales.items.product.category',
-                'payments' => function ($q) use ($startDate, $endDate) {
-                    if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
-                    elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
-                    elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
-                }
+            $customersQuery = Customer::with([
+                'sales.items.product',
+                'payments'
             ]);
 
             if ($customerId) {
@@ -233,24 +223,22 @@ class ReportsController extends Controller
             }
 
             $customersLedger = $customersQuery->paginate(10);
+
+            // Build ledger for each customer
+            $customersLedger->getCollection()->transform(function ($customer) {
+
+                $customer->ledger = $this->buildCustomerLedger($customer);
+
+                return $customer;
+            });
         }
 
         // Suppliers ledger
         if ($reportType === 'suppliers' || $reportType === 'all') {
-            $suppliersQuery = Supplier::with([
-                'purchases' => function ($q) use ($startDate, $endDate, $supplierId) {
-                    if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
-                    elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
-                    elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
 
-                    if ($supplierId) $q->where('supplier_id', $supplierId); // optional, safe
-                },
-                'purchases.items.product.category',
-                'payments' => function ($q) use ($startDate, $endDate) {
-                    if ($startDate && $endDate) $q->whereBetween('created_at', [$startDate, $endDate]);
-                    elseif ($startDate) $q->whereDate('created_at', '>=', $startDate);
-                    elseif ($endDate) $q->whereDate('created_at', '<=', $endDate);
-                }
+            $suppliersQuery = Supplier::with([
+                'purchases.items.product',
+                'payments'
             ]);
 
             if ($supplierId) {
@@ -258,6 +246,14 @@ class ReportsController extends Controller
             }
 
             $suppliersLedger = $suppliersQuery->paginate(10);
+
+            // Build ledger for each supplier
+            $suppliersLedger->getCollection()->transform(function ($supplier) {
+
+                $supplier->ledger = $this->buildSupplierLedger($supplier);
+
+                return $supplier;
+            });
         }
 
         // dropdown source lists
@@ -427,5 +423,207 @@ class ReportsController extends Controller
             'D_adjustedSales',
             'D_adjustedCOGS'
         ));
+    }
+
+    private function buildSupplierLedger($supplier)
+    {
+        $supplier->load([
+            'purchases.items.product',
+            'payments'
+        ]);
+
+        $ledger = collect();
+
+        /*
+        |------------------------------------------
+        | PURCHASES (DEBIT)
+        |------------------------------------------
+        */
+        foreach ($supplier->purchases as $purchase) {
+
+            foreach ($purchase->items as $item) {
+
+                $qty = $item->quantity;
+                $unitPrice = $item->price;
+                $discountPercent = $item->discount ?? 0;
+                $taxPercent = $item->tax ?? 0;
+
+                $subtotal = ($qty * $unitPrice);
+                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal += $subtotal * ($taxPercent / 100);
+
+                if ($purchase->date) {
+                    $time = Carbon::parse($purchase->created_at)->format('H:i:s');
+                    $date = Carbon::parse($purchase->date . ' ' . $time);
+                } else {
+                    $date = Carbon::parse($purchase->created_at);
+                }
+
+                $ledger->push([
+                    'date'      => $date->format('Y-m-d H:i:s'),
+                    'type'      => 'purchase',
+                    'reference' => 'Purchase #' . $purchase->id,
+                    'product'   => $item->product->name ?? '-',
+                    'qty'       => $qty,
+                    'price'     => $unitPrice,
+                    'discount'  => $discountPercent,
+                    'tax'       => $taxPercent,
+                    'debit'     => round($subtotal, 2),
+                    'credit'    => 0,
+                ]);
+            }
+        }
+
+        /*
+        |------------------------------------------
+        | PAYMENTS (CREDIT)
+        |------------------------------------------
+        */
+        foreach ($supplier->payments as $payment) {
+
+            $paymentDate = $payment->date
+                ? Carbon::parse($payment->date)
+                : $payment->created_at;
+
+            $ledger->push([
+                'date'      => $paymentDate->format('Y-m-d H:i:s'),
+                'type'      => 'payment',
+                'reference' => 'Payment #' . $payment->id,
+                'product'   => '-',
+                'qty'       => null,
+                'price'     => null,
+                'discount'  => 0,
+                'tax'       => 0,
+                'debit'     => 0,
+                'credit'    => (float) $payment->amount,
+            ]);
+        }
+
+        /*
+        |------------------------------------------
+        | SORT BY DATE
+        |------------------------------------------
+        */
+        $ledger = $ledger->sortBy('date')->values();
+
+        /*
+        |------------------------------------------
+        | RUNNING BALANCE
+        |------------------------------------------
+        */
+        $running = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$running) {
+
+            $running += $row['debit'];
+            $running -= $row['credit'];
+
+            $row['balance'] = round($running, 2);
+
+            return $row;
+        });
+
+        return $ledger;
+    }
+
+    private function buildCustomerLedger($customer)
+    {
+        $customer->load([
+            'sales.items.product',
+            'payments'
+        ]);
+
+        $ledger = collect();
+
+        /*
+        |------------------------------------------
+        | SALES (DEBIT)
+        |------------------------------------------
+        */
+        foreach ($customer->sales as $sale) {
+
+            foreach ($sale->items as $item) {
+
+                $qty = $item->quantity;
+                $unitPrice = $item->price;
+                $discountPercent = $item->discount ?? 0;
+                $taxPercent = $item->tax ?? 0;
+
+                $subtotal = ($qty * $unitPrice);
+                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal += $subtotal * ($taxPercent / 100);
+
+                if ($sale->date) {
+                    $saleTime = Carbon::parse($sale->created_at)->format('H:i:s');
+                    $saleDate = Carbon::parse($sale->date . ' ' . $saleTime);
+                } else {
+                    $saleDate = Carbon::parse($sale->created_at);
+                }
+
+                $ledger->push([
+                    'date'      => $saleDate->format('Y-m-d H:i:s'),
+                    'type'      => 'sale',
+                    'reference' => 'Invoice #' . $sale->id,
+                    'product'   => $item->product->name ?? '-',
+                    'qty'       => $qty,
+                    'price'     => $unitPrice,
+                    'discount'  => $discountPercent,
+                    'tax'       => $taxPercent,
+                    'debit'     => round($subtotal, 2),
+                    'credit'    => 0,
+                ]);
+            }
+        }
+
+        /*
+        |------------------------------------------
+        | PAYMENTS (CREDIT)
+        |------------------------------------------
+        */
+        foreach ($customer->payments as $payment) {
+
+            $paymentDate = $payment->date
+                ? Carbon::parse($payment->date)
+                : $payment->created_at;
+
+            $ledger->push([
+                'date'      => $paymentDate->format('Y-m-d H:i:s'),
+                'type'      => 'payment',
+                'reference' => 'Receipt #' . $payment->id,
+                'product'   => '-',
+                'qty'       => '-',
+                'price'     => '-',
+                'discount'  => 0,
+                'tax'       => 0,
+                'debit'     => 0,
+                'credit'    => (float) $payment->amount,
+            ]);
+        }
+
+        /*
+        |------------------------------------------
+        | SORT BY DATE
+        |------------------------------------------
+        */
+        $ledger = $ledger->sortBy('date')->values();
+
+        /*
+        |------------------------------------------
+        | RUNNING BALANCE
+        |------------------------------------------
+        */
+        $running = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$running) {
+
+            $running += $row['debit'];
+            $running -= $row['credit'];
+
+            $row['balance'] = round($running, 2);
+
+            return $row;
+        });
+
+        return $ledger;
     }
 }

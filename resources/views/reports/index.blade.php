@@ -479,7 +479,7 @@
             @forelse($customersLedger as $customer)
             <div class="mb-5">
                 <h6 class="fw-bold">
-                    {{ $customer->name }}
+                    {{ $customer->company_name }} ( {{ $customer->name }} )
                     <span class="text-muted">(Closing Balance: {{ number_format($customer->balance,2) }})</span>
                 </h6>
 
@@ -500,96 +500,105 @@
                         </tr>
                     </thead>
                     <tbody>
+
                         @php
-                            $runningBalance = 0;
-                            $hasRows = false;
-                            $totalDebit = 0;
-                            $totalCredit = 0;
+                        $totalDebit = 0;
+                        $totalCredit = 0;
                         @endphp
 
-                        {{-- Sales --}}
-                        @foreach($customer->sales as $sale)
-                            @php
-                                // Calculate invoice subtotal to distribute tax/discount proportionally if needed
-                                $invoiceSubtotal = $sale->items->sum(function($i){
-                                    return $i->quantity * $i->price;
-                                });
-                                if ($invoiceSubtotal <= 0) $invoiceSubtotal = 1;
-                            @endphp
+                        @forelse($customer->ledger as $row)
 
-                            @foreach($sale->items as $item)
-                                @php
-                                    $hasRows = true;
-                                    $qty = $item->quantity;
-                                    $price = $item->price;
-                                    $discount = $item->discount ?? 0;
-                                    $tax = $item->tax ?? 0;
+                        @php
+                        $totalDebit += $row['debit'];
+                        $totalCredit += $row['credit'];
+                        @endphp
 
-                                    // Calculate line subtotal per item
-                                    $lineSubtotal = ($qty * $price);
-                                    $lineSubtotal -= $lineSubtotal * ($discount / 100);
-                                    $lineSubtotal += $lineSubtotal * ($tax / 100);
-
-                                    $runningBalance += $lineSubtotal;
-                                    $totalDebit += $lineSubtotal;
-                                @endphp
-                                <tr>
-                                    <td class="text-start p-2">{{ $sale->created_at->format('Y-m-d') }}</td>
-                                    <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
-                                    <td class="text-start p-2">Invoice #{{ $sale->id }}</td>
-                                    <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
-                                    <td class="text-start p-2">{{ $qty }}</td>
-                                    <td class="text-start p-2">{{ number_format($price,2) }}</td>
-                                    <td class="text-start p-2">{{ number_format($tax,2) }}</td>
-                                    <td class="text-start p-2">{{ number_format($discount,2) }}</td>
-                                    <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineSubtotal,2) }}</td>
-                                    <td class="text-end p-2">-</td>
-                                    <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                                </tr>
-                            @endforeach
-                        @endforeach
-
-                        {{-- Payments --}}
-                        @foreach($customer->payments as $payment)
-                            @php
-                                $hasRows = true;
-                                $runningBalance -= $payment->amount;
-                                $totalCredit += $payment->amount;
-                            @endphp
-                            <tr>
-                                <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
-                                <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
-                                <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
-                                <td class="text-start p-2">-</td>
-                                <td class="text-start p-2">-</td>
-                                <td class="text-start p-2">-</td>
-                                <td class="text-start p-2">-</td>
-                                <td class="text-start p-2">-</td>
-                                <td class="text-end p-2">-</td>
-                                <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
-                                <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                            </tr>
-                        @endforeach
-
-                        {{-- If no records --}}
-                        @unless($hasRows)
                         <tr>
-                            <td colspan="11" class="text-center text-muted">No records found for this customer.</td>
+
+                            <td class="text-start p-2">
+                                {{ \Carbon\Carbon::parse($row['date'])->format('Y-m-d') }}
+                            </td>
+
+                            <td class="text-start p-2">
+
+                                @if($row['type']=='sale')
+                                <span class="badge bg-success">Sale</span>
+                                @else
+                                <span class="badge bg-primary">Payment</span>
+                                @endif
+
+                            </td>
+
+                            <td class="text-start p-2">{{ $row['reference'] }}</td>
+
+                            <td class="text-start p-2">{{ $row['product'] }}</td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['qty']) ? $row['qty'] : '-' }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['tax']) ? number_format($row['tax'],2) : '-' }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['discount']) ? number_format($row['discount'],2) : '-' }}
+                            </td>
+
+                            <td class="text-end p-2 text-success fw-bold">
+                                @if($row['debit']>0)
+                                +{{ number_format($row['debit'],2) }}
+                                @endif
+                            </td>
+
+                            <td class="text-end p-2 text-danger fw-bold">
+                                @if($row['credit']>0)
+                                -{{ number_format($row['credit'],2) }}
+                                @endif
+                            </td>
+
+                            <td class="text-end p-2 fw-bold">
+                                {{ number_format($row['balance'],2) }}
+                            </td>
+
                         </tr>
-                        @endunless
+
+                        @empty
+
+                        <tr>
+                            <td colspan="11" class="text-center text-muted">
+                                No records found.
+                            </td>
+                        </tr>
+
+                        @endforelse
+
                     </tbody>
 
                     {{-- Totals Footer --}}
-                    @if($hasRows)
                     <tfoot class="table-light fw-bold">
                         <tr>
+
                             <td colspan="8" class="text-end p-2">Totals:</td>
-                            <td class="text-end p-2 text-success">+{{ number_format($totalDebit,2) }}</td>
-                            <td class="text-end p-2 text-danger">-{{ number_format($totalCredit,2) }}</td>
-                            <td class="text-end p-2">{{ number_format($runningBalance,2) }}</td>
+
+                            <td class="text-end text-success">
+                                +{{ number_format($totalDebit,2) }}
+                            </td>
+
+                            <td class="text-end text-danger">
+                                -{{ number_format($totalCredit,2) }}
+                            </td>
+
+                            <td class="text-end">
+                                {{ number_format($customer->ledger->last()['balance'] ?? 0 ,2) }}
+                            </td>
+
                         </tr>
                     </tfoot>
-                    @endif
                 </table>
             </div>
             @empty
@@ -616,7 +625,7 @@
             @forelse($suppliersLedger as $supplier)
             <div class="mb-5">
                 <h6 class="fw-bold">
-                    {{ $supplier->name }}
+                    {{ $supplier->company_name }} ( {{ $supplier->name }} )
                     <span class="text-muted">(Closing Balance: {{ number_format($supplier->balance,2) }})</span>
                 </h6>
 
@@ -637,79 +646,105 @@
                         </tr>
                     </thead>
                     <tbody>
+
                         @php
-                        $runningBalance = 0;
-                        $hasRows = false;
                         $totalDebit = 0;
                         $totalCredit = 0;
                         @endphp
 
-                        {{-- Purchases --}}
-                        @foreach($supplier->purchases as $purchase)
-                        @foreach($purchase->items as $item)
-                        @php
-                        $hasRows = true;
-                        $lineTotal = ($item->quantity * $item->price) - $item->discount + $item->tax;
-                        $runningBalance += $lineTotal;
-                        $totalDebit += $lineTotal;
-                        @endphp
-                        <tr>
-                            <td class="text-start p-2">{{ $purchase->date }}</td>
-                            <td class="text-start p-2"><span class="badge bg-success">Purchase</span></td>
-                            <td class="text-start p-2">Invoice #{{ $purchase->id }}</td>
-                            <td class="text-start p-2">{{ $item->product->name ?? 'N/A' }}</td>
-                            <td class="text-start p-2">{{ $item->quantity ?? 'N/A' }}</td>
-                            <td class="text-start p-2">{{ number_format($item->price,2) }}</td>
-                            <td class="text-start p-2">{{ number_format($item->tax,2) }}</td>
-                            <td class="text-start p-2">{{ number_format($item->discount,2) }}</td>
-                            <td class="text-end p-2 text-success fw-bold">+{{ number_format($lineTotal,2) }}</td>
-                            <td class="text-end p-2">-</td>
-                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                        </tr>
-                        @endforeach
-                        @endforeach
+                        @forelse($supplier->ledger as $row)
 
-                        {{-- Payments --}}
-                        @foreach($supplier->payments as $payment)
                         @php
-                        $hasRows = true;
-                        $runningBalance -= $payment->amount;
-                        $totalCredit += $payment->amount;
+                        $totalDebit += $row['debit'];
+                        $totalCredit += $row['credit'];
                         @endphp
-                        <tr>
-                            <td class="text-start p-2">{{ $payment->created_at->format('Y-m-d') }}</td>
-                            <td class="text-start p-2"><span class="badge bg-primary">Payment</span></td>
-                            <td class="text-start p-2">Receipt #{{ $payment->id }}</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-start p-2">-</td>
-                            <td class="text-end p-2">-</td>
-                            <td class="text-end p-2 text-danger fw-bold">-{{ number_format($payment->amount,2) }}</td>
-                            <td class="text-end p-2 fw-bold">{{ number_format($runningBalance,2) }}</td>
-                        </tr>
-                        @endforeach
 
-                        {{-- If no records --}}
-                        @unless($hasRows)
                         <tr>
-                            <td colspan="11" class="text-center text-muted">No records found for this supplier.</td>
+
+                            <td class="text-start p-2">
+                                {{ \Carbon\Carbon::parse($row['date'])->format('Y-m-d') }}
+                            </td>
+
+                            <td class="text-start p-2">
+
+                                @if($row['type']=='purchase')
+                                <span class="badge bg-success">Purchase</span>
+                                @else
+                                <span class="badge bg-primary">Payment</span>
+                                @endif
+
+                            </td>
+
+                            <td class="text-start p-2">{{ $row['reference'] }}</td>
+
+                            <td class="text-start p-2">{{ $row['product'] }}</td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['qty']) ? $row['qty'] : '-' }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ number_format($row['tax'],2) }}
+                            </td>
+
+                            <td class="text-start p-2">
+                                {{ number_format($row['discount'],2) }}
+                            </td>
+
+                            <td class="text-end p-2 text-success fw-bold">
+                                @if($row['debit']>0)
+                                +{{ number_format($row['debit'],2) }}
+                                @endif
+                            </td>
+
+                            <td class="text-end p-2 text-danger fw-bold">
+                                @if($row['credit']>0)
+                                -{{ number_format($row['credit'],2) }}
+                                @endif
+                            </td>
+
+                            <td class="text-end p-2 fw-bold">
+                                {{ number_format($row['balance'],2) }}
+                            </td>
+
                         </tr>
-                        @endunless
+
+                        @empty
+
+                        <tr>
+                            <td colspan="11" class="text-center text-muted">
+                                No records found for this supplier.
+                            </td>
+                        </tr>
+
+                        @endforelse
+
                     </tbody>
 
                     {{-- Totals Footer --}}
-                    @if($hasRows)
                     <tfoot class="table-light fw-bold">
                         <tr>
+
                             <td colspan="8" class="text-end p-2">Totals:</td>
-                            <td class="text-end p-2 text-success">+{{ number_format($totalDebit,2) }}</td>
-                            <td class="text-end p-2 text-danger">-{{ number_format($totalCredit,2) }}</td>
-                            <td class="text-end p-2">{{ number_format($runningBalance,2) }}</td>
+
+                            <td class="text-end text-success">
+                                +{{ number_format($totalDebit,2) }}
+                            </td>
+
+                            <td class="text-end text-danger">
+                                -{{ number_format($totalCredit,2) }}
+                            </td>
+
+                            <td class="text-end">
+                                {{ number_format($supplier->ledger->last()['balance'] ?? 0,2) }}
+                            </td>
+
                         </tr>
                     </tfoot>
-                    @endif
                 </table>
             </div>
             @empty
@@ -793,7 +828,7 @@
                 {{ number_format($D_adjustedCOGS, 2) }}
                 <span class="percent-value">(
                     {{ $D_adjustedSales > 0 ? number_format(($D_adjustedCOGS / $D_adjustedSales) * 100, 2) : '0' }}%
-                )</span><br>
+                    )</span><br>
 
                 <strong>Gross Profit:</strong> <span class="label-line"></span>
                 {{ number_format($D_grossProfit, 2) }}
@@ -836,7 +871,7 @@
                 {{ number_format($D_totalPurchases, 2) }}
                 <span class="percent-value">(
                     {{ $D_adjustedSales > 0 ? number_format(($D_totalPurchases / $D_adjustedSales) * 100, 2) : '0' }}%
-                )</span><br>
+                    )</span><br>
                 <strong>Purchased Qty:</strong> <span class="label-line"></span> {{ $D_purchaseQty }}<br>
                 <strong>Sale Qty:</strong> <span class="label-line"></span> {{ $D_saleQty }}<br>
                 <strong>Purchase %:</strong> <span class="label-line"></span>
@@ -872,7 +907,6 @@
         });
     </script>
     @endif
-
 
 </div>
 
