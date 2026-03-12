@@ -23,7 +23,7 @@ class SupplierController extends Controller
 
         return view('suppliers.index', compact('suppliers', 'totalSupplierBalance'));
     }
-    
+
     public function details(Request $request)
     {
         $perPage = $request->get('per_page', 20);
@@ -261,5 +261,64 @@ class SupplierController extends Controller
 
         return redirect()->route('suppliers.show', $supplier)
             ->with('success', 'Payment recorded successfully.');
+    }
+
+    public function outstanding(Request $request)
+    {
+        $perPage = $request->get('per_page', 20);
+
+        $suppliers = Supplier::withSum(['purchases as total_purchases' => function ($q) {
+            $q->select(DB::raw("COALESCE(SUM(total_amount),0)"));
+        }], 'total_amount')
+            ->withSum(['payments as total_paid' => function ($q) {
+                $q->select(DB::raw("COALESCE(SUM(amount),0)"));
+            }], 'amount')
+            ->get()
+            ->map(function ($supplier) {
+
+                $purchases = $supplier->total_purchases ?? 0;
+                $paid  = $supplier->total_paid ?? 0;
+
+                $supplier->outstanding = $purchases - $paid;
+
+                return $supplier;
+            })
+            ->filter(function ($supplier) {
+                return $supplier->outstanding > 0;
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | SORTING LOGIC
+        |--------------------------------------------------------------------------
+        | 1) Counter Sale always first
+        | 2) Others by highest outstanding
+        */
+        $suppliers = $suppliers->sort(function ($a, $b) {
+
+            // Counter Sale priority
+            if (strtolower($a->name) == 'counter sale') return -1;
+            if (strtolower($b->name) == 'counter sale') return 1;
+
+            // then sort by outstanding (descending)
+            return $b->outstanding <=> $a->outstanding;
+        })->values();
+
+
+        // Total Outstanding
+        $totalOutstanding = $suppliers->sum('outstanding');
+
+        // Manual Pagination
+        $page = request()->get('page', 1);
+
+        $suppliers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $suppliers->forPage($page, $perPage),
+            $suppliers->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        return view('suppliers.outstanding', compact('suppliers', 'totalOutstanding'));
     }
 }

@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('categories', CategoryController::class);
 
     Route::get('suppliers/details', [SupplierController::class, 'details'])->name('suppliers.details');
+    Route::get('suppliers/outstanding', [SupplierController::class, 'outstanding'])->name('suppliers.outstanding');
     Route::resource('suppliers', SupplierController::class);
     Route::get('customers/details', [CustomerController::class, 'details'])->name('customers.details');
     Route::get('customers/outstanding', [CustomerController::class, 'outstanding'])->name('customers.outstanding');

@@ -69,10 +69,24 @@
                 </li>
 
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="{{ route('customers.outstanding') }}">
+                    <a class="sidebar-link has-arrow" href="javascript:void(0)">
                         <i class="ti ti-alert-circle"></i>
                         <span class="hide-menu">Outstanding</span>
                     </a>
+                    <ul class="collapse first-level">
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('suppliers.outstanding') }}">
+                        <i class="ti ti-alert-circle"></i>
+                                <span class="hide-menu">Purchases</span>
+                            </a>
+                        </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('customers.outstanding') }}">
+                        <i class="ti ti-alert-circle"></i>
+                                <span class="hide-menu">Sales</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="sidebar-item">
