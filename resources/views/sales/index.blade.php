@@ -32,7 +32,7 @@
                     <div class="d-flex justify-content-between align-items-center">
 
                         <!-- All Time Total -->
-                        <div>
+                        <!-- <div>
                             <div style="color:#7b8a9a;font-size:13px;font-weight:600;">
                                 Total Sale (All Time)
                             </div>
@@ -40,13 +40,13 @@
                             <div style="font-size:24px;font-weight:700;color:#20b26b;">
                                 Rs {{ number_format($allTimeTotal, 2) }}
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Divider -->
-                        <div style="height:45px;width:1px;background:#e2e8f0;"></div>
+                        <!-- <div style="height:45px;width:1px;background:#e2e8f0;"></div> -->
 
                         <!-- Selected Period -->
-                        <div class="text-end">
+                        <div>
                             <div style="color:#7b8a9a;font-size:13px;font-weight:600;">
                                 @if($monthYear == 'all')
                                 All Records
@@ -57,7 +57,7 @@
                                 @endif
                             </div>
 
-                            <div style="font-size:20px;font-weight:700;color:#1f6feb;">
+                            <div style="font-size:24px;font-weight:700;color:#20b26b;">
                                 Rs {{ number_format($monthTotal, 2) }}
                             </div>
                         </div>
