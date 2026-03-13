@@ -13,8 +13,23 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 20); // default 20
-        $customers = Customer::paginate($perPage);
+        $perPage = $request->get('per_page', 20);
+
+        $customers = Customer::withSum('sales as total_sales', 'total_amount')
+            ->withSum('payments as total_paid', 'amount')
+            ->paginate($perPage);
+
+        // Calculate Current Balance
+        $customers->getCollection()->transform(function ($customer) {
+
+            $sales = $customer->total_sales ?? 0;
+            $paid  = $customer->total_paid ?? 0;
+
+            $customer->current_balance = $sales - $paid;
+
+            return $customer;
+        });
+
         return view('customers.index', compact('customers'));
     }
 

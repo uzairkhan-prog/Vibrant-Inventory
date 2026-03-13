@@ -55,7 +55,8 @@
                         <th>#</th>
                         <th>Name</th>
                         <th>Address</th>
-                        <th>Total Amount</th>
+                        <th>Current Balance</th>
+                        <!-- <th>Total Amount</th> -->
                         <th>Balance Details</th>
                         <!-- <th>Actions</th> -->
                     </tr>
@@ -86,7 +87,10 @@
                         <td>{{ ($customers->currentPage() - 1) * $customers->perPage() + $loop->iteration + ($counterCustomer ? 1 : 0) }}</td>
                         <td>{{ $customer->company_name }} ( {{ $customer->name }} )</td>
                         <td>{{ $customer->address }}</td>
-                        <td>Rs {{ number_format($customer->balance ?? 0, 2) }}</td>
+                        <td>
+                            Rs {{ number_format($customer->current_balance ?? 0, 2) }}
+                        </td>
+                        <!-- <td>Rs {{ number_format($customer->balance ?? 0, 2) }}</td> -->
                         <td>
                             <a href="{{ route('customers.show', $customer) }}" class="btn btn-sm btn-info text-white" title="View">
                                 Balance <i class="material-icons">&#xE8F4;</i>
