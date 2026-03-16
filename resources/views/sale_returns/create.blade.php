@@ -20,9 +20,17 @@
         <!-- Hidden input for sale_id -->
         <input type="hidden" name="sale_id" id="saleIdInput" value="">
 
-        <div class="row mb-3">
+        <div class="row my-3">
+
+            <!-- DATE -->
+            <div class="col-md-4">
+                <label>Return Date</label>
+                <input type="date" name="return_date" class="form-control"
+                    value="{{ old('return_date', date('Y-m-d')) }}" required>
+            </div>
+
             <!-- CUSTOMER -->
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label>Customer</label>
                 <select name="customer_id" id="customerSelect" class="form-select select2" style="width:100%;" required>
                     <option value="">-- Select Customer --</option>
@@ -36,7 +44,7 @@
             </div>
 
             <!-- PRODUCT -->
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label>Product / Sale ID</label>
                 <select name="product_id" id="productSelect" class="form-select select2" style="width:100%;" required>
                     <option value="">-- Select Product --</option>

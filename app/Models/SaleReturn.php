@@ -14,6 +14,8 @@ class SaleReturn extends Model
         'qty_return',
         'amount_deducted',
         'total_after_return',
+        'created_at',
+        'updated_at',
     ];
 
     public function customer()

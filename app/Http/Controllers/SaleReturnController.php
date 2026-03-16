@@ -37,6 +37,7 @@ class SaleReturnController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'return_date'     => 'required|date',
             'customer_id'     => 'required|exists:customers,id',
             'product_id'      => 'required|exists:products,id',
             'sale_id'         => 'required|exists:sales,id',
@@ -105,6 +106,8 @@ class SaleReturnController extends Controller
                     'qty_return'         => $request->qty_return,
                     'amount_deducted'    => $request->amount_deducted,
                     'total_after_return' => $customer->balance,
+                    'created_at'         => $request->return_date,
+                    'updated_at'         => $request->return_date,
                 ]);
             });
         } catch (\Exception $e) {
@@ -129,6 +132,7 @@ class SaleReturnController extends Controller
     public function update(Request $request, SaleReturn $sale_return)
     {
         $request->validate([
+            'return_date'     => 'required|date',
             'customer_id'     => 'required|exists:customers,id',
             'product_id'      => 'required|exists:products,id',
             'sale_id'         => 'required|exists:sales,id',
@@ -218,6 +222,8 @@ class SaleReturnController extends Controller
                     'qty_return'         => $request->qty_return,
                     'amount_deducted'    => $request->amount_deducted,
                     'total_after_return' => $newCustomer->balance,
+                    'created_at'         => $request->return_date,
+                    'updated_at'         => $request->return_date,
                 ]);
             });
         } catch (\Exception $e) {
