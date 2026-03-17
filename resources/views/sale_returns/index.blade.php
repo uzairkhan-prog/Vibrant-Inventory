@@ -12,12 +12,71 @@
         </div>
     </div>
 
-    @php $subtotal = $returns->sum('total_after_return'); @endphp
+    <!-- @php $subtotal = $returns->sum('amount_deducted'); @endphp
     <div class="alert alert-success shadow-sm rounded-3 fs-6 fw-bold mb-4">
         <div class="d-flex justify-content-between">
             <span>Total Returned Value:</span>
             <span>Rs {{ number_format($subtotal, 2) }}</span>
         </div>
+    </div> -->
+
+    <div class="row mb-4 align-items-center">
+
+        <!-- TOTAL CARD -->
+        <div class="col-md-6">
+            <div class="card border-0 rounded-4"
+                style="box-shadow:0 4px 18px rgba(0,0,0,0.08); border:1px solid #e6edf5;">
+
+                <div class="card-body py-3">
+                    <div style="color:#7b8a9a;font-size:13px;font-weight:600;">
+                        @if($monthYear == 'all')
+                        All Records
+                        @elseif($monthYear == 'custom')
+                        {{ $fromDate }} to {{ $toDate }}
+                        @else
+                        {{ \Carbon\Carbon::createFromFormat('Y-m', $monthYear)->format('F Y') }}
+                        @endif
+                    </div>
+
+                    <div style="font-size:24px;font-weight:700;color:#dc3545;">
+                        Rs {{ number_format($monthTotal, 2) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MONTH FILTER -->
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+
+            <form method="GET" action="{{ route('sale-returns.index') }}"
+                class="d-inline-flex align-items-center"
+                style="background:#eef3fb;padding:10px 14px;border-radius:14px;gap:10px;">
+
+                <label style="font-weight:600;color:#2c6ed5;">Month:</label>
+
+                <select name="month_year" onchange="this.form.submit()"
+                    style="border:2px solid #2c6ed5;border-radius:10px;padding:6px 12px;">
+
+                    <option value="all" {{ $monthYear == 'all' ? 'selected' : '' }}>
+                        All Records
+                    </option>
+
+                    @foreach($months as $m)
+                    <option value="{{ $m }}" {{ $monthYear == $m ? 'selected' : '' }}>
+                        {{ \Carbon\Carbon::createFromFormat('Y-m', $m)->format('F Y') }}
+                    </option>
+                    @endforeach
+
+                </select>
+
+                <!-- <button class="btn btn-primary">Filter</button> -->
+
+                <a href="{{ route('sale-returns.index') }}" class="btn btn-secondary">Reset</a>
+
+            </form>
+
+        </div>
+
     </div>
 
     <!-- Filters Row -->

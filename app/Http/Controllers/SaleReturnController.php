@@ -10,16 +10,100 @@ use App\Models\SaleItem;
 use App\Models\CustomerPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class SaleReturnController extends Controller
 {
     /* =============================
        INDEX
     ============================= */
-    public function index()
+    public function index(Request $request)
     {
-        $returns = SaleReturn::with(['customer', 'product'])->latest()->paginate(20);
-        return view('sale_returns.index', compact('returns'));
+        $perPage   = $request->get('per_page', 20);
+        $search    = $request->get('search');
+        $monthYear = $request->get('month_year');
+        $fromDate  = $request->get('from_date');
+        $toDate    = $request->get('to_date');
+
+        $query = SaleReturn::with(['customer', 'product'])
+            ->orderBy('created_at', 'desc');
+
+        /* ===============================
+        DATE / MONTH FILTER
+        =============================== */
+        if ($fromDate || $toDate) {
+
+            if ($fromDate && $toDate) {
+                $query->whereBetween('created_at', [$fromDate, $toDate]);
+            } elseif ($fromDate) {
+                $query->whereDate('created_at', '>=', $fromDate);
+            } elseif ($toDate) {
+                $query->whereDate('created_at', '<=', $toDate);
+            }
+
+            $monthTotal = (clone $query)->sum('amount_deducted');
+            $monthYear  = 'custom';
+        } elseif ($monthYear && $monthYear !== 'all') {
+
+            // 👉 Selected specific month
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month);
+
+            $monthTotal = (clone $query)->sum('amount_deducted');
+        } elseif ($monthYear === 'all') {
+
+            // 👉 Only when user selects ALL
+            $monthTotal = SaleReturn::sum('amount_deducted');
+        } else {
+
+            // ✅ DEFAULT = CURRENT MONTH (FIXED)
+            $monthYear = Carbon::now()->format('Y-m');
+
+            [$year, $month] = explode('-', $monthYear);
+
+            $query->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month);
+
+            $monthTotal = (clone $query)->sum('amount_deducted');
+        }
+
+        /* ===============================
+        SEARCH FILTER
+        =============================== */
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('sale_id', 'like', "%{$search}%")
+                    ->orWhere('amount_deducted', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($c) use ($search) {
+                        $c->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('product', function ($p) use ($search) {
+                        $p->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $returns = $query->paginate($perPage)->appends($request->all());
+
+        $allTimeTotal = SaleReturn::sum('amount_deducted');
+
+        $months = SaleReturn::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month")
+            ->distinct()
+            ->orderBy('month', 'desc')
+            ->pluck('month');
+
+        return view('sale_returns.index', compact(
+            'returns',
+            'monthYear',
+            'months',
+            'allTimeTotal',
+            'monthTotal',
+            'search',
+            'fromDate',
+            'toDate'
+        ));
     }
 
     /* =============================
