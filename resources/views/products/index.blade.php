@@ -89,13 +89,17 @@
                     @foreach ($products as $index => $product)
                     <tr>
                         <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
-                        <td>{{ $product->name }}</td>
+                        <td><a href="{{ route('products.ledger',$product->id) }}" class="text-dark">{{ $product->name }}</a></td>
                         <td>{{ $product->category->name ?? 'Uncategorized' }}</td>
                         <td>{{ $product->packing }}</td>
                         <td>{{ number_format($product->quantity) }}</td>
                         <td>{{ number_format($product->price_per_unit, 2) }}</td>
                         <td>{{ number_format($product->quantity * $product->price_per_unit, 2) }}</td>
                         <td class="d-flex justify-content-center gap-1">
+                            <a href="{{ route('products.ledger',$product->id) }}"
+                                class="btn btn-sm btn-dark">
+                                Ledger
+                            </a>
                             <a href="{{ route('products.show', $product) }}" class="btn btn-sm btn-info text-white">Show</a>
                             <a href="{{ route('products.edit', $product) }}" class="btn btn-sm btn-success text-white">Edit</a>
                             <form action="{{ route('products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this product?')">

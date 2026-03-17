@@ -2,143 +2,228 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\SaleItem;
 use App\Models\PurchaseItem;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\SaleReturn;
+use Illuminate\Http\Request;
 
 class ProductLedgerController extends Controller
 {
+
     public function index(Request $request)
     {
-        // Filters
-        $from = $request->input('from_date');
-        $to   = $request->input('to_date');
-        $typeFilter = $request->input('type_filter'); // sale / purchase / null
-        $showAll = $request->has('show_all');
+        $products = Product::orderBy('name')->get();
 
-        /* ============================================================
-            FETCH SALES
-        ============================================================ */
-        $salesQuery = SaleItem::with(['sale.customer', 'product']);
+        $productId = $request->product_id;
+        $fromDate  = $request->from_date;
+        $toDate    = $request->to_date;
 
-        if ($from && $to) {
-            $salesQuery->whereBetween('created_at', [
-                $from . ' 00:00:00',
-                $to . ' 23:59:59'
-            ]);
-        }
+        $ledger = collect();
+        $product = null;
 
-        // Apply type filter
-        if ($typeFilter === 'sale') {
-            // keep sales
-        } elseif ($typeFilter === 'purchase') {
-            // user wants only purchase → skip sales
-            $sales = collect([]);
-        }
+        if ($productId) {
 
-        // Only fetch sales if necessary
-        if (!isset($sales)) {
-            $sales = $salesQuery->get()->map(function ($item) {
-                return [
-                    'date' => $item->created_at->format('Y-m-d'),
-                    'type' => 'sale',
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name ?? '-',
-                    'qty' => $item->quantity,
-                    'unit_price' => $item->price,
-                    'invoice_no' => $item->sale_id,
-                    'invoice_value' => $item->price * $item->quantity,
-                ];
+            $product = Product::with('category')->findOrFail($productId);
+
+            /* ================= PURCHASES ================= */
+            $purchases = PurchaseItem::with('purchase.supplier')
+                ->where('product_id', $productId)
+                ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
+                    $q->whereHas('purchase', function ($q2) use ($fromDate, $toDate) {
+                        $q2->whereBetween('date', [$fromDate, $toDate]);
+                    });
+                })
+                ->get()
+                ->map(function ($item) {
+
+                    $supplier = $item->purchase->supplier;
+
+                    return [
+                        'date' => $item->purchase->date,
+                        'invoice_no' => 'Purchase - Invoice no: ' . $item->purchase->id,
+                        'type' => 'Purchase',
+                        'party' => $supplier
+                            ? ($supplier->company_name ?? $supplier->name)
+                            . ($supplier->name ? " ({$supplier->name})" : '')
+                            : '-',
+                        'qty_in' => $item->quantity,
+                        'qty_out' => 0,
+                        'price' => $item->price,
+                        'total' => $item->quantity * $item->price,
+                    ];
+                });
+
+            /* ================= SALES ================= */
+            $sales = SaleItem::with('sale.customer')
+                ->where('product_id', $productId)
+                ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
+                    $q->whereHas('sale', function ($q2) use ($fromDate, $toDate) {
+                        $q2->whereBetween('date', [$fromDate, $toDate]);
+                    });
+                })
+                ->get()
+                ->map(function ($item) {
+
+                    $customer = $item->sale->customer;
+
+                    return [
+                        'date' => $item->sale->date,
+                        'invoice_no' => 'Sale - Invoice no: ' . $item->sale->id,
+                        'type' => 'Sale',
+                        'party' => $customer
+                            ? ($customer->company_name ?? '-')
+                            . ($customer->name ? " ({$customer->name})" : '')
+                            : '-',
+                        'qty_in' => 0,
+                        'qty_out' => $item->quantity,
+                        'price' => $item->price,
+                        'total' => $item->quantity * $item->price,
+                    ];
+                });
+
+            /* ================= RETURNS ================= */
+            $returns = SaleReturn::with('customer')
+                ->where('product_id', $productId)
+                ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
+                    $q->whereBetween('created_at', [$fromDate, $toDate]);
+                })
+                ->get()
+                ->map(function ($return) {
+
+                    $customer = $return->customer;
+
+                    return [
+                        'date' => $return->created_at,
+                        'invoice_no' => 'Sale Return - Invoice no: ' . $return->id,
+                        'type' => 'Sale Return',
+                        'party' => $customer
+                            ? ($customer->company_name ?? '-')
+                            . ($customer->name ? " ({$customer->name})" : '')
+                            : '-',
+                        'qty_in' => $return->qty_return,
+                        'qty_out' => 0,
+                        'price' => $return->amount_deducted / max($return->qty_return, 1),
+                        'total' => $return->amount_deducted,
+                    ];
+                });
+
+            /* ================= MERGE ================= */
+            $ledger = $purchases
+                ->concat($sales)
+                ->concat($returns)
+                ->sortBy('date')
+                ->values();
+
+            /* ================= BALANCE ================= */
+            $balance = 0;
+
+            $ledger = $ledger->map(function ($row) use (&$balance) {
+                $balance += $row['qty_in'];
+                $balance -= $row['qty_out'];
+                $row['balance'] = $balance;
+                return $row;
             });
         }
 
-        /* ============================================================
-            FETCH PURCHASES
-        ============================================================ */
-        $purchaseQuery = PurchaseItem::with(['purchase.supplier', 'product']);
+        return view('ledger.products', compact('products', 'ledger', 'product'));
+    }
 
-        if ($from && $to) {
-            $purchaseQuery->whereBetween('created_at', [
-                $from . ' 00:00:00',
-                $to . ' 23:59:59'
-            ]);
-        }
+    public function show($productId)
+    {
+        $product = Product::with('category')->findOrFail($productId);
 
-        // Apply type filter
-        if ($typeFilter === 'purchase') {
-            // keep purchases only
-        } elseif ($typeFilter === 'sale') {
-            // user wants only sale → skip purchases
-            $purchases = collect([]);
-        }
+        /* ================= PURCHASES ================= */
+        $purchases = PurchaseItem::with('purchase.supplier')
+            ->where('product_id', $productId)
+            ->get()
+            ->map(function ($item) {
 
-        // Only fetch purchases if necessary
-        if (!isset($purchases)) {
-            $purchases = $purchaseQuery->get()->map(function ($item) {
+                $supplier = $item->purchase->supplier;
+
                 return [
-                    'date' => $item->created_at->format('Y-m-d'),
-                    'type' => 'purchase',
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name ?? '-',
-                    'qty' => $item->quantity,
-                    'unit_price' => $item->price,
-                    'invoice_no' => $item->purchase_id,
-                    'invoice_value' => $item->price * $item->quantity,
+                    'date' => $item->purchase->date,
+                    'invoice_no' => 'Purchase - Invoice no: ' . $item->purchase->id,
+                    'type' => 'Purchase',
+                    'party' => $supplier
+                        ? ($supplier->company_name ?? $supplier->name)
+                        . ($supplier->name ? " ({$supplier->name})" : '')
+                        : '-',
+                    'qty_in' => $item->quantity,
+                    'qty_out' => 0,
+                    'price' => $item->price,
+                    'total' => $item->quantity * $item->price,
                 ];
             });
-        }
 
-        /* ============================================================
-            MERGE BOTH LISTS
-        ============================================================ */
-        $merged = collect($sales)->merge($purchases);
+        /* ================= SALES ================= */
+        $sales = SaleItem::with('sale.customer')
+            ->where('product_id', $productId)
+            ->get()
+            ->map(function ($item) {
 
-        // Remove duplicate product entries if "Show All" is unchecked
-        if (!$showAll) {
-            $merged = $merged->unique('product_id')->values();
-        }
+                $customer = $item->sale->customer;
 
-        // Sort by date desc
-        $merged = $merged->sortByDesc('date')->values();
+                return [
+                    'date' => $item->sale->date,
+                    'invoice_no' => 'Sale - Invoice no: ' . $item->sale->id,
+                    'type' => 'Sale',
+                    'party' => $customer
+                        ? ($customer->company_name ?? '-')
+                        . ($customer->name ? " ({$customer->name})" : '')
+                        : '-',
+                    'qty_in' => 0,
+                    'qty_out' => $item->quantity,
+                    'price' => $item->price,
+                    'total' => $item->quantity * $item->price,
+                ];
+            });
 
-        /* ============================================================
-            PAGINATION
-        ============================================================ */
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = $request->input('per_page', 20);
-        $currentItems = $merged->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        /* ================= SALE RETURNS ================= */
+        $returns = SaleReturn::with('customer')
+            ->where('product_id', $productId)
+            ->get()
+            ->map(function ($return) {
 
-        $ledgerEntries = new LengthAwarePaginator(
-            $currentItems,
-            $merged->count(),
-            $perPage,
-            $currentPage,
-            [
-                'path' => $request->url(),
-                'query' => $request->query()
-            ]
-        );
+                $customer = $return->customer;
 
-        /* ============================================================
-            TOTALS BASED ON FILTERED RESULTS
-        ============================================================ */
-        $total_sold_qty = collect($sales)->sum('qty');
-        $total_sold_value = collect($sales)->sum('invoice_value');
+                return [
+                    'date' => $return->created_at,
+                    'invoice_no' => 'Sale Return - Invoice no: ' . $return->id,
+                    'type' => 'Sale Return',
+                    'party' => $customer
+                        ? ($customer->company_name ?? '-')
+                        . ($customer->name ? " ({$customer->name})" : '')
+                        : '-',
+                    'qty_in' => $return->qty_return,
+                    'qty_out' => 0,
+                    'price' => $return->amount_deducted / max($return->qty_return, 1),
+                    'total' => $return->amount_deducted,
+                ];
+            });
 
-        $total_purchase_qty = collect($purchases)->sum('qty');
-        $total_purchase_value = collect($purchases)->sum('invoice_value');
+        /* ================= MERGE ================= */
 
-        return view('ledger.products', compact(
-            'ledgerEntries',
-            'total_sold_qty',
-            'total_sold_value',
-            'total_purchase_qty',
-            'total_purchase_value',
-            'perPage',
-            'from',
-            'to'
-        ));
+        $ledger = $purchases
+            ->concat($sales)
+            ->concat($returns)
+            ->sortBy('date')
+            ->values();
+
+        /* ================= RUNNING BALANCE ================= */
+
+        $balance = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$balance) {
+
+            $balance += $row['qty_in'];
+            $balance -= $row['qty_out'];
+
+            $row['balance'] = $balance;
+
+            return $row;
+        });
+
+        return view('products.ledger', compact('product', 'ledger'));
     }
 }

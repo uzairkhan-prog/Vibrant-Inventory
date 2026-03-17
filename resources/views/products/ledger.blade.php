@@ -4,49 +4,28 @@
 
 <div class="p-4 bg-white shadow rounded">
 
-    <h2 class="fw-bold text-primary mb-4">Product Ledger</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <form method="GET" action="{{ route('ledger.products') }}" class="row g-3 mb-4">
+        <h2 class="fw-bold text-primary mb-0">
+            Product Ledger
+        </h2>
 
-        <div class="col-md-4">
-            <label class="form-label">Select Product</label>
-            <select name="product_id" class="form-control" required>
-                <option value="">-- Select Product --</option>
-                @foreach($products as $p)
-                <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
-                    {{ $p->name }}
-                </option>
-                @endforeach
-            </select>
-        </div>
+        <a href="{{ route('products.index') }}" class="btn btn-secondary">
+            Back
+        </a>
 
-        <div class="col-md-3">
-            <label class="form-label">From Date</label>
-            <input type="date" name="from_date" value="{{ request('from_date') }}" class="form-control">
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">To Date</label>
-            <input type="date" name="to_date" value="{{ request('to_date') }}" class="form-control">
-        </div>
-
-        <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-primary w-100">Search</button>
-            <a href="{{ route('ledger.products') }}" class="btn btn-secondary w-100 ms-1">Reset</a>
-        </div>
-
-    </form>
-
-    {{-- PRODUCT INFO --}}
-    @if($product)
-    <div class="alert alert-info">
-        <strong>Product :</strong> {{ $product->name }} <br>
-        <strong>Category :</strong> {{ $product->category->name ?? 'Uncategorized' }}
     </div>
-    @endif
 
 
-    {{-- TABLE --}}
+    <div class="alert alert-info">
+
+        <strong>Product :</strong> {{ $product->name }} <br>
+
+        <strong>Category :</strong> {{ $product->category->name ?? 'Uncategorized' }}
+
+    </div>
+
+
     @if($ledger->count())
 
     <div class="table-responsive">
@@ -54,7 +33,9 @@
         <table class="table table-striped table-bordered text-center align-middle">
 
             <thead class="table-light">
+
                 <tr>
+
                     <th>Date</th>
                     <th>Invoice</th>
                     <th>Type</th>
@@ -64,17 +45,19 @@
                     <th>Price</th>
                     <th>Total</th>
                     <!-- <th>Balance</th> -->
+
                 </tr>
+
             </thead>
+
 
             <tbody>
                 @foreach($ledger as $row)
                 <tr>
-
                     <!-- Date -->
                     <td>{{ \Carbon\Carbon::parse($row['date'])->format('d-m-Y') }}</td>
 
-                    <!-- Invoice -->
+                    <!-- Invoice with background color -->
                     <td class="fw-bold"
                         @if($row['type']=='Purchase' ) style="background-color:#cce5ff;"
                         @elseif($row['type']=='Sale' ) style="background-color:#d4edda;"
@@ -82,14 +65,16 @@
                         {{ $row['invoice_no'] }}
                     </td>
 
-                    <!-- Type -->
+                    <!-- Type Badge with background color -->
                     <td>
                         @if($row['type']=='Purchase')
-                        <span class="badge" style="background:#cce5ff;color:#000;">Purchase</span>
+                        <span class="badge" style="background-color:#cce5ff; color:#000;">Purchase</span>
+
                         @elseif($row['type']=='Sale')
-                        <span class="badge" style="background:#d4edda;color:#000;">Sale</span>
+                        <span class="badge" style="background-color:#d4edda; color:#000;">Sale</span>
+
                         @else
-                        <span class="badge" style="background:#f8d7da;color:#000;">Sale Return</span>
+                        <span class="badge" style="background-color:#f8d7da; color:#000;">Sale Return</span>
                         @endif
                     </td>
 
@@ -107,16 +92,15 @@
                     </td>
 
                     <!-- Price -->
-                    <td>{{ number_format($row['price'], 2) }}</td>
+                    <td>{{ number_format($row['price'],2) }}</td>
 
                     <!-- Total -->
-                    <td>{{ number_format($row['total'], 2) }}</td>
+                    <td>{{ number_format($row['total'],2) }}</td>
 
                     <!-- Balance -->
                     <!-- <td class="fw-bold text-primary">
                         {{ $row['balance'] }}
                     </td> -->
-
                 </tr>
                 @endforeach
             </tbody>
@@ -125,10 +109,12 @@
 
     </div>
 
-    @elseif(request()->product_id)
+    @else
 
     <div class="alert alert-warning text-center">
-        No ledger records found for selected filters.
+
+        No ledger records found for this product.
+
     </div>
 
     @endif
