@@ -278,32 +278,118 @@
     });
 
     // PDF Export
-    async function exportTableToPDF() {
+    function exportTableToPDF() {
         const {
             jsPDF
         } = window.jspdf;
         const doc = new jsPDF("p", "mm", "a4");
-        doc.text("Stock Management Report", 14, 20);
-        const head = [
-            ['#', 'Name', 'Category', 'Packing', 'Qty', 'Value']
-        ];
-        const body = [];
-        document.querySelectorAll("#productTable tbody tr").forEach(r => {
-            const cols = r.querySelectorAll("td");
-            body.push([cols[0].innerText, cols[1].innerText, cols[2].innerText, cols[3].innerText, cols[4].innerText, cols[5].innerText]);
+
+        // ===============================
+        // DATE (DYNAMIC)
+        // ===============================
+        const today = new Date();
+        const formattedDate = today.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
         });
-        doc.autoTable({
-            head,
-            body,
-            startY: 30,
-            theme: 'grid',
-            styles: {
-                fontSize: 8
-            }
-        });
-        const totalValue = document.getElementById("totalValue").innerText;
-        doc.text(`Total Stock Value: ${totalValue}`, 14, doc.lastAutoTable.finalY + 10);
-        doc.save('products.pdf');
+
+        // ===============================
+        // LOGO (STYLED)
+        // ===============================
+        const logo = new Image();
+        logo.src = "{{ asset('assets/images/logos/logo-export.png') }}";
+    
+        logo.onload = function() {
+
+            // 🔷 Gradient Background (simulate)
+            doc.setFillColor(17, 20, 45); // #11142d
+            doc.roundedRect(12, 8, 50, 22, 3, 3, 'F');
+
+            doc.setFillColor(17, 20, 45); // #11142d
+            doc.roundedRect(12, 8, 50, 22, 3, 3, 'F');
+
+            // 🔷 Logo Image (fit inside like max-height:60px)
+            doc.addImage(logo, 'PNG', 16, 10, 40, 16); // adjusted size
+
+            // ===============================
+            // COMPANY DETAILS
+            // ===============================
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+
+            doc.text("Head Office: Shop #13, Falak Park View Near", 14, 38);
+            doc.text("Inquiry Office Nazimabad #2, Karachi", 14, 43);
+            doc.text("Phone: +92 335 2385773", 14, 49);
+            doc.text("Email: info@vibrantengineering.pk", 14, 54);
+
+            // ===============================
+            // RIGHT SIDE (INVOICE INFO)
+            // ===============================
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(15);
+            doc.text("Stock Invoice", 140, 20);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text("Invoice #: 57", 140, 30);
+            doc.text(`Date: ${formattedDate}`, 140, 36);
+            doc.text("Payment Terms: Due on receipt", 140, 42);
+
+            // Divider
+            doc.line(14, 60, 196, 60);
+
+            // ===============================
+            // TABLE
+            // ===============================
+            const head = [
+                ['#', 'Name', 'Category', 'Packing', 'Qty', 'Value']
+            ];
+
+            const body = [];
+
+            document.querySelectorAll("#productTable tbody tr").forEach(r => {
+                const cols = r.querySelectorAll("td");
+                body.push([
+                    cols[0].innerText,
+                    cols[1].innerText,
+                    cols[2].innerText,
+                    cols[3].innerText,
+                    cols[4].innerText,
+                    cols[5].innerText
+                ]);
+            });
+
+            doc.autoTable({
+                head,
+                body,
+                startY: 65,
+                theme: 'grid',
+                styles: {
+                    fontSize: 8
+                },
+                headStyles: {
+                    fillColor: [17, 20, 45], // #11142d
+                    textColor: 255
+                }
+            });
+
+            // ===============================
+            // TOTAL
+            // ===============================
+            const totalValue = document.getElementById("totalValue").innerText;
+
+            doc.setFontSize(11);
+            doc.text(`Total Stock Value: ${totalValue}`, 14, doc.lastAutoTable.finalY + 10);
+
+            doc.save('stock_invoice.pdf');
+        };
+
+        // Fallback
+        logo.onerror = function() {
+            doc.text("Stock Invoice", 14, 20);
+            doc.save('stock_invoice.pdf');
+        };
     }
 </script>
 

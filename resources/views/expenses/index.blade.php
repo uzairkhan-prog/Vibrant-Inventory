@@ -13,9 +13,14 @@
                     All Records
                 </option>
 
-                @foreach($months as $month)
-                <option value="{{ $month }}" {{ $monthYear == $month ? 'selected' : '' }}>
-                    {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y') }}
+                {{-- Dynamic Months --}}
+                @foreach($months as $m)
+                @php
+                // Trim whitespace and safely parse the date
+                $formattedMonth = \Carbon\Carbon::parse(trim($m) . '-01')->format('F Y');
+                @endphp
+                <option value="{{ $m }}" {{ $monthYear == $m ? 'selected' : '' }}>
+                    {{ $formattedMonth }}
                 </option>
                 @endforeach
             </select>

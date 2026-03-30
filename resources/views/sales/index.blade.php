@@ -105,14 +105,18 @@
 
                     {{-- Dynamic Months --}}
                     @foreach($months as $m)
+                    @php
+                    // Trim whitespace and safely parse the date
+                    $formattedMonth = \Carbon\Carbon::parse(trim($m) . '-01')->format('F Y');
+                    @endphp
                     <option value="{{ $m }}" {{ $monthYear == $m ? 'selected' : '' }}>
-                        {{ \Carbon\Carbon::createFromFormat('Y-m', $m)->format('F Y') }}
+                        {{ $formattedMonth }}
                     </option>
                     @endforeach
 
                 </select>
 
-                <button type="submit"
+                <!-- <button type="submit"
                     style="
                     background:#2c6ed5;
                     color:white;
@@ -126,7 +130,7 @@
                     onmouseover="this.style.background='#1f5cc1'"
                     onmouseout="this.style.background='#2c6ed5'">
                     Filter
-                </button>
+                </button> -->
 
                 <a href="{{ route('sales.index') }}" class="btn btn-secondary">Reset</a>
 
