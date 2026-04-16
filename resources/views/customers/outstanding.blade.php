@@ -80,7 +80,8 @@
                     </td> -->
 
                     <td class="text-danger fw-bold">
-                        Rs {{ number_format($customer->outstanding, 2) }}
+                        <!-- Rs {{ number_format($customer->outstanding, 2) }} -->
+                        Rs {{ number_format($customer->is_counter ? $customer->outstanding : $customer->current_balance, 2) }}
                     </td>
 
                     <td>

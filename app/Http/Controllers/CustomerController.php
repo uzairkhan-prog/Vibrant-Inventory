@@ -248,52 +248,126 @@ class CustomerController extends Controller
         return redirect()->route('customers.show', $customer)->with('success', 'Payment recorded successfully.');
     }
 
+    // public function outstanding(Request $request)
+    // {
+    //     $perPage = $request->get('per_page', 20);
+
+    //     $customers = Customer::withSum(['sales as total_sales' => function ($q) {
+    //         $q->select(DB::raw("COALESCE(SUM(total_amount),0)"));
+    //     }], 'total_amount')
+    //         ->withSum(['payments as total_paid' => function ($q) {
+    //             $q->select(DB::raw("COALESCE(SUM(amount),0)"));
+    //         }], 'amount')
+    //         ->get()
+    //         ->map(function ($customer) {
+
+    //             $sales = $customer->total_sales ?? 0;
+    //             $paid  = $customer->total_paid ?? 0;
+
+    //             $customer->outstanding = $sales - $paid;
+
+    //             return $customer;
+    //         })
+    //         ->filter(function ($customer) {
+    //             return $customer->outstanding > 0;
+    //         });
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | SORTING LOGIC
+    //     |--------------------------------------------------------------------------
+    //     | 1) Counter Sale always first
+    //     | 2) Others by highest outstanding
+    //     */
+    //     $customers = $customers->sort(function ($a, $b) {
+
+    //         // Counter Sale priority
+    //         if (strtolower($a->name) == 'counter sale') return -1;
+    //         if (strtolower($b->name) == 'counter sale') return 1;
+
+    //         // then sort by outstanding (descending)
+    //         return $b->outstanding <=> $a->outstanding;
+    //     })->values();
+
+
+    //     // Total Outstanding
+    //     $totalOutstanding = $customers->sum('outstanding');
+
+    //     // Manual Pagination
+    //     $page = request()->get('page', 1);
+
+    //     $customers = new \Illuminate\Pagination\LengthAwarePaginator(
+    //         $customers->forPage($page, $perPage),
+    //         $customers->count(),
+    //         $perPage,
+    //         $page,
+    //         ['path' => request()->url(), 'query' => request()->query()]
+    //     );
+
+    //     return view('customers.outstanding', compact('customers', 'totalOutstanding'));
+    // }
     public function outstanding(Request $request)
     {
         $perPage = $request->get('per_page', 20);
 
-        $customers = Customer::withSum(['sales as total_sales' => function ($q) {
-            $q->select(DB::raw("COALESCE(SUM(total_amount),0)"));
-        }], 'total_amount')
-            ->withSum(['payments as total_paid' => function ($q) {
-                $q->select(DB::raw("COALESCE(SUM(amount),0)"));
-            }], 'amount')
+        $customers = Customer::withSum('sales as total_sales', 'total_amount')
+            ->withSum('payments as total_paid', 'amount')
             ->get()
             ->map(function ($customer) {
 
                 $sales = $customer->total_sales ?? 0;
                 $paid  = $customer->total_paid ?? 0;
 
-                $customer->outstanding = $sales - $paid;
+                // -----------------------------------
+                // ✅ COUNTER SALE = OLD LOGIC
+                // -----------------------------------
+                if (strtolower(trim($customer->name)) === 'counter sale') {
+                    $customer->outstanding = $sales - $paid;
+                    $customer->is_counter = true;
+                    return $customer;
+                }
+
+                // -----------------------------------
+                // ✅ OTHER CUSTOMERS = NEW LOGIC
+                // -----------------------------------
+                $customer->current_balance = $sales - $paid;
+                $customer->is_counter = false;
 
                 return $customer;
             })
             ->filter(function ($customer) {
-                return $customer->outstanding > 0;
+
+                // Counter Sale always show
+                if (!empty($customer->is_counter)) {
+                    return true;
+                }
+
+                // Others only if > 0
+                return $customer->current_balance > 0;
             });
 
-        /*
-        |--------------------------------------------------------------------------
-        | SORTING LOGIC
-        |--------------------------------------------------------------------------
-        | 1) Counter Sale always first
-        | 2) Others by highest outstanding
-        */
+        // -----------------------------------
+        // SORTING (Counter Sale first)
+        // -----------------------------------
         $customers = $customers->sort(function ($a, $b) {
 
-            // Counter Sale priority
-            if (strtolower($a->name) == 'counter sale') return -1;
-            if (strtolower($b->name) == 'counter sale') return 1;
+            if ($a->is_counter) return -1;
+            if ($b->is_counter) return 1;
 
-            // then sort by outstanding (descending)
-            return $b->outstanding <=> $a->outstanding;
+            return $b->current_balance <=> $a->current_balance;
         })->values();
 
+        // -----------------------------------
+        // TOTAL OUTSTANDING
+        // (exclude Counter Sale if you want clean total)
+        // -----------------------------------
+        $totalOutstanding = $customers
+            ->where('is_counter', false)
+            ->sum('current_balance');
 
-        // Total Outstanding
-        $totalOutstanding = $customers->sum('outstanding');
-
-        // Manual Pagination
+        // -----------------------------------
+        // PAGINATION
+        // -----------------------------------
         $page = request()->get('page', 1);
 
         $customers = new \Illuminate\Pagination\LengthAwarePaginator(

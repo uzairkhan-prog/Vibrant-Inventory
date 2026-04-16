@@ -17,7 +17,16 @@
     <!-- Balance Info -->
     <div class="alert alert-success d-flex justify-content-between align-items-center shadow-sm rounded-3 fs-5">
         <span><strong>Current Balance:</strong></span>
-        <span class="fw-bold text-success">Rs {{ number_format(($customer->balance ?? 0) - ($customer->payments->sum('amount') ?? 0), 2) }}</span>
+        <!-- <span class="fw-bold text-success">Rs {{ number_format($currentBalance, 2) }}</span> -->
+        @if($customer->name === 'Counter Sale')
+        <span class="fw-bold text-success">
+            Rs {{ number_format($currentBalance, 2) }}
+        </span>
+        @else
+        <span class="fw-bold text-success">
+            Rs {{ number_format(($customer->balance ?? 0) - ($customer->payments->sum('amount') ?? 0), 2) }}
+        </span>
+        @endif
     </div>
 
     <!-- Flash messages -->
