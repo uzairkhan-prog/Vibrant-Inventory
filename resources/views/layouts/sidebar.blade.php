@@ -76,13 +76,13 @@
                     <ul class="collapse first-level">
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="{{ route('suppliers.outstanding') }}">
-                        <i class="ti ti-alert-circle"></i>
+                                <i class="ti ti-alert-circle"></i>
                                 <span class="hide-menu">Purchases</span>
                             </a>
                         </li>
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="{{ route('customers.outstanding') }}">
-                        <i class="ti ti-alert-circle"></i>
+                                <i class="ti ti-alert-circle"></i>
                                 <span class="hide-menu">Sales</span>
                             </a>
                         </li>
@@ -100,6 +100,13 @@
                     <a class="sidebar-link" href="{{ route('customers.details') }}">
                         <i class="ti ti-users"></i>
                         <span class="hide-menu">Customers</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('agents.index') }}">
+                        <i class="ti ti-user-circle"></i>
+                        <span class="hide-menu">Agents</span>
                     </a>
                 </li>
 

@@ -21,17 +21,19 @@
     <form method="POST" action="{{ route('sales.store') }}">
         @csrf
 
-        <!-- Customer and Date -->
+        <!-- Customer and Agent + Date -->
         <div class="row mb-4">
-            <div class="col-md-6">
+
+            <!-- Customer -->
+            <div class="col-md-4">
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select select2" required>
-                    <option value="" disabled {{ old('customer_id') ? '' : '' }}>-- Select Customer --</option>
+                    <option value="" disabled {{ old('customer_id') ? '' : 'selected' }}>-- Select Customer --</option>
 
-                    {{-- First, show Counter Sale on top --}}
                     @php
                     $counterCustomer = $customers->firstWhere('name', 'Counter Sale');
                     @endphp
+
                     @if($counterCustomer)
                     <option value="{{ $counterCustomer->id }}"
                         {{ old('customer_id') 
@@ -41,7 +43,6 @@
                     </option>
                     @endif
 
-                    {{-- Then, show the rest of the customers --}}
                     @foreach($customers as $customer)
                     @if($customer->name !== 'Counter Sale')
                     <option value="{{ $customer->id }}"
@@ -52,10 +53,29 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-6">
-                <label for="date" class="form-label">Date</label>
-                <input type="date" name="date" id="date" class="form-control" required value="{{ old('date', date('Y-m-d')) }}">
+
+            <!-- Agent (NEW) -->
+            <div class="col-md-4">
+                <label for="agent_id" class="form-label">Agent</label>
+                <select name="agent_id" id="agent_id" class="form-select select2">
+                    <option value="" selected>-- Select Agent --</option>
+
+                    @foreach($agents as $agent)
+                    <option value="{{ $agent->id }}"
+                        {{ old('agent_id') == $agent->id ? 'selected' : '' }}>
+                        {{ $agent->name }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
+
+            <!-- Date -->
+            <div class="col-md-4">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" name="date" id="date" class="form-control"
+                    required value="{{ old('date', date('Y-m-d')) }}">
+            </div>
+
         </div>
 
         <!-- Products Table -->

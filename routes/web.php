@@ -18,6 +18,7 @@ use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\CustomerLedgerController;
 use App\Http\Controllers\SupplierLedgerController;
 use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AgentController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SaleReturnController;
@@ -68,6 +69,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('supplier-ledgers', SupplierLedgerController::class);
     Route::resource('customer-ledgers', CustomerLedgerController::class);
     Route::resource('assets-inventory', AssetController::class);
+    Route::resource('agents', AgentController::class);
 
     Route::get('sale-returns/customer-products/{customer}', [SaleReturnController::class, 'getCustomerProducts']);
     Route::resource('sale-returns', SaleReturnController::class);

@@ -11,6 +11,7 @@ class Sale extends Model
 
     protected $fillable = [
         'customer_id',
+        'agent_id',
         'total_amount',
         'description',
         'date',
@@ -19,6 +20,11 @@ class Sale extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
     }
 
     public function items()

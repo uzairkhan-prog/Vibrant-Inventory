@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agent;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Customer;
@@ -90,8 +91,9 @@ class SaleController extends Controller
     public function create()
     {
         $customers = Customer::all();
+        $agents    = Agent::all();
         $products  = Product::all();
-        return view('sales.create', compact('customers', 'products'));
+        return view('sales.create', compact('customers', 'agents', 'products'));
     }
 
     /* =====================================================
@@ -101,6 +103,7 @@ class SaleController extends Controller
     {
         $request->validate([
             'customer_id'  => 'required|exists:customers,id',
+            'agent_id'     => 'nullable|exists:agents,id',
             'date'         => 'required|date',
             'product_id.*' => 'required|exists:products,id',
             'quantity.*'   => 'required|integer|min:1',
@@ -123,6 +126,7 @@ class SaleController extends Controller
                 // Create sale
                 $sale = Sale::create([
                     'customer_id'  => $request->customer_id,
+                    'agent_id'     => $request->agent_id,
                     'date'         => $request->date,
                     'total_amount' => 0
                 ]);
@@ -210,6 +214,7 @@ class SaleController extends Controller
     public function edit(Sale $sale)
     {
         $customers = Customer::all();
+        $agents    = Agent::all();
         $products  = Product::all();
 
         $sale->load('items.product');
@@ -220,8 +225,8 @@ class SaleController extends Controller
 
         $balance = $sale->total_amount - $advancePayment;
         if ($balance < 0) $balance = 0;
-
-        return view('sales.edit', compact('sale', 'customers', 'products', 'advancePayment', 'balance'));
+    
+        return view('sales.edit', compact('sale', 'customers', 'agents', 'products', 'advancePayment', 'balance'));
     }
 
     /* =====================================================
@@ -231,6 +236,7 @@ class SaleController extends Controller
     {
         $request->validate([
             'customer_id'   => 'required|exists:customers,id',
+            'agent_id'      => 'nullable|exists:agents,id',
             'date'          => 'required|date',
             'product_id.*'  => 'required|exists:products,id',
             'quantity.*'    => 'required|integer|min:1',
@@ -260,6 +266,7 @@ class SaleController extends Controller
                 // Update sale info
                 $sale->update([
                     'customer_id' => $request->customer_id,
+                    'agent_id' => $request->agent_id,
                     'date' => $request->date,
                     'total_amount' => 0
                 ]);

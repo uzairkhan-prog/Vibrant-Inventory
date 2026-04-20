@@ -22,13 +22,16 @@
         @csrf
         @method('PUT')
 
-        <!-- Customer and Date -->
+        <!-- Customer, Agent and Date -->
         <div class="row mb-4">
-            <div class="col-md-6">
+
+            <!-- Customer -->
+            <div class="col-md-4">
                 <label for="customer_id" class="form-label">Customer</label>
                 <select name="customer_id" id="customer_id" class="form-select select2" required>
                     @foreach($customers as $customer)
-                    <option value="{{ $customer->id }}" {{ old('customer_id', $sale->customer_id) == $customer->id ? 'selected' : '' }}>
+                    <option value="{{ $customer->id }}"
+                        {{ old('customer_id', $sale->customer_id) == $customer->id ? 'selected' : '' }}>
                         {{ $customer->company_name }} ( {{ $customer->name }} )
                     </option>
                     @endforeach
@@ -37,7 +40,27 @@
                 <div class="text-danger small">{{ $message }}</div>
                 @enderror
             </div>
-            <div class="col-md-6">
+
+            <!-- Agent -->
+            <div class="col-md-4">
+                <label for="agent_id" class="form-label">Agent</label>
+                <select name="agent_id" id="agent_id" class="form-select select2">
+                    <option value="">-- Select Agent --</option>
+
+                    @foreach($agents as $agent)
+                    <option value="{{ $agent->id }}"
+                        {{ old('agent_id', $sale->agent_id) == $agent->id ? 'selected' : '' }}>
+                        {{ $agent->name }} ( {{ $agent->phone }} )
+                    </option>
+                    @endforeach
+                </select>
+                @error('agent_id')
+                <div class="text-danger small">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Date -->
+            <div class="col-md-4">
                 <label for="date" class="form-label">Date</label>
                 <input type="date" name="date" id="date" class="form-control"
                     value="{{ old('date', \Carbon\Carbon::parse($sale->date)->format('Y-m-d')) }}" required>
@@ -45,6 +68,7 @@
                 <div class="text-danger small">{{ $message }}</div>
                 @enderror
             </div>
+
         </div>
 
         <!-- Products Table -->
@@ -155,7 +179,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="mt-4 text-center">
             <button type="submit" class="btn btn-primary px-5">Update</button>
             <a href="{{ route('sales.index') }}" class="btn btn-dark ms-2">Back</a>

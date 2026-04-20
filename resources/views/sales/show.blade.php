@@ -22,6 +22,9 @@
             <p><strong>Invoice #:</strong> {{ $sale->id }}</p>
             <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($sale->date)->format('d M, Y') }}</p>
             <p><strong>Payment Terms:</strong> Due on receipt</p>
+             @if($sale->agent)
+                <p><strong>Agent:</strong> {{ $sale->agent->name }}</p>
+            @endif
         </div>
     </div>
 
