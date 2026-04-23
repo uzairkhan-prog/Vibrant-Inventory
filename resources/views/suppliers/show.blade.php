@@ -7,7 +7,7 @@
             Supplier Profile: <strong>{{ $supplier->name }}</strong>
         </h2>
 
-        @if($supplier->payments->count())
+        @if($ledger->count())
         <button class="btn btn-danger" onclick="exportSupplierPaymentsPDF()">
             <i class="material-icons align-middle">picture_as_pdf</i> Export PDF
         </button>
@@ -279,79 +279,127 @@
 </div>
 </div>
 
-<!-- PDF + Toggle Scripts SAME AS CUSTOMER -->
-
+<!-- JS for Export PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
 <style>
     tfoot.table-light.fw-bold.text-end tr td {
         font-size: 18px !important;
         font-weight: 600 !important;
     }
 </style>
-
 <script>
-    async function exportSupplierPaymentsPDF() {
-        const {
-            jsPDF
-        } = window.jspdf;
-        const doc = new jsPDF("p", "mm", "a4");
+    const supplierLedgerData = {
+        supplierName: '{{ addslashes($supplier->name) }}',
+        companyName: '{{ addslashes($supplier->company_name ?? '') }}',
+        currentBalance: '{{ number_format($currentBalance, 2) }}',
+        ledger: @json($ledger->values()),
+        totalDebit: {{ $ledger->sum('debit') }},
+        totalCredit: {{ $ledger->sum('credit') }},
+    };
+
+    function exportSupplierPaymentsPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("l", "mm", "a4"); // landscape for wide ledger
 
         const logoUrl = "{{ asset('assets/images/logos/logo.jpg') }}";
         const img = new Image();
         img.src = logoUrl;
 
-        img.onload = function() {
+        img.onload = function () {
+            const d = supplierLedgerData;
+            const pageW = doc.internal.pageSize.width;
 
-            doc.addImage(img, "JPG", 14, 10, 40, 15);
+            // --- Logo ---
+            doc.addImage(img, "JPG", 14, 8, 38, 14);
 
+            // --- Title ---
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(17, 20, 45);
-            doc.text("Supplier Payments Report", 105, 18, {
-                align: "center"
-            });
+            doc.text("Supplier Ledger Report", pageW / 2, 16, { align: "center" });
 
-            doc.setFontSize(12);
+            // --- Supplier Info ---
+            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(`Supplier: {{ $supplier->name }}`, 14, 32);
-            doc.text(`Current Balance: Rs {{ number_format($currentBalance,2) }}`, 14, 39);
+            doc.setTextColor(0, 0, 0);
+            const label = d.companyName ? `${d.companyName} ( ${d.supplierName} )` : d.supplierName;
+            doc.text(`Supplier: ${label}`, 14, 30);
+            doc.text(`Current Balance: Rs ${d.currentBalance}`, 14, 37);
+            doc.text(`Date: {{ now()->format('Y-m-d') }}`, pageW - 14, 30, { align: "right" });
 
-            let head = [
-                ['Mode', 'Description', 'Amount (Rs)', 'Date']
-            ];
-            let body = [];
+            // --- Build table body ---
+            const head = [['Date', 'Type', 'Reference', 'Product', 'Qty', 'Price', 'Disc%', 'Tax%', 'Debit (+)', 'Credit (-)', 'Balance']];
+            const body = [];
 
-            document.querySelectorAll("#supplierPaymentsTable tbody tr").forEach(tr => {
-                let tds = tr.querySelectorAll("td");
-                body.push([
-                    tds[1].innerText,
-                    tds[3].innerText,
-                    tds[4].innerText,
-                    tds[5].innerText
-                ]);
+            d.ledger.forEach(row => {
+                const dt = row.date ? row.date.substring(0, 10) : '-';
+                const type = row.type === 'purchase' ? 'Purchase' : 'Payment';
+                const price = (row.price !== null && row.price !== '-' && !isNaN(row.price))
+                    ? parseFloat(row.price).toLocaleString('en-US', { minimumFractionDigits: 2 })
+                    : '-';
+                const disc = row.discount ? parseFloat(row.discount).toFixed(2) : '-';
+                const tax  = row.tax  ? parseFloat(row.tax).toFixed(2)  : '-';
+                const debit  = row.debit  ? parseFloat(row.debit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-';
+                const credit = row.credit ? parseFloat(row.credit).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-';
+                const balance = parseFloat(row.balance).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+                body.push([dt, type, row.reference, row.product ?? '-', row.qty ?? '-', price, disc, tax, debit, credit, balance]);
             });
+
+            const totalDebit  = parseFloat(d.totalDebit).toLocaleString('en-US', { minimumFractionDigits: 2 });
+            const totalCredit = parseFloat(d.totalCredit).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
             doc.autoTable({
                 head: head,
                 body: body,
-                startY: 50,
+                startY: 44,
                 theme: 'grid',
                 styles: {
-                    fontSize: 9,
+                    fontSize: 8,
                     halign: 'center',
                     valign: 'middle',
-                    cellPadding: 3
+                    cellPadding: 2,
                 },
                 headStyles: {
                     fillColor: [17, 20, 45],
                     textColor: [255, 255, 255],
-                    fontStyle: 'bold'
-                }
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                },
+                columnStyles: {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 20 },
+                    2: { cellWidth: 25 },
+                    3: { halign: 'left', cellWidth: 52 },
+                    4: { cellWidth: 12 },
+                    5: { cellWidth: 22 },
+                    6: { cellWidth: 14 },
+                    7: { cellWidth: 14 },
+                    8: { cellWidth: 25, textColor: [0, 128, 0], fontStyle: 'bold' },
+                    9: { cellWidth: 25, textColor: [220, 0, 0], fontStyle: 'bold' },
+                    10: { cellWidth: 28, fontStyle: 'bold' },
+                },
+                foot: [[
+                    { content: 'Totals:', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold', textColor: "#11142d", fillColor: [240, 240, 240] } },
+                    { content: totalDebit,  styles: { halign: 'center', fontStyle: 'bold', textColor: [0, 128, 0], fillColor: [240, 240, 240] } },
+                    { content: totalCredit, styles: { halign: 'center', fontStyle: 'bold', textColor: [220, 0, 0], fillColor: [240, 240, 240] } },
+                    { content: d.currentBalance, styles: { halign: 'center', fontStyle: 'bold', textColor: "#11142d", fillColor: [240, 240, 240] } },
+                ]],
+                footStyles: { fillColor: [240, 240, 240], fontStyle: 'bold' },
+                didDrawPage: function (data) {
+                    const pageHeight = doc.internal.pageSize.height;
+                    doc.setFontSize(7);
+                    doc.setTextColor(120);
+                    doc.text(
+                        "Page " + doc.internal.getNumberOfPages(),
+                        pageW - 14, pageHeight - 8,
+                        { align: "right" }
+                    );
+                },
             });
 
-            doc.save('supplier-payments.pdf');
+            doc.save(`supplier-ledger-${d.supplierName}.pdf`);
         };
     }
 
