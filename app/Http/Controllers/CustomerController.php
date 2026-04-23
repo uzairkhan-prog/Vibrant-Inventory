@@ -91,7 +91,10 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        // Ledger
+        $isCounterSale = strtolower(trim($customer->name)) === 'counter sale';
+        $openingBalance = $isCounterSale ? 0 : ($customer->balance ?? 0);
+
+        // Ledger (running balance starts from opening balance)
         $ledger = $this->buildCustomerLedger($customer);
 
         // Sales for payment dropdown
@@ -103,13 +106,14 @@ class CustomerController extends Controller
             $sale->remaining_amount = $sale->total_amount - ($sale->payments_sum_amount ?? 0);
         }
 
-        // Current Balance = Last ledger balance
-        $currentBalance = $ledger->last()['balance'] ?? 0;
+        // Current Balance = Last ledger balance (includes opening balance)
+        $currentBalance = $ledger->last()['balance'] ?? $openingBalance;
 
         return view('customers.show', compact(
             'customer',
             'ledger',
             'sales',
+            'openingBalance',
             'currentBalance'
         ));
     }
@@ -199,14 +203,20 @@ class CustomerController extends Controller
 
         /*
         |------------------------------------------
-        | 4) RUNNING BALANCE
+        | 4) RUNNING BALANCE (starts from opening balance)
         |------------------------------------------
         */
-        $running = 0;
+        $isCounterSale = strtolower(trim($customer->name)) === 'counter sale';
+        $running = $isCounterSale ? 0 : ($customer->balance ?? 0);
 
-        $ledger = $ledger->map(function ($row) use (&$running) {
-            $running += $row['debit'];
-            $running -= $row['credit'];
+        $ledger = $ledger->map(function ($row) use (&$running, $isCounterSale) {
+            if ($isCounterSale) {
+                $running += $row['debit'];
+                $running -= $row['credit'];
+            } else {
+                // Opening balance already includes sales; only payments reduce it
+                $running -= $row['credit'];
+            }
             $row['balance'] = round($running, 2);
             return $row;
         });
