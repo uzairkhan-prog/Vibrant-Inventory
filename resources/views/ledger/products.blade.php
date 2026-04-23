@@ -139,26 +139,26 @@
 
             <tfoot class="fw-bold text-center">
                 <tr style="background-color:#d4edda;">
-                    <td colspan="4" class="text-end fw-bold">Total Purchase:</td>
-                    <td class="text-success fw-bold">{{ $totalPurchaseQtyIn ?: '-' }}</td>
+                    <td colspan="4" class="text-end fw-bold text-success">Total Purchase:</td>
+                    <td class="text-success fw-bold text-success">{{ $totalPurchaseQtyIn ?: '-' }}</td>
                     <td>-</td>
                     <td></td>
-                    <td class="fw-bold">{{ number_format($totalPurchaseAmount, 2) }}</td>
+                    <td class="fw-bold text-success">{{ number_format($totalPurchaseAmount, 2) }}</td>
                 </tr>
                 <tr style="background-color:#f8d7da;">
-                    <td colspan="4" class="text-end fw-bold">Total Sale:</td>
+                    <td colspan="4" class="text-end fw-bold text-danger">Total Sale:</td>
                     <td>-</td>
-                    <td class="text-danger fw-bold">{{ $totalSaleQtyOut ?: '-' }}</td>
+                    <td class="text-danger fw-bold text-danger">{{ $totalSaleQtyOut ?: '-' }}</td>
                     <td></td>
-                    <td class="fw-bold">{{ number_format($totalSaleAmount, 2) }}</td>
+                    <td class="fw-bold text-danger">{{ number_format($totalSaleAmount, 2) }}</td>
                 </tr>
                 @if($totalReturnQtyIn > 0)
                 <tr style="background-color:#f8d7da;">
-                    <td colspan="4" class="text-end fw-bold">Total Sale Return:</td>
-                    <td class="text-success fw-bold">{{ $totalReturnQtyIn }}</td>
+                    <td colspan="4" class="text-end fw-bold text-danger">Total Sale Return:</td>
+                    <td class="text-success fw-bold text-success">{{ $totalReturnQtyIn }}</td>
                     <td>-</td>
                     <td></td>
-                    <td class="fw-bold">{{ number_format($totalReturnAmount, 2) }}</td>
+                    <td class="fw-bold text-danger">{{ number_format($totalReturnAmount, 2) }}</td>
                 </tr>
                 @endif
             </tfoot>
