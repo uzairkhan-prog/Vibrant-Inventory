@@ -12,6 +12,7 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseLedgerController;
 use App\Http\Controllers\ExpenseNameController;
 use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\LedgerController;
@@ -61,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('sales', SaleController::class);
     Route::resource('expenses', ExpenseController::class);
+    Route::get('ledger/expenses', [ExpenseLedgerController::class, 'index'])->name('ledger.expenses');
     Route::resource('expense-name', ExpenseNameController::class);
     Route::resource('payment-types', PaymentTypeController::class);
 

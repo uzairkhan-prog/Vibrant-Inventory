@@ -176,6 +176,12 @@
                                 <span class="hide-menu">Customer Ledger</span>
                             </a>
                         </li>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="{{ route('ledger.expenses') }}">
+                                <i class="ti ti-receipt"></i>
+                                <span class="hide-menu">Expense Ledger</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 

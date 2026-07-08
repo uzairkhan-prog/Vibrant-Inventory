@@ -111,6 +111,9 @@
                         <td>{{ $expense->paymentType->name ?? '-' }}</td>
                         <td>Rs {{ number_format($expense->amount, 2) }}</td>
                         <td class="d-flex justify-content-center">
+                            <a href="{{ route('ledger.expenses', ['expense_name_id' => $expense->expense_name_id]) }}" class="btn btn-sm btn-info me-1 text-white" title="Ledger">
+                                Ledger <i class="material-icons">&#xE24E;</i>
+                            </a>
                             <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-sm btn-success me-1 text-white" title="Edit">
                                 Edit <i class="material-icons">&#xE254;</i>
                             </a>
