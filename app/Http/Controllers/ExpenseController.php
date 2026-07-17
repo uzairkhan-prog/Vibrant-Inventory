@@ -17,6 +17,7 @@ class ExpenseController extends Controller
         $fromDate  = $request->input('from_date');
         $toDate    = $request->input('to_date');
         $monthYear = $request->input('month_year');
+        $search    = $request->input('search');
 
         $query = Expense::with('paymentType', 'expenseName')
             ->orderBy('created_at', 'desc');
@@ -26,15 +27,35 @@ class ExpenseController extends Controller
         | FILTER PRIORITY SYSTEM
         |--------------------------------------------------------------------------
         | Priority:
-        | 1) From-To Date
-        | 2) Month
-        | 3) Default Current Month
+        | 1) Search (searches the whole table, ignores month/date filters)
+        | 2) From-To Date
+        | 3) Month
+        | 4) Default Current Month
         */
 
         // -------------------------
-        // 1️⃣ DATE RANGE FILTER (HIGHEST PRIORITY)
+        // 1️⃣ SEARCH (HIGHEST PRIORITY — search all records)
         // -------------------------
-        if (!empty($fromDate) || !empty($toDate)) {
+        if (!empty($search)) {
+            $monthYear = 'all';
+
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('expenseName', function ($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('paymentType', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('amount', 'like', "%{$search}%")
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%d %b %Y') like ?", ["%{$search}%"])
+                    ->orWhereRaw("DATE_FORMAT(created_at, '%Y-%m-%d') like ?", ["%{$search}%"]);
+            });
+        }
+        // -------------------------
+        // 2️⃣ DATE RANGE FILTER
+        // -------------------------
+        elseif (!empty($fromDate) || !empty($toDate)) {
             if (!empty($fromDate) && !empty($toDate)) {
                 $query->whereBetween('created_at', [
                     Carbon::parse($fromDate)->startOfDay(),
@@ -47,7 +68,7 @@ class ExpenseController extends Controller
             }
         }
         // -------------------------
-        // 2️⃣ MONTH FILTER
+        // 3️⃣ MONTH FILTER
         // -------------------------
         elseif ($request->has('month_year')) {
             // If user selected "All Records" → no filter
@@ -59,7 +80,7 @@ class ExpenseController extends Controller
             }
         }
         // -------------------------
-        // 3️⃣ DEFAULT CURRENT MONTH
+        // 4️⃣ DEFAULT CURRENT MONTH
         // -------------------------
         else {
             $startDate = now()->startOfMonth();
@@ -124,7 +145,8 @@ class ExpenseController extends Controller
             'months',
             'monthYear',
             'fromDate',
-            'toDate'
+            'toDate',
+            'search'
         ));
     }
 

@@ -52,7 +52,7 @@
         <!-- Existing Search -->
         <div class="col-xl-12 col-md-4 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
-            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by customer, date or amount">
+            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by expense, description, payment type, date or amount and press Enter" value="{{ $search ?? '' }}">
         </div>
 
         <!-- Date Filters -->
@@ -143,13 +143,27 @@
 </div>
 
 <script>
-    // Search input
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const value = this.value.toLowerCase();
-        document.querySelectorAll('#expenseTable tbody tr').forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(value) ? '' : 'none';
-        });
+    // Search input - on Enter, search the whole database (not just the current month/page)
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+
+        const value = this.value.trim();
+        const url = new URL(window.location.href);
+
+        if (value) {
+            url.searchParams.set('search', value);
+        } else {
+            url.searchParams.delete('search');
+        }
+
+        // Search overrides month/date filters, so clear them from the URL too
+        url.searchParams.delete('month_year');
+        url.searchParams.delete('from_date');
+        url.searchParams.delete('to_date');
+        url.searchParams.delete('page');
+
+        window.location.href = url.toString();
     });
 
     // Rows per page
