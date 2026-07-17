@@ -52,7 +52,10 @@
         <!-- Existing Search -->
         <div class="col-xl-12 col-md-4 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
-            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by expense, description, payment type, date or amount and press Enter" value="{{ $search ?? '' }}">
+            <input type="text" id="searchInput" class="form-control w-100 me-2" placeholder="Search by expense, description, payment type, date or amount" value="{{ $search ?? '' }}">
+            <button type="button" id="searchBtn" class="btn btn-primary text-nowrap">
+                <i class="bi bi-search"></i> Search
+            </button>
         </div>
 
         <!-- Date Filters -->
@@ -143,12 +146,9 @@
 </div>
 
 <script>
-    // Search input - on Enter, search the whole database (not just the current month/page)
-    document.getElementById('searchInput').addEventListener('keypress', function(e) {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-
-        const value = this.value.trim();
+    // Search input - on Enter or Search button click, search the whole database (not just the current month/page)
+    function runExpenseSearch() {
+        const value = document.getElementById('searchInput').value.trim();
         const url = new URL(window.location.href);
 
         if (value) {
@@ -164,7 +164,15 @@
         url.searchParams.delete('page');
 
         window.location.href = url.toString();
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        runExpenseSearch();
     });
+
+    document.getElementById('searchBtn').addEventListener('click', runExpenseSearch);
 
     // Rows per page
     document.getElementById('rowsPerPage').addEventListener('change', function() {
