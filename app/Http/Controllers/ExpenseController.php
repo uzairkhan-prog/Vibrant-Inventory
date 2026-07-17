@@ -38,6 +38,7 @@ class ExpenseController extends Controller
         // -------------------------
         if (!empty($search)) {
             $monthYear = 'all';
+            $perPage = max($perPage, 500);
 
             $query->where(function ($q) use ($search) {
                 $q->whereHas('expenseName', function ($q2) use ($search) {

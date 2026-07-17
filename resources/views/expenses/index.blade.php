@@ -70,7 +70,7 @@
                 <a href="{{ route('expenses.index') }}" class="btn btn-secondary">Reset</a>
                 <label class="ms-3 me-2 fw-semibold">Show</label>
                 <select id="rowsPerPage" name="per_page" class="form-select w-auto">
-                    @foreach ([20, 50, 100] as $value)
+                    @foreach ([20, 50, 100, 500] as $value)
                     <option value="{{ $value }}" {{ request('per_page') == $value ? 'selected' : '' }}>{{ $value }}</option>
                     @endforeach
                 </select>
