@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>
         @php
         // Map route names to page titles
@@ -237,6 +238,42 @@
             });
 
         });
+    </script>
+
+    <!-- CSRF-safe fetch wrapper: on a 419 (expired/stale token), silently
+         refreshes the token in the background and retries once, instead of
+         surfacing "Page Expired" to the user. -->
+    <script>
+        async function refreshCsrfToken() {
+            const res = await fetch("{{ route('csrf.token') }}", {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await res.json();
+            document.querySelector('meta[name="csrf-token"]').setAttribute('content', data.token);
+            return data.token;
+        }
+
+        window.csrfFetch = async function(url, options = {}) {
+            const withToken = (token) => ({
+                ...options,
+                headers: {
+                    ...(options.headers || {}),
+                    'X-CSRF-TOKEN': token,
+                },
+            });
+
+            const currentToken = document.querySelector('meta[name="csrf-token"]').content;
+            let response = await fetch(url, withToken(currentToken));
+
+            if (response.status === 419) {
+                const freshToken = await refreshCsrfToken();
+                response = await fetch(url, withToken(freshToken));
+            }
+
+            return response;
+        };
     </script>
 </body>
 

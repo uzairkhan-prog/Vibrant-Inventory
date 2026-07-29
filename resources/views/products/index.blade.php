@@ -251,11 +251,8 @@
         const formData = new FormData();
         formData.append('csv_file', file);
 
-        fetch("{{ route('products.import') }}", {
+        csrfFetch("{{ route('products.import') }}", {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
                 body: formData
             })
             .then(async res => {
