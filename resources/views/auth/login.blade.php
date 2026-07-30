@@ -240,7 +240,9 @@
 
                     <button type="submit" class="btn">Login</button>
 
-                    @if ($errors->any())
+                    @if ($errors->has('csrf'))
+                    <p id="errorMsg" class="error" style="display: block;">❗ {{ $errors->first('csrf') }}</p>
+                    @elseif ($errors->any())
                     <p id="errorMsg" class="error" style="display: block;">❗ Invalid username or password</p>
                     @endif
                 </form>
