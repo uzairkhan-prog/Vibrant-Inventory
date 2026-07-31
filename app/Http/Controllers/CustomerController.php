@@ -14,10 +14,25 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 20);
+        $search  = trim((string) $request->get('search', ''));
 
-        $customers = Customer::withSum('sales as total_sales', 'total_amount')
-            ->withSum('payments as total_paid', 'amount')
-            ->paginate($perPage);
+        $query = Customer::withSum('sales as total_sales', 'total_amount')
+            ->withSum('payments as total_paid', 'amount');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhereRaw('(
+                        (SELECT COALESCE(SUM(total_amount), 0) FROM sales WHERE sales.customer_id = customers.id)
+                        -
+                        (SELECT COALESCE(SUM(amount), 0) FROM customer_payments WHERE customer_payments.customer_id = customers.id)
+                    ) LIKE ?', ["%{$search}%"]);
+            });
+        }
+
+        $customers = $query->paginate($perPage)->appends($request->query());
 
         // Calculate Current Balance
         $customers->getCollection()->transform(function ($customer) {
