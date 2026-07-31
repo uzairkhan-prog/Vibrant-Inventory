@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\AdminMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -19,13 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
         ]);
+
+        // Trust the reverse proxy / load balancer in front of production
+        // (e.g. Cloudflare, cPanel's proxy, a CDN) so Laravel correctly detects
+        // HTTPS. Without this, Laravel can think a request is plain HTTP even
+        // though the browser is on HTTPS, which breaks secure session cookies
+        // and causes CSRF/419 errors that only ever show up in production.
+        $middleware->trustProxies(at: '*');
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {
-        // A 419 (expired/stale CSRF token) should never dead-end the user with
-        // Laravel's raw "Page Expired" page. Instead, bounce them back to the
-        // same form (which now has a fresh token) with their input preserved
-        // and a friendly message, on every device/browser.
+        // A 419 (expired/stale CSRF token) should never show Laravel's raw
+        // "Page Expired" page. Send the user straight to the dashboard if
+        // they're still logged in, otherwise straight to the login page —
+        // no error page or message shown in between.
         $exceptions->render(function (TokenMismatchException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -33,9 +41,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 419);
             }
 
-            return redirect()
-                ->back()
-                ->withInput($request->except('password', 'password_confirmation'))
-                ->withErrors(['csrf' => 'Your session expired, please try again.']);
+            return Auth::check()
+                ? redirect()->route('dashboard')
+                : redirect()->route('login');
         });
     })->create();
