@@ -499,6 +499,84 @@
     </div>
 </div>
 
+<!-- Agents Ledger Modal -->
+<div class="modal fade" id="agentsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agents Ledger ({{ $startDate }} - {{ $endDate }})</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="agentsReportContent">
+                @forelse($agentsLedger as $agent)
+                <div class="mb-3">
+                    <h6 class="fw-bold">
+                        {{ $agent->name }}
+                    </h6>
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-start p-2">Date</th>
+                                <th class="text-start p-2">Type</th>
+                                <th class="text-start p-2">Invoice</th>
+                                <th class="text-start p-2">Customer</th>
+                                <th class="text-start p-2">Product</th>
+                                <th class="text-start p-2">Qty</th>
+                                <th class="text-start p-2">Price</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-end">Running Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @php $hasRows = false; $totalAgentSales = 0; @endphp
+
+                            @foreach($agent->ledger as $row)
+                            @php
+                            $hasRows = true;
+                            $totalAgentSales += $row['debit'];
+                            @endphp
+                            <tr>
+                                <td class="text-start p-2">{{ \Carbon\Carbon::parse($row['date'])->format('Y-m-d') }}</td>
+                                <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
+                                <td class="text-start p-2">{{ $row['reference'] }}</td>
+                                <td class="text-start p-2">{{ $row['customer'] }}</td>
+                                <td class="text-start p-2">{{ $row['product'] }}</td>
+                                <td class="text-start p-2">{{ is_numeric($row['qty']) ? $row['qty'] : '-' }}</td>
+                                <td class="text-start p-2">{{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}</td>
+                                <td class="text-end text-success fw-bold">{{ number_format($row['debit'],2) }}</td>
+                                <td class="text-end fw-bold">{{ number_format($row['balance'],2) }}</td>
+                            </tr>
+                            @endforeach
+
+                            @unless($hasRows)
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">No sales found for this agent.</td>
+                            </tr>
+                            @endunless
+                        </tbody>
+
+                        @if($hasRows)
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="7" class="text-end">Totals:</td>
+                                <td class="text-end text-success">{{ number_format($totalAgentSales,2) }}</td>
+                                <td class="text-end">{{ number_format($agent->ledger->last()['balance'] ?? 0,2) }}</td>
+                            </tr>
+                        </tfoot>
+                        @endif
+                    </table>
+                </div>
+                @empty
+                <div class="alert alert-warning">No agents found.</div>
+                @endforelse
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="downloadAgentsPdf">Export PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Assets Ledger Modal -->
 <div class="modal fade" id="assetsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -669,6 +747,9 @@
     });
     document.getElementById("downloadSuppliersPdf").addEventListener("click", () => {
         exportPdf("suppliersReportContent", "Suppliers_Ledger.pdf", "Suppliers Ledger");
+    });
+    document.getElementById("downloadAgentsPdf").addEventListener("click", () => {
+        exportPdf("agentsReportContent", "Agents_Ledger.pdf", "Agents Ledger");
     });
     document.getElementById("downloadAssetsPdf").addEventListener("click", () => {
         exportPdf("assetsReportContent", "Assets_Report.pdf", "Assets Ledger Report");

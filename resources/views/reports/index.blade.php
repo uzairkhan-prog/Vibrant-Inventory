@@ -20,6 +20,7 @@
                         <option value="expenses" {{ $reportType == 'expenses' ? 'selected' : '' }}>Expenses</option>
                         <option value="customers" {{ $reportType == 'customers' ? 'selected' : '' }}>Customers</option>
                         <option value="suppliers" {{ $reportType == 'suppliers' ? 'selected' : '' }}>Suppliers</option>
+                        <option value="agents" {{ $reportType == 'agents' ? 'selected' : '' }}>Agents</option>
                         <option value="assets" {{ $reportType == 'assets' ? 'selected' : '' }}>Assets</option>
                     </select>
                 </div>
@@ -58,6 +59,19 @@
                         @foreach($suppliersList as $s)
                         <option value="{{ $s->id }}" {{ $supplierId == $s->id ? 'selected' : '' }}>
                             {{ $s->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Agent -->
+                <div class="col-md-3" id="agentDropdownWrapper" style="display:none;">
+                    <label class="form-label">Agent</label>
+                    <select name="agent_id" id="agent_id" class="form-select select2">
+                        <option value="">All Agents</option>
+                        @foreach($agentsList as $a)
+                        <option value="{{ $a->id }}" {{ $agentId == $a->id ? 'selected' : '' }}>
+                            {{ $a->name }}
                         </option>
                         @endforeach
                     </select>
@@ -761,6 +775,91 @@
     </div>
     @endif
 
+    <!-- Agents Report -->
+    @if($reportType == 'agents' || $reportType == 'all')
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between">
+            <h5>Agents Report</h5>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#agentsModal">Export</button>
+        </div>
+        <div class="card-body table-responsive">
+            @forelse($agentsLedger as $agent)
+            <div class="mb-5">
+                <h6 class="fw-bold">
+                    {{ $agent->name }}
+                    <span class="text-muted">(Total Sales: {{ number_format($agent->ledger->last()['balance'] ?? 0,2) }})</span>
+                </h6>
+
+                <table class="table table-bordered table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-start p-2">Date</th>
+                            <th class="text-start p-2">Type</th>
+                            <th class="text-start p-2">Invoice</th>
+                            <th class="text-start p-2">Customer</th>
+                            <th class="text-start p-2">Product</th>
+                            <th class="text-start p-2">Qty</th>
+                            <th class="text-start p-2">Price</th>
+                            <th class="text-end p-2">Amount</th>
+                            <th class="text-end p-2">Running Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @php
+                        $totalAgentSales = 0;
+                        @endphp
+
+                        @forelse($agent->ledger as $row)
+
+                        @php
+                        $totalAgentSales += $row['debit'];
+                        @endphp
+
+                        <tr>
+                            <td class="text-start p-2">{{ \Carbon\Carbon::parse($row['date'])->format('Y-m-d') }}</td>
+                            <td class="text-start p-2"><span class="badge bg-success">Sale</span></td>
+                            <td class="text-start p-2">{{ $row['reference'] }}</td>
+                            <td class="text-start p-2">{{ $row['customer'] }}</td>
+                            <td class="text-start p-2">{{ $row['product'] }}</td>
+                            <td class="text-start p-2">{{ is_numeric($row['qty']) ? $row['qty'] : '-' }}</td>
+                            <td class="text-start p-2">{{ is_numeric($row['price']) ? number_format($row['price'],2) : '-' }}</td>
+                            <td class="text-end p-2 text-success fw-bold">{{ number_format($row['debit'],2) }}</td>
+                            <td class="text-end p-2 fw-bold">{{ number_format($row['balance'],2) }}</td>
+                        </tr>
+
+                        @empty
+
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No sales found for this agent.</td>
+                        </tr>
+
+                        @endforelse
+
+                    </tbody>
+
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="7" class="text-end p-2">Total Sales:</td>
+                            <td class="text-end text-success">{{ number_format($totalAgentSales,2) }}</td>
+                            <td class="text-end">{{ number_format($agent->ledger->last()['balance'] ?? 0,2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @empty
+            <div class="alert alert-warning">No agents found.</div>
+            @endforelse
+            {{-- Pagination --}}
+            @if ($agentsLedger->hasPages())
+            <div class="d-flex justify-content-center">
+                {!! $agentsLedger->appends(request()->all())->links('pagination::bootstrap-5') !!}
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Assets Report -->
     @if($reportType == 'assets' || $reportType == 'all')
     <div class="card mb-4">
@@ -918,23 +1017,28 @@
         const reportType = document.getElementById('report_type');
         const customerDD = document.getElementById('customerDropdownWrapper');
         const supplierDD = document.getElementById('supplierDropdownWrapper');
+        const agentDD = document.getElementById('agentDropdownWrapper');
         const customer = document.getElementById('customer_id');
         const supplier = document.getElementById('supplier_id');
+        const agent = document.getElementById('agent_id');
 
         function updateUI() {
 
-            // Hide both first
+            // Hide all first
             customerDD.style.display = "none";
             supplierDD.style.display = "none";
+            agentDD.style.display = "none";
 
             let rt = reportType.value;
             let hasCustomer = customer.value !== "";
             let hasSupplier = supplier.value !== "";
+            let hasAgent = agent.value !== "";
 
             // 🔥 PRIORITY 1: If customer selected → show only customer
             if (hasCustomer) {
                 customerDD.style.display = "block";
                 supplier.value = ""; // reset supplier
+                agent.value = ""; // reset agent
                 return;
             }
 
@@ -942,10 +1046,19 @@
             if (hasSupplier) {
                 supplierDD.style.display = "block";
                 customer.value = ""; // reset customer
+                agent.value = ""; // reset agent
                 return;
             }
 
-            // 🔥 PRIORITY 3: Show based on Report Type
+            // 🔥 PRIORITY 3: If agent selected → show only agent
+            if (hasAgent) {
+                agentDD.style.display = "block";
+                customer.value = ""; // reset customer
+                supplier.value = ""; // reset supplier
+                return;
+            }
+
+            // 🔥 PRIORITY 4: Show based on Report Type
             switch (rt) {
 
                 case "customers":
@@ -957,18 +1070,31 @@
                 case "purchases":
                     supplierDD.style.display = "block";
                     break;
+
+                case "agents":
+                    agentDD.style.display = "block";
+                    break;
             }
         }
 
-        // When selecting customer → hide supplier
+        // When selecting customer → hide supplier & agent
         customer.addEventListener("change", () => {
             supplier.value = "";
+            agent.value = "";
             updateUI();
         });
 
-        // When selecting supplier → hide customer
+        // When selecting supplier → hide customer & agent
         supplier.addEventListener("change", () => {
             customer.value = "";
+            agent.value = "";
+            updateUI();
+        });
+
+        // When selecting agent → hide customer & supplier
+        agent.addEventListener("change", () => {
+            customer.value = "";
+            supplier.value = "";
             updateUI();
         });
 
@@ -976,6 +1102,7 @@
         reportType.addEventListener("change", () => {
             customer.value = "";
             supplier.value = "";
+            agent.value = "";
             updateUI();
         });
 

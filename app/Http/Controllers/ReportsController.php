@@ -10,6 +10,7 @@ use App\Models\PurchaseItem;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\Customer;
+use App\Models\Agent;
 use App\Models\Expense;
 use App\Models\Asset;
 use App\Models\SaleReturn;
@@ -38,6 +39,7 @@ class ReportsController extends Controller
         $endDate     = $request->end_date;
         $customerId  = $request->customer_id;
         $supplierId  = $request->supplier_id;
+        $agentId     = $request->agent_id;
 
         // Base queries (we will apply customer/supplier filters where appropriate)
         $purchasesQuery  = Purchase::query();
@@ -80,6 +82,11 @@ class ReportsController extends Controller
             $purchasesQuery->where('supplier_id', $supplierId);
         }
 
+        if ($agentId) {
+            // if agent filter selected, apply it to sales
+            $salesQuery->where('agent_id', $agentId);
+        }
+
         // Totals (clone queries so pagination later is unaffected)
         $totalPurchases       = (clone $purchasesQuery)->sum('total_amount');
         $totalSales           = (clone $salesQuery)->sum('total_amount');
@@ -103,6 +110,7 @@ class ReportsController extends Controller
         $assetsLedger    = $this->emptyPaginator();
         $customersLedger = $this->emptyPaginator();
         $suppliersLedger = $this->emptyPaginator();
+        $agentsLedger    = $this->emptyPaginator();
 
         // Products ledger (respecting product_id + type filters)
         if ($reportType === 'products' || $reportType === 'all') {
@@ -233,6 +241,29 @@ class ReportsController extends Controller
             });
         }
 
+        // Agents ledger (sales attributed to each agent)
+        if ($reportType === 'agents' || $reportType === 'all') {
+
+            $agentsQuery = Agent::with([
+                'sales.items.product',
+                'sales.customer'
+            ]);
+
+            if ($agentId) {
+                $agentsQuery->where('id', $agentId);
+            }
+
+            $agentsLedger = $agentsQuery->paginate(10);
+
+            // Build ledger for each agent
+            $agentsLedger->getCollection()->transform(function ($agent) {
+
+                $agent->ledger = $this->buildAgentLedger($agent);
+
+                return $agent;
+            });
+        }
+
         // Suppliers ledger
         if ($reportType === 'suppliers' || $reportType === 'all') {
 
@@ -259,6 +290,7 @@ class ReportsController extends Controller
         // dropdown source lists
         $customersList = Customer::orderBy('name')->get();
         $suppliersList = Supplier::orderBy('name')->get();
+        $agentsList    = Agent::orderBy('name')->get();
         // Add products list for dropdown
         $productsList = Product::orderBy('name')->get();
 
@@ -387,6 +419,7 @@ class ReportsController extends Controller
             'assetsLedger',
             'customersLedger',
             'suppliersLedger',
+            'agentsLedger',
             'totalPurchases',
             'totalSales',
             'totalSaleReturns',
@@ -401,8 +434,10 @@ class ReportsController extends Controller
             'totalSupplierBalance',
             'customerId',
             'supplierId',
+            'agentId',
             'customersList',
             'suppliersList',
+            'agentsList',
             'productsList',
             'D_totalSales',
             'D_totalPurchases',
@@ -497,6 +532,85 @@ class ReportsController extends Controller
                 'debit'     => 0,
                 'credit'    => (float) $payment->amount,
             ]);
+        }
+
+        /*
+        |------------------------------------------
+        | SORT BY DATE
+        |------------------------------------------
+        */
+        $ledger = $ledger->sortBy('date')->values();
+
+        /*
+        |------------------------------------------
+        | RUNNING BALANCE
+        |------------------------------------------
+        */
+        $running = 0;
+
+        $ledger = $ledger->map(function ($row) use (&$running) {
+
+            $running += $row['debit'];
+            $running -= $row['credit'];
+
+            $row['balance'] = round($running, 2);
+
+            return $row;
+        });
+
+        return $ledger;
+    }
+
+    private function buildAgentLedger($agent)
+    {
+        $agent->load([
+            'sales.items.product',
+            'sales.customer'
+        ]);
+
+        $ledger = collect();
+
+        /*
+        |------------------------------------------
+        | SALES (DEBIT) - invoices credited to this agent
+        |------------------------------------------
+        */
+        foreach ($agent->sales as $sale) {
+
+            foreach ($sale->items as $item) {
+
+                $qty = $item->quantity;
+                $unitPrice = $item->price;
+                $discountPercent = $item->discount ?? 0;
+                $taxPercent = $item->tax ?? 0;
+
+                $subtotal = ($qty * $unitPrice);
+                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal += $subtotal * ($taxPercent / 100);
+
+                if ($sale->date) {
+                    $saleTime = Carbon::parse($sale->created_at)->format('H:i:s');
+                    $saleDate = Carbon::parse($sale->date . ' ' . $saleTime);
+                } else {
+                    $saleDate = Carbon::parse($sale->created_at);
+                }
+
+                $ledger->push([
+                    'date'      => $saleDate->format('Y-m-d H:i:s'),
+                    'type'      => 'sale',
+                    'reference' => 'Invoice #' . $sale->id,
+                    'customer'  => $sale->customer
+                        ? ($sale->customer->company_name ?? '-') . ($sale->customer->name ? " ({$sale->customer->name})" : '')
+                        : '-',
+                    'product'   => $item->product->name ?? '-',
+                    'qty'       => $qty,
+                    'price'     => $unitPrice,
+                    'discount'  => $discountPercent,
+                    'tax'       => $taxPercent,
+                    'debit'     => round($subtotal, 2),
+                    'credit'    => 0,
+                ]);
+            }
         }
 
         /*
