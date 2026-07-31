@@ -44,7 +44,8 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th width="200px">Actions</th>
+                        <th>Total Sales</th>
+                        <th width="240px">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -54,10 +55,14 @@
                         <td>{{ $agent->name }}</td>
                         <td>{{ $agent->email }}</td>
                         <td>{{ $agent->phone }}</td>
+                        <td class="fw-bold">{{ number_format($agent->sales_sum_total_amount ?? 0, 2) }}</td>
                         <td class="d-flex justify-content-center">
                             <!-- <a href="{{ route('agents.show',$agent->id) }}" class="btn btn-sm btn-info me-1 text-white">
                                 Show
                             </a> -->
+                            <a href="{{ route('agents.ledger',$agent->id) }}" class="btn btn-sm btn-dark me-1 text-white">
+                                Ledger
+                            </a>
                             <a href="{{ route('agents.edit',$agent->id) }}" class="btn btn-sm btn-success me-1 text-white">
                                 Edit <i class="material-icons">&#xE254;</i>
                             </a>

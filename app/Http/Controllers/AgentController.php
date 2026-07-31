@@ -9,7 +9,7 @@ class AgentController extends Controller
 {
     public function index()
     {
-        $agents = Agent::latest()->paginate(10);
+        $agents = Agent::withSum('sales', 'total_amount')->latest()->paginate(10);
         return view('agents.index', compact('agents'));
     }
 

@@ -15,4 +15,9 @@ class Agent extends Model
         'phone',
         'address'
     ];
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
 }
