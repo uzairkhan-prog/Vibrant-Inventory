@@ -51,7 +51,23 @@ class CustomerController extends Controller
     public function details(Request $request)
     {
         $perPage = $request->get('per_page', 20); // default 20
-        $customers = Customer::paginate($perPage);
+        $search  = trim((string) $request->get('search', ''));
+
+        $query = Customer::query();
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhereRaw('DATE_FORMAT(created_at, "%d-%m-%Y") LIKE ?', ["%{$search}%"]);
+            });
+        }
+
+        $customers = $query->paginate($perPage)->appends($request->query());
+
         return view('customers.details', compact('customers'));
     }
 

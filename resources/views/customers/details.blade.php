@@ -19,7 +19,7 @@
     <div class="row mb-3 align-items-center">
         <div class="col-md-10 d-flex align-items-center">
             <label class="me-2 fw-semibold">Search:</label>
-            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by name, company, phone, email, address, date">
+            <input type="text" id="searchInput" class="form-control w-100" placeholder="Search by name, company, phone, email, address, date" value="{{ request('search') }}">
         </div>
         <div class="col-md-2 d-flex justify-content-end align-items-center">
             <label class="me-2 fw-semibold">Show</label>
@@ -82,7 +82,7 @@
 
             <!-- Pagination -->
             <div class="d-flex justify-content-center mt-4">
-                {!! $customers->appends(['per_page' => request('per_page')])->links('pagination::bootstrap-5') !!}
+                {!! $customers->links('pagination::bootstrap-5') !!}
             </div>
         </div>
     </div>
@@ -94,12 +94,26 @@
 </div>
 
 <script>
-    // Search input
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const value = this.value.toLowerCase();
-        document.querySelectorAll('#customersTable tbody tr').forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(value) ? '' : 'none';
-        });
+    // Search input (server-side, searches across all pages)
+    let searchDebounce;
+    document.getElementById('searchInput').addEventListener('keyup', function(e) {
+        clearTimeout(searchDebounce);
+        const value = this.value;
+        const doSearch = () => {
+            const url = new URL(window.location.href);
+            if (value.trim() !== '') {
+                url.searchParams.set('search', value.trim());
+            } else {
+                url.searchParams.delete('search');
+            }
+            url.searchParams.delete('page'); // reset to first page on new search
+            window.location.href = url.toString();
+        };
+        if (e.key === 'Enter') {
+            doSearch();
+        } else {
+            searchDebounce = setTimeout(doSearch, 500);
+        }
     });
 
     // Rows per page
