@@ -4,7 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Session\TokenMismatchException;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Middleware\AdminMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -31,9 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withExceptions(function (Exceptions $exceptions): void {
         // A 419 (expired/stale CSRF token) should never show Laravel's raw
-        // "Page Expired" page. Send the user straight to the dashboard if
-        // they're still logged in, otherwise straight to the login page —
-        // no error page or message shown in between.
+        // "Page Expired" page. Show our own branded, responsive page with a
+        // "Go to Login" button instead (resources/views/errors/419.blade.php).
+        // The login route's built-in "guest" middleware will automatically
+        // bounce an already-authenticated user straight to the dashboard.
         $exceptions->render(function (TokenMismatchException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -41,8 +41,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 419);
             }
 
-            return Auth::check()
-                ? redirect()->route('dashboard')
-                : redirect()->route('login');
+            return response()->view('errors.419', [], 419);
         });
     })->create();
