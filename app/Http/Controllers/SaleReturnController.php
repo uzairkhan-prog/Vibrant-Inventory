@@ -7,7 +7,6 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Models\CustomerPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -126,6 +125,7 @@ class SaleReturnController extends Controller
             'product_id'      => 'required|exists:products,id',
             'sale_id'         => 'required|exists:sales,id',
             'qty_return'      => 'required|integer|min:1',
+            'cut_amount'      => 'nullable|numeric|min:0',
             'amount_deducted' => 'required|numeric|min:0',
         ]);
 
@@ -158,29 +158,6 @@ class SaleReturnController extends Controller
                 if ($customer->balance < 0) $customer->balance = 0;
                 $customer->save();
 
-                // Update Customer Payment (deduct and set description)
-                $returnAmount = (float) $request->amount_deducted;
-                $payments = CustomerPayment::where('sale_id', $sale->id)
-                    ->orderBy('id')
-                    ->lockForUpdate()
-                    ->get();
-
-                foreach ($payments as $payment) {
-                    if ($returnAmount <= 0) break;
-                    $availableAmount = $payment->amount;
-                    if ($availableAmount <= 0) continue;
-
-                    $deductNow = min($availableAmount, $returnAmount);
-                    $payment->amount -= $deductNow;
-
-                    // Updated description
-                    $payment->description =
-                        "Sale Return - Reduced Rs {$deductNow} from Invoice #{$sale->id} for {$request->qty_return} unit(s) of {$product->name}";
-
-                    $payment->save();
-                    $returnAmount -= $deductNow;
-                }
-
                 // Save Sale Return
                 SaleReturn::create([
                     'customer_id'        => $request->customer_id,
@@ -188,6 +165,7 @@ class SaleReturnController extends Controller
                     'sale_id'            => $request->sale_id,
                     'packing'            => $request->packing,
                     'qty_return'         => $request->qty_return,
+                    'cut_amount'         => $request->cut_amount ?? 0,
                     'amount_deducted'    => $request->amount_deducted,
                     'total_after_return' => $customer->balance,
                     'created_at'         => $request->return_date,
@@ -221,6 +199,7 @@ class SaleReturnController extends Controller
             'product_id'      => 'required|exists:products,id',
             'sale_id'         => 'required|exists:sales,id',
             'qty_return'      => 'required|integer|min:1',
+            'cut_amount'      => 'nullable|numeric|min:0',
             'amount_deducted' => 'required|numeric|min:0',
         ]);
 
@@ -274,29 +253,6 @@ class SaleReturnController extends Controller
                 if ($newCustomer->balance < 0) $newCustomer->balance = 0;
                 $newCustomer->save();
 
-                // Deduct from CustomerPayment (like store) with updated description
-                $returnAmount = (float) $request->amount_deducted;
-                $payments = CustomerPayment::where('sale_id', $request->sale_id)
-                    ->orderBy('id')
-                    ->lockForUpdate()
-                    ->get();
-
-                foreach ($payments as $payment) {
-                    if ($returnAmount <= 0) break;
-                    $availableAmount = $payment->amount;
-                    if ($availableAmount <= 0) continue;
-
-                    $deductNow = min($availableAmount, $returnAmount);
-                    $payment->amount -= $deductNow;
-
-                    // Updated description
-                    $payment->description =
-                        "Sale Return - Reduced Rs {$deductNow} from Invoice #{$request->sale_id} for {$request->qty_return} unit(s) of {$newProduct->name}";
-
-                    $payment->save();
-                    $returnAmount -= $deductNow;
-                }
-
                 // Update SaleReturn
                 $sale_return->update([
                     'customer_id'        => $request->customer_id,
@@ -304,6 +260,7 @@ class SaleReturnController extends Controller
                     'sale_id'            => $request->sale_id,
                     'packing'            => $request->packing,
                     'qty_return'         => $request->qty_return,
+                    'cut_amount'         => $request->cut_amount ?? 0,
                     'amount_deducted'    => $request->amount_deducted,
                     'total_after_return' => $newCustomer->balance,
                     'created_at'         => $request->return_date,
@@ -348,14 +305,6 @@ class SaleReturnController extends Controller
                 $sale = Sale::lockForUpdate()->findOrFail($sale_return->sale_id);
                 $sale->total_amount += $sale_return->amount_deducted;
                 $sale->save();
-
-                // Update CustomerPayment for revert
-                $payments = CustomerPayment::where('sale_id', $sale_return->sale_id)->lockForUpdate()->get();
-                foreach ($payments as $payment) {
-                    $payment->amount += $sale_return->amount_deducted;
-                    $payment->description = "Advance received against Sale Invoice #{$sale_return->sale_id}";
-                    $payment->save();
-                }
 
                 $sale_return->delete();
             });

@@ -125,7 +125,8 @@
                         <th>Product</th>
                         <th>Packing</th>
                         <th>Qty</th>
-                        <th>Deducted</th>
+                        <th>Deduction</th>
+                        <th>Net Refund</th>
                         <!-- <th>Total After</th> -->
                         <th>Actions</th>
                     </tr>
@@ -140,6 +141,7 @@
                         <td>{{ $r->product->name }}</td>
                         <td>{{ $r->packing }}</td>
                         <td>{{ $r->qty_return }}</td>
+                        <td>Rs {{ number_format($r->cut_amount, 2) }}</td>
                         <td>Rs {{ number_format($r->amount_deducted, 2) }}</td>
                         <!-- <td>Rs {{ number_format($r->total_after_return, 2) }}</td> -->
                         <td class="d-flex justify-content-center">

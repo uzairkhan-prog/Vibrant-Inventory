@@ -12,6 +12,7 @@ class SaleReturn extends Model
         'product_id',
         'packing',
         'qty_return',
+        'cut_amount',
         'amount_deducted',
         'total_after_return',
         'created_at',
