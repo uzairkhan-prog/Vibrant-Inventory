@@ -133,15 +133,33 @@
 function exportToPDF() {
     const element = document.getElementById('invoiceContent');
 
+    // html2canvas captures relative to the current scroll offset, which left a
+    // large blank gap at the top of the PDF when the page was scrolled.
+    const scrollPos = window.scrollY;
+    window.scrollTo(0, 0);
+
     const opt = {
-        margin:       0.4,
+        margin:       [0, 0.3, 0.3, 0.3],
         filename:     'sales-invoice-{{ $sale->id }}.pdf',
         image:        { type: 'jpeg', quality: 0.99 },
-        html2canvas:  { scale: 2, ignoreElements: el => el.classList.contains('no-print') },
+        html2canvas:  {
+            scale: 2,
+            scrollX: 0,
+            scrollY: 0,
+            ignoreElements: el => el.classList.contains('no-print'),
+            // Strip the on-screen card margin/shadow so the invoice starts at the top edge.
+            onclone: doc => {
+                const clone = doc.getElementById('invoiceContent');
+                // p-4 / my-5 are !important in Bootstrap, so the classes must be removed.
+                clone.classList.remove('my-5', 'p-4', 'shadow', 'rounded');
+                clone.style.setProperty('margin', '0', 'important');
+                clone.style.setProperty('padding', '0 24px 24px 24px', 'important');
+            }
+        },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save();
+    html2pdf().set(opt).from(element).save().then(() => window.scrollTo(0, scrollPos));
 }
 </script>
 
@@ -152,7 +170,7 @@ function exportToPDF() {
         margin: auto;
         background: #fff;
     }
-    
+
     .invoice-wrapper strong,
     .invoice-wrapper p {
         color: #000;
