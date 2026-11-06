@@ -44,7 +44,7 @@
                     <th class="text-start">Product</th>
                     <th>Qty</th>
                     <th>Unit Price (Rs)</th>
-                    <th>Discount (%)</th>
+                    <th>Discount (Rs)</th>
                     <th>Tax (%)</th>
                     <th>Subtotal (Rs)</th>
                 </tr>
@@ -54,7 +54,7 @@
                 @foreach($sale->items as $index => $item)
                 @php
                     $base = $item->quantity * $item->price;
-                    $discountAmount = ($item->discount ?? 0) * $base / 100;
+                    $discountAmount = $item->discount ?? 0;
                     $taxable = $base - $discountAmount;
                     $taxAmount = ($item->tax ?? 0) * $taxable / 100;
                     $subtotal = $taxable + $taxAmount;

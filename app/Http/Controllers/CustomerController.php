@@ -170,12 +170,12 @@ class CustomerController extends Controller
 
                 $qty = $item->quantity;
                 $unitPrice = $item->price;
-                $discountPercent = $item->discount ?? 0;
+                $discountAmount = $item->discount ?? 0;
                 $taxPercent = $item->tax ?? 0;
 
                 // Subtotal calculation per item
                 $subtotal = ($qty * $unitPrice);
-                $subtotal -= $subtotal * ($discountPercent / 100); // apply discount %
+                $subtotal -= $discountAmount; // apply discount amount
                 $subtotal += $subtotal * ($taxPercent / 100); // apply tax %
 
                 // Combine sale date + created_at time
@@ -194,7 +194,7 @@ class CustomerController extends Controller
                     'product'     => $item->product->name ?? '-',
                     'qty'         => $qty,
                     'price'       => $unitPrice,
-                    'discount'    => $discountPercent,
+                    'discount'    => $discountAmount,
                     'tax'         => $taxPercent,
                     'debit'       => round($subtotal, 2),
                     'credit'      => 0,

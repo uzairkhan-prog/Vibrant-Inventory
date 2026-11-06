@@ -79,7 +79,7 @@
                         <th>Product</th>
                         <th>Qty</th>
                         <th>Price</th>
-                        <th>Discount %</th>
+                        <th>Discount (Rs)</th>
                         <th>Tax %</th>
                         <th>Subtotal</th>
                         <th>Remove</th>
@@ -96,7 +96,7 @@
                         $discount = old('discount.' . $i, $item->discount ?? 0);
                         $tax = old('tax.' . $i, $item->tax ?? 0);
                         $base = $quantity * $price;
-                        $discountAmt = ($discount / 100) * $base;
+                        $discountAmt = min((float) $discount, $base);
                         $taxable = $base - $discountAmt;
                         $taxAmt = ($tax / 100) * $taxable;
                         $subtotal = $taxable + $taxAmt;
@@ -128,7 +128,7 @@
                                 @enderror
                             </td>
                             <td>
-                                <input type="number" name="discount[]" class="form-control discount" value="{{ $discount }}">
+                                <input type="number" name="discount[]" class="form-control discount" min="0" step="0.01" value="{{ $discount }}">
                                 @error("discount.$i")
                                 <div class="text-danger small">{{ $message }}</div>
                                 @enderror
@@ -251,7 +251,7 @@
             const tax = parseFloat($(this).find('.tax').val()) || 0;
 
             let base = qty * price;
-            let discountAmount = (discount / 100) * base;
+            let discountAmount = Math.min(discount, base);
             let taxable = base - discountAmount;
             let taxAmount = (tax / 100) * taxable;
             let finalAmount = taxable + taxAmount;

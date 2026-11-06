@@ -86,7 +86,7 @@
                         <th>Product</th>
                         <th>Qty</th>
                         <th>Price</th>
-                        <th>Discount %</th>
+                        <th>Discount (Rs)</th>
                         <th>Tax %</th>
                         <th>Subtotal</th>
                         <th>Remove</th>
@@ -264,7 +264,7 @@
             const tax = parseFloat($(this).find('.tax').val()) || 0;
 
             let base = qty * price;
-            let discountAmount = (discount / 100) * base;
+            let discountAmount = Math.min(discount, base);
             let taxable = base - discountAmount;
             let taxAmount = (tax / 100) * taxable;
             let finalAmount = taxable + taxAmount;

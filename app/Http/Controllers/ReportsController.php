@@ -581,11 +581,11 @@ class ReportsController extends Controller
 
                 $qty = $item->quantity;
                 $unitPrice = $item->price;
-                $discountPercent = $item->discount ?? 0;
+                $discountAmount = $item->discount ?? 0;
                 $taxPercent = $item->tax ?? 0;
 
                 $subtotal = ($qty * $unitPrice);
-                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal -= $discountAmount;
                 $subtotal += $subtotal * ($taxPercent / 100);
 
                 if ($sale->date) {
@@ -605,7 +605,7 @@ class ReportsController extends Controller
                     'product'   => $item->product->name ?? '-',
                     'qty'       => $qty,
                     'price'     => $unitPrice,
-                    'discount'  => $discountPercent,
+                    'discount'  => $discountAmount,
                     'tax'       => $taxPercent,
                     'debit'     => round($subtotal, 2),
                     'credit'    => 0,
@@ -660,11 +660,11 @@ class ReportsController extends Controller
 
                 $qty = $item->quantity;
                 $unitPrice = $item->price;
-                $discountPercent = $item->discount ?? 0;
+                $discountAmount = $item->discount ?? 0;
                 $taxPercent = $item->tax ?? 0;
 
                 $subtotal = ($qty * $unitPrice);
-                $subtotal -= $subtotal * ($discountPercent / 100);
+                $subtotal -= $discountAmount;
                 $subtotal += $subtotal * ($taxPercent / 100);
 
                 if ($sale->date) {
@@ -681,7 +681,7 @@ class ReportsController extends Controller
                     'product'   => $item->product->name ?? '-',
                     'qty'       => $qty,
                     'price'     => $unitPrice,
-                    'discount'  => $discountPercent,
+                    'discount'  => $discountAmount,
                     'tax'       => $taxPercent,
                     'debit'     => round($subtotal, 2),
                     'credit'    => 0,

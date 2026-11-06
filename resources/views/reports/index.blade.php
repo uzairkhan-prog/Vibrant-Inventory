@@ -507,7 +507,7 @@
                             <th class="text-start p-2">Qty</th>
                             <th class="text-start p-2">Price</th>
                             <th class="text-start p-2">Tax (%)</th>
-                            <th class="text-start p-2">Discount (%)</th>
+                            <th class="text-start p-2">Discount (Rs)</th>
                             <th class="text-end p-2">Debit (+)</th>
                             <th class="text-end p-2">Credit (-)</th>
                             <th class="text-end p-2">Balance</th>

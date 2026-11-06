@@ -108,6 +108,7 @@ class SaleController extends Controller
             'product_id.*' => 'required|exists:products,id',
             'quantity.*'   => 'required|integer|min:1',
             'price.*'      => 'required|numeric|min:0',
+            'discount.*'   => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -147,8 +148,10 @@ class SaleController extends Controller
                     $product->save();
 
                     $base = $qty * $price;
-                    $discountAmt = ($discount / 100) * $base;
-                    $afterDiscount = $base - $discountAmt;
+                    if ($discount > $base) {
+                        throw new \Exception("Discount for '{$product->name}' cannot exceed line amount (Rs {$base}).");
+                    }
+                    $afterDiscount = $base - $discount;
                     $taxAmt = ($tax / 100) * $afterDiscount;
                     $lineTotal = $afterDiscount + $taxAmt;
 
@@ -241,6 +244,7 @@ class SaleController extends Controller
             'product_id.*'  => 'required|exists:products,id',
             'quantity.*'    => 'required|integer|min:1',
             'price.*'       => 'required|numeric|min:0',
+            'discount.*'    => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -297,8 +301,10 @@ class SaleController extends Controller
                     $product->save();
 
                     $base = $qty * $price;
-                    $discountAmt = ($discount / 100) * $base;
-                    $afterDiscount = $base - $discountAmt;
+                    if ($discount > $base) {
+                        throw new \Exception("Discount for '{$product->name}' cannot exceed line amount (Rs {$base}).");
+                    }
+                    $afterDiscount = $base - $discount;
                     $taxAmt = ($tax / 100) * $afterDiscount;
                     $lineTotal = $afterDiscount + $taxAmt;
 
@@ -378,12 +384,12 @@ class SaleController extends Controller
 
         $callback = function () use ($sale) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['#', 'Product', 'Qty', 'Price', 'Discount (%)', 'Tax (%)', 'Subtotal']);
+            fputcsv($handle, ['#', 'Product', 'Qty', 'Price', 'Discount (Rs)', 'Tax (%)', 'Subtotal']);
 
             $total = 0;
             foreach ($sale->items as $index => $item) {
                 $base = $item->quantity * $item->price;
-                $discount = ($item->discount ?? 0) * $base / 100;
+                $discount = $item->discount ?? 0;
                 $taxable = $base - $discount;
                 $tax = ($item->tax ?? 0) * $taxable / 100;
                 $subtotal = $taxable + $tax;
@@ -424,7 +430,7 @@ class SaleController extends Controller
                 'Product',
                 'Quantity',
                 'Price',
-                'Discount %',
+                'Discount (Rs)',
                 'Tax %',
                 'Subtotal',
                 'Total Amount'
@@ -435,7 +441,7 @@ class SaleController extends Controller
             foreach ($sales as $sale) {
                 foreach ($sale->items as $item) {
                     $base = $item->quantity * $item->price;
-                    $discountAmount = ($item->discount ?? 0) * $base / 100;
+                    $discountAmount = $item->discount ?? 0;
                     $taxable = $base - $discountAmount;
                     $taxAmount = ($item->tax ?? 0) * $taxable / 100;
                     $subtotal = $taxable + $taxAmount;
