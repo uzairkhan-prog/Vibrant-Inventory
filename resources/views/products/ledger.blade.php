@@ -65,6 +65,7 @@
                     <td class="fw-bold"
                         @if($row['type']=='Purchase' ) style="background-color:#cce5ff;"
                         @elseif($row['type']=='Sale' ) style="background-color:#d4edda;"
+                        @elseif($row['type']=='Purchase Return' ) style="background-color:#ffe5b4;"
                         @else style="background-color:#f8d7da;" @endif>
                         {{ $row['invoice_no'] }}
                     </td>
@@ -74,6 +75,8 @@
                         <span class="badge" style="background-color:#cce5ff; color:#000;">Purchase</span>
                         @elseif($row['type']=='Sale')
                         <span class="badge" style="background-color:#d4edda; color:#000;">Sale</span>
+                        @elseif($row['type']=='Purchase Return')
+                        <span class="badge" style="background:#ffe5b4;color:#000;">Purchase Return</span>
                         @else
                         <span class="badge" style="background-color:#f8d7da; color:#000;">Sale Return</span>
                         @endif
@@ -103,6 +106,8 @@
                 $totalSaleAmount     = $ledger->where('type','Sale')->sum('total');
                 $totalReturnQtyIn    = $ledger->where('type','Sale Return')->sum('qty_in');
                 $totalReturnAmount   = $ledger->where('type','Sale Return')->sum('total');
+                $totalPurchaseReturnQtyOut = $ledger->where('type','Purchase Return')->sum('qty_out');
+                $totalPurchaseReturnAmount = $ledger->where('type','Purchase Return')->sum('total');
             @endphp
 
             <tfoot class="fw-bold text-center">
@@ -129,6 +134,14 @@
                     <td class="fw-bold text-danger">{{ number_format($totalReturnAmount, 2) }}</td>
                 </tr>
                 @endif
+                @if($totalPurchaseReturnQtyOut > 0)
+                <tr style="background-color:#ffe5b4;">
+                    <td colspan="4" class="text-end fw-bold text-warning-emphasis">Total Purchase Return:</td>
+                    <td>-</td>
+                    <td class="fw-bold text-danger">{{ $totalPurchaseReturnQtyOut }}</td>
+                    <td></td>
+                    <td class="fw-bold text-warning-emphasis">{{ number_format($totalPurchaseReturnAmount, 2) }}</td>
+                </tr>
             </tfoot>
 
         </table>
@@ -165,6 +178,8 @@ $_jsData = [
     'totalSaleAmt'       => $totalSaleAmount,
     'totalReturnQtyIn'   => $totalReturnQtyIn,
     'totalReturnAmt'     => $totalReturnAmount,
+    'totalPurchaseReturnQtyOut' => $totalPurchaseReturnQtyOut,
+    'totalPurchaseReturnAmt'    => $totalPurchaseReturnAmount,
 ];
 @endphp
 <script type="application/json" id="product-ledger-data">@json($_jsData)</script>
@@ -238,6 +253,16 @@ $_jsData = [
                     { content: '-',                         styles: { halign: 'center', textColor: [220, 0, 0], fillColor: [248, 215, 218] } },
                     { content: '',                          styles: { fillColor: [248, 215, 218] } },
                     { content: fmtNum(d.totalReturnAmt),    styles: { halign: 'center', fontStyle: 'bold', textColor: [220, 0, 0], fillColor: [248, 215, 218] } },
+                ]);
+            }
+
+            if (d.totalPurchaseReturnQtyOut > 0) {
+                footRows.push([
+                    { content: 'Total Purchase Return:', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', textColor: [153, 84, 0], fillColor: [255, 229, 180] } },
+                    { content: '-',                                styles: { halign: 'center', textColor: [153, 84, 0], fillColor: [255, 229, 180] } },
+                    { content: d.totalPurchaseReturnQtyOut,        styles: { halign: 'center', fontStyle: 'bold', textColor: [220, 0, 0], fillColor: [255, 229, 180] } },
+                    { content: '',                                 styles: { fillColor: [255, 229, 180] } },
+                    { content: fmtNum(d.totalPurchaseReturnAmt),   styles: { halign: 'center', fontStyle: 'bold', textColor: [153, 84, 0], fillColor: [255, 229, 180] } },
                 ]);
             }
 

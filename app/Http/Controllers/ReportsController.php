@@ -464,7 +464,8 @@ class ReportsController extends Controller
     {
         $supplier->load([
             'purchases.items.product',
-            'payments'
+            'payments',
+            'purchaseReturns.product'
         ]);
 
         $ledger = collect();
@@ -531,6 +532,27 @@ class ReportsController extends Controller
                 'tax'       => 0,
                 'debit'     => 0,
                 'credit'    => (float) $payment->amount,
+            ]);
+        }
+
+        /*
+        |------------------------------------------
+        | PURCHASE RETURNS (CREDIT - Supplier credits us back)
+        |------------------------------------------
+        */
+        foreach ($supplier->purchaseReturns as $return) {
+
+            $ledger->push([
+                'date'      => Carbon::parse($return->created_at)->format('Y-m-d H:i:s'),
+                'type'      => 'purchase_return',
+                'reference' => 'Purchase Return #' . $return->id . ' (Purchase #' . $return->purchase_id . ')',
+                'product'   => $return->product->name ?? '-',
+                'qty'       => $return->qty_return,
+                'price'     => $return->unit_cost,
+                'discount'  => 0,
+                'tax'       => 0,
+                'debit'     => 0,
+                'credit'    => (float) $return->amount_deducted,
             ]);
         }
 

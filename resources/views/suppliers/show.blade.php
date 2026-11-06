@@ -164,6 +164,8 @@
                                 <td>
                                     @if($row['type'] == 'purchase')
                                     <span class="badge bg-primary">Purchase</span>
+                                    @elseif($row['type'] == 'purchase_return')
+                                    <span class="badge bg-danger">Purchase Return</span>
                                     @else
                                     <span class="badge bg-success">Payment</span>
                                     @endif
@@ -334,7 +336,7 @@
 
             d.ledger.forEach(row => {
                 const dt = row.date ? row.date.substring(0, 10) : '-';
-                const type = row.type === 'purchase' ? 'Purchase' : 'Payment';
+                const type = row.type === 'purchase' ? 'Purchase' : (row.type === 'purchase_return' ? 'Purchase Return' : 'Payment');
                 const price = (row.price !== null && row.price !== '-' && !isNaN(row.price))
                     ? parseFloat(row.price).toLocaleString('en-US', { minimumFractionDigits: 2 })
                     : '-';

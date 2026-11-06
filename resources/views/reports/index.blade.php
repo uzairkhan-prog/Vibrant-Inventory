@@ -683,6 +683,8 @@
 
                                 @if($row['type']=='purchase')
                                 <span class="badge bg-success">Purchase</span>
+                                @elseif($row['type']=='purchase_return')
+                                <span class="badge bg-danger">Purchase Return</span>
                                 @else
                                 <span class="badge bg-primary">Payment</span>
                                 @endif

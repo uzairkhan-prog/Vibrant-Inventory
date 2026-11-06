@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\SaleItem;
 use App\Models\PurchaseItem;
 use App\Models\SaleReturn;
+use App\Models\PurchaseReturn;
 use Illuminate\Http\Request;
 
 class ProductLedgerController extends Controller
@@ -108,10 +109,37 @@ class ProductLedgerController extends Controller
                     ];
                 });
 
+            /* ================= PURCHASE RETURNS ================= */
+            $purchaseReturns = PurchaseReturn::with('supplier')
+                ->where('product_id', $productId)
+                ->when($fromDate && $toDate, function ($q) use ($fromDate, $toDate) {
+                    $q->whereDate('created_at', '>=', $fromDate)->whereDate('created_at', '<=', $toDate);
+                })
+                ->get()
+                ->map(function ($return) {
+
+                    $supplier = $return->supplier;
+
+                    return [
+                        'date' => $return->created_at,
+                        'invoice_no' => 'Purchase Return - Invoice no: ' . $return->id . ' (Purchase #' . $return->purchase_id . ')',
+                        'type' => 'Purchase Return',
+                        'party' => $supplier
+                            ? ($supplier->company_name ?? $supplier->name)
+                            . ($supplier->name ? " ({$supplier->name})" : '')
+                            : '-',
+                        'qty_in' => 0,
+                        'qty_out' => $return->qty_return,
+                        'price' => $return->unit_cost,
+                        'total' => $return->amount_deducted,
+                    ];
+                });
+
             /* ================= MERGE ================= */
             $ledger = $purchases
                 ->concat($sales)
                 ->concat($returns)
+                ->concat($purchaseReturns)
                 ->sortBy('date')
                 ->values();
 
@@ -202,11 +230,35 @@ class ProductLedgerController extends Controller
                 ];
             });
 
+        /* ================= PURCHASE RETURNS ================= */
+        $purchaseReturns = PurchaseReturn::with('supplier')
+            ->where('product_id', $productId)
+            ->get()
+            ->map(function ($return) {
+
+                $supplier = $return->supplier;
+
+                return [
+                    'date' => $return->created_at,
+                    'invoice_no' => 'Purchase Return - Invoice no: ' . $return->id . ' (Purchase #' . $return->purchase_id . ')',
+                    'type' => 'Purchase Return',
+                    'party' => $supplier
+                        ? ($supplier->company_name ?? $supplier->name)
+                        . ($supplier->name ? " ({$supplier->name})" : '')
+                        : '-',
+                    'qty_in' => 0,
+                    'qty_out' => $return->qty_return,
+                    'price' => $return->unit_cost,
+                    'total' => $return->amount_deducted,
+                ];
+            });
+
         /* ================= MERGE ================= */
 
         $ledger = $purchases
             ->concat($sales)
             ->concat($returns)
+            ->concat($purchaseReturns)
             ->sortBy('date')
             ->values();
 

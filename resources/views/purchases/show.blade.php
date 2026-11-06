@@ -41,6 +41,7 @@
             </thead>
             <tbody>
                 @php
+                $grossTotal = 0;
                 $calculatedTotal = 0;
                 @endphp
                 @foreach($purchase->items as $index => $item)
@@ -50,16 +51,32 @@
                 $taxable = $base - $discountAmount;
                 $taxAmount = ($item->tax ?? 0) * $taxable / 100;
                 $subtotal = $taxable + $taxAmount;
-                $calculatedTotal += $subtotal;
+                $grossTotal += $subtotal;
+
+                // Net of purchase returns against this line
+                $returned = $returnsByProduct[$item->product_id] ?? null;
+                $netQty = $item->quantity - ($returned['qty'] ?? 0);
+                $netSubtotal = $subtotal - ($returned['credit'] ?? 0);
+                $calculatedTotal += $netSubtotal;
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td class="text-start">{{ $item->product->name }}</td>
-                    <td>{{ $item->quantity }}</td>
+                    <td>
+                        {{ $netQty }}
+                        @if($returned)
+                        <div class="small text-danger">({{ $item->quantity }} - {{ $returned['qty'] }} returned)</div>
+                        @endif
+                    </td>
                     <td>{{ number_format($item->price, 2) }}</td>
                     <td>{{ number_format($item->discount ?? 0, 2) }}</td>
                     <td>{{ number_format($item->tax ?? 0, 2) }}</td>
-                    <td class="fw-bold">{{ number_format($subtotal, 2) }}</td>
+                    <td class="fw-bold">
+                        {{ number_format($netSubtotal, 2) }}
+                        @if($returned)
+                        <div class="small text-danger fw-normal">({{ number_format($subtotal, 2) }} - {{ number_format($returned['credit'], 2) }})</div>
+                        @endif
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
@@ -71,6 +88,26 @@
                 // Remaining payable
                 $balance = $calculatedTotal - $advance;
                 @endphp
+                @if($purchase->returns->isNotEmpty())
+                <tr>
+                    <td colspan="6" class="text-end fw-bold fs-5 pe-3">
+                        Gross Total:
+                    </td>
+                    <td class="fw-bold fs-5">
+                        {{ number_format($grossTotal, 2) }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="6" class="text-end fw-bold fs-5 pe-3">
+                        Less Purchase Returns:
+                    </td>
+                    <td class="fw-bold text-danger fs-5">
+                        - {{ number_format($purchase->returns->sum('amount_deducted'), 2) }}
+                    </td>
+                </tr>
+                @endif
+
                 <tr>
                     <td colspan="6" class="text-end fw-bold fs-5 pe-3">
                         Advance:
@@ -101,6 +138,38 @@
             </tfoot>
         </table>
     </div>
+
+    @if($purchase->returns->isNotEmpty())
+    <h5 class="fw-bold text-danger mt-4">Purchase Returns</h5>
+    <div class="table-responsive">
+        <table class="table table-bordered invoice-table align-middle text-center">
+            <thead class="text-uppercase">
+                <tr>
+                    <th>Return #</th>
+                    <th>Date</th>
+                    <th class="text-start">Product</th>
+                    <th>Qty</th>
+                    <th>Cost/Unit (Rs)</th>
+                    <th>Deduction (Rs)</th>
+                    <th>Net Credit (Rs)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($purchase->returns as $return)
+                <tr>
+                    <td>{{ $return->id }}</td>
+                    <td>{{ $return->created_at->format('d M, Y') }}</td>
+                    <td class="text-start">{{ $return->product->name ?? '-' }}</td>
+                    <td>{{ $return->qty_return }}</td>
+                    <td>{{ number_format($return->unit_cost, 2) }}</td>
+                    <td>{{ number_format($return->cut_amount, 2) }}</td>
+                    <td class="fw-bold text-danger">{{ number_format($return->amount_deducted, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
 
     <!-- Buttons (Exclude from PDF using class) -->
     <div class="mt-4 text-center d-flex justify-content-center gap-3 flex-wrap no-print" id="exportButtons">

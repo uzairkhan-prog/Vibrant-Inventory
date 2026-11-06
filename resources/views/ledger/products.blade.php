@@ -85,6 +85,7 @@
                     <td class="fw-bold"
                         @if($row['type']=='Purchase' ) style="background-color:#cce5ff;"
                         @elseif($row['type']=='Sale' ) style="background-color:#d4edda;"
+                        @elseif($row['type']=='Purchase Return' ) style="background-color:#ffe5b4;"
                         @else style="background-color:#f8d7da;" @endif>
                         {{ $row['invoice_no'] }}
                     </td>
@@ -95,6 +96,8 @@
                         <span class="badge" style="background:#cce5ff;color:#000;">Purchase</span>
                         @elseif($row['type']=='Sale')
                         <span class="badge" style="background:#d4edda;color:#000;">Sale</span>
+                        @elseif($row['type']=='Purchase Return')
+                        <span class="badge" style="background:#ffe5b4;color:#000;">Purchase Return</span>
                         @else
                         <span class="badge" style="background:#f8d7da;color:#000;">Sale Return</span>
                         @endif
@@ -135,6 +138,8 @@
                 $totalSaleAmount     = $ledger->where('type','Sale')->sum('total');
                 $totalReturnQtyIn    = $ledger->where('type','Sale Return')->sum('qty_in');
                 $totalReturnAmount   = $ledger->where('type','Sale Return')->sum('total');
+                $totalPurchaseReturnQtyOut = $ledger->where('type','Purchase Return')->sum('qty_out');
+                $totalPurchaseReturnAmount = $ledger->where('type','Purchase Return')->sum('total');
             @endphp
 
             <tfoot class="fw-bold text-center">
@@ -161,6 +166,14 @@
                     <td class="fw-bold text-danger">{{ number_format($totalReturnAmount, 2) }}</td>
                 </tr>
                 @endif
+                @if($totalPurchaseReturnQtyOut > 0)
+                <tr style="background-color:#ffe5b4;">
+                    <td colspan="4" class="text-end fw-bold text-warning-emphasis">Total Purchase Return:</td>
+                    <td>-</td>
+                    <td class="fw-bold text-danger">{{ $totalPurchaseReturnQtyOut }}</td>
+                    <td></td>
+                    <td class="fw-bold text-warning-emphasis">{{ number_format($totalPurchaseReturnAmount, 2) }}</td>
+                </tr>
             </tfoot>
 
         </table>

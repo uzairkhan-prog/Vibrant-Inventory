@@ -125,6 +125,13 @@
                 </li>
 
                 <li class="sidebar-item">
+                    <a class="sidebar-link" href="{{ route('purchase-returns.index') }}">
+                        <i class="ti ti-truck-return"></i>
+                        <span class="hide-menu">Purchase Returns</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="javascript:void(0)">
                         <i class="ti ti-receipt"></i>
                         <span class="hide-menu">Expenses</span>

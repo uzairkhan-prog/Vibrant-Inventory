@@ -235,8 +235,20 @@ class PurchaseController extends Controller
             ->with('success', 'Purchase created successfully & stock updated.');
     }
 
+    // Edit/delete recalculate the purchase from its items, which would undo any returns against it
+    private function blockIfHasReturns(Purchase $purchase)
+    {
+        if ($purchase->returns()->exists()) {
+            return redirect()->route('purchases.index')
+                ->withErrors(['error' => "Purchase #{$purchase->id} has purchase returns. Delete those returns first, then edit or delete this purchase."]);
+        }
+        return null;
+    }
+
     public function edit(Purchase $purchase)
     {
+        if ($blocked = $this->blockIfHasReturns($purchase)) return $blocked;
+
         $suppliers = Supplier::all();
         $products  = Product::all();
         $categories = Category::all();
@@ -255,6 +267,8 @@ class PurchaseController extends Controller
 
     public function update(Request $request, Purchase $purchase)
     {
+        if ($blocked = $this->blockIfHasReturns($purchase)) return $blocked;
+
         $request->validate([
             'supplier_id'  => 'required|exists:suppliers,id',
             'date'         => 'required|date',
@@ -428,14 +442,23 @@ class PurchaseController extends Controller
             'supplier',
             'supplier.payments' => function ($q) use ($purchase) {
                 $q->where('purchase_id', $purchase->id);
-            }
+            },
+            'returns.product',
         ]);
 
-        return view('purchases.show', compact('purchase'));
+        // Returned qty / credit per product, shown against each invoice line
+        $returnsByProduct = $purchase->returns->groupBy('product_id')->map(fn($r) => [
+            'qty'    => $r->sum('qty_return'),
+            'credit' => $r->sum('amount_deducted'),
+        ]);
+
+        return view('purchases.show', compact('purchase', 'returnsByProduct'));
     }
 
     public function destroy(Purchase $purchase)
     {
+        if ($blocked = $this->blockIfHasReturns($purchase)) return $blocked;
+
         DB::transaction(function () use ($purchase) {
             foreach ($purchase->items as $item) {
                 $product = Product::find($item->product_id);
@@ -455,7 +478,7 @@ class PurchaseController extends Controller
 
     public function exportInoviceCSV($id)
     {
-        $purchase = Purchase::with(['items.product', 'supplier'])->findOrFail($id);
+        $purchase = Purchase::with(['items.product', 'supplier', 'returns.product'])->findOrFail($id);
 
         $filename = 'purchase_invoice_' . $purchase->id . '.csv';
         $headers = [
@@ -488,6 +511,27 @@ class PurchaseController extends Controller
                     number_format($item->tax ?? 0, 2),
                     number_format($subtotal, 2)
                 ]);
+            }
+
+            if ($purchase->returns->isNotEmpty()) {
+                fputcsv($handle, ['', '', '', '', '', 'Gross Total', number_format($total, 2)]);
+
+                fputcsv($handle, []);
+                fputcsv($handle, ['Return #', 'Product', 'Qty', 'Cost/Unit', 'Deduction', 'Date', 'Net Credit']);
+                foreach ($purchase->returns as $return) {
+                    fputcsv($handle, [
+                        $return->id,
+                        $return->product->name ?? '-',
+                        $return->qty_return,
+                        number_format($return->unit_cost, 2),
+                        number_format($return->cut_amount, 2),
+                        $return->created_at->format('Y-m-d'),
+                        '-' . number_format($return->amount_deducted, 2),
+                    ]);
+                }
+
+                $total -= $purchase->returns->sum('amount_deducted');
+                fputcsv($handle, []);
             }
 
             fputcsv($handle, ['', '', '', '', '', 'Total', number_format($total, 2)]);

@@ -24,6 +24,7 @@ use App\Http\Controllers\AgentLedgerController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\PurchaseReturnController;
 use App\Http\Controllers\CacheClearController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('sale-returns/customer-products/{customer}', [SaleReturnController::class, 'getCustomerProducts']);
     Route::resource('sale-returns', SaleReturnController::class);
+
+    Route::get('purchase-returns/supplier-products/{supplier}', [PurchaseReturnController::class, 'getSupplierProducts'])->name('purchase-returns.supplierProducts');
+    Route::resource('purchase-returns', PurchaseReturnController::class)->except(['show']);
 
     // ADMIN ONLY PAGES
     Route::middleware(['admin'])->group(function () {
