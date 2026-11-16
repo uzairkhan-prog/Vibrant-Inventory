@@ -142,6 +142,7 @@
                     <td></td>
                     <td class="fw-bold text-warning-emphasis">{{ number_format($totalPurchaseReturnAmount, 2) }}</td>
                 </tr>
+                @endif
             </tfoot>
 
         </table>
